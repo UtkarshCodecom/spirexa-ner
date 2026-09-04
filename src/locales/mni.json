@@ -1,0 +1,16 @@
+{
+  "_name": "Manipuri (Meitei)",
+  "_native_name": "মৈতৈলোন্",
+  "_verified": false,
+  "_translation_confidence": "low - drafted without native review, must be checked before deployment",
+  "severity_severe": "য়াম্না অকীবা",
+  "severity_high": "ৱাংবা",
+  "severity_moderate": "মরিল",
+  "severity_low": "য়াম্না ৱাংদবা",
+  "alert_body": "{location}, {state} গী নকতা লৈ নোংথাক্তুনা তাবগী {severity} খুদোংথিবা লৈ। খুদোংথিবগী চাং {percent}%।",
+  "action_severe": "হৌজিক্তা চিংথেকতগী থাদোক্লগা চৎলু। চিংদগী লাপথোকনা অথাংবা অমসুং মপাল নাইবা মphamda চৎলু। চিংথেককী মখাগী লম্বীদা চৎলুরোই।",
+  "action_high": "চিংথেক অমসুং মখাগী লম্বী অদু থিংলু। নোং চুবা মখা চৎলবদি চৎখ্রবা য়ানবা থৌরাং তৌদুনা লৈয়ু।",
+  "action_moderate": "চেক্শিন্না লৈয়ু। অনৌবা কাক্লিবা, তুম্লিবা উশিং, নত্রগা চিংথেক্তগী থোরকপা লৈবাক্কী ঈশিং য়েংলু।",
+  "action_low": "করিগুম্বা তৌবগী দরকার লৈতে। ফিভম অদু য়েংশিল্লি।",
+  "signature": "NER Slope Watch (মশা মথন্তা)। নখোয়গী দিস্ত্রিক্ত এদমিনিস্ত্রেসন্গী ৱারোল ইনথৌ।"
+}

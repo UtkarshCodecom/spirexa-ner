@@ -1,0 +1,1384 @@
+<meta charset="UTF-8">
+<title>SPIREXA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --base: #e9eeea;
+    --base-shadow-dark: #bcc7be;
+    --base-shadow-light: #ffffff;
+
+    --text: #1f2d26;
+    --text-muted: #5a6d62;
+    --text-faint: #8b9d92;
+
+    --glass-fill: rgba(255,255,255,0.48);
+    --glass-fill-strong: rgba(255,255,255,0.74);
+    --glass-border: rgba(255,255,255,0.7);
+    --glass-shadow: 0 8px 32px rgba(28,45,36,0.13), inset 0 1px 0 rgba(255,255,255,0.55);
+
+    --accent: #6355d8;
+    --accent-soft: #ebe8fb;
+    --accent-ink: #fbfaff;
+
+    --risk-low: #15803d;
+    --risk-low-soft: #dcfce7;
+    --risk-moderate: #b45309;
+    --risk-moderate-soft: #fef3c7;
+    --risk-high: #ea580c;
+    --risk-high-soft: #ffedd5;
+    --risk-severe: #dc2626;
+    --risk-severe-soft: #fee2e2;
+
+    --caught: #15803d;
+    --missed: #dc2626;
+
+    --map-land: #d3e5d6;
+    --map-land-hi: #bfdcc5;
+    --map-border: #86b193;
+    --map-water: #dde8e4;
+    --road-major: #b4632f;
+    --road-minor: #c99266;
+
+    --font-display: 'Archivo', 'Arial Narrow', sans-serif;
+    --font-body: 'Public Sans', -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    --r-md: 16px;
+    --r-sm: 10px;
+    --r-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(46% 38% at 6% 5%, #7fdfb9a8 0%, transparent 70%),
+      radial-gradient(38% 34% at 94% 10%, #7cc3f5a0 0%, transparent 70%),
+      radial-gradient(44% 42% at 88% 90%, #f5c66ea0 0%, transparent 70%),
+      radial-gradient(40% 38% at 4% 94%, #b7a2f294 0%, transparent 70%),
+      var(--base);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .app {
+    display: flex; flex-direction: column;
+    min-height: 100vh; max-width: 1520px;
+    margin: 0 auto; padding: 18px 22px 22px; gap: 16px;
+  }
+
+  .glass {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(22px) saturate(165%);
+    backdrop-filter: blur(22px) saturate(165%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--r-md);
+    box-shadow: var(--glass-shadow);
+  }
+  .neu {
+    background: var(--base); border-radius: var(--r-pill);
+    box-shadow: 5px 5px 10px var(--base-shadow-dark), -5px -5px 10px var(--base-shadow-light);
+  }
+
+  /* ---- topbar ---- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 15px 20px; flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 5px 10px; border-radius: var(--r-pill);
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em; margin: 0; text-wrap: balance;
+  }
+  .subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .as-of {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+    text-align: right; line-height: 1.45;
+  }
+  .as-of strong { color: var(--text); font-weight: 600; }
+
+  .mode-toggle { display: flex; padding: 4px; gap: 2px; }
+  .mode-toggle button {
+    font-family: var(--font-body); font-weight: 600; font-size: 12.5px;
+    color: var(--text-muted); background: transparent; border: none;
+    padding: 8px 15px; border-radius: var(--r-pill); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .mode-toggle button.active {
+    background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 3px 10px rgba(99,85,216,0.38);
+  }
+  .mode-toggle button:not(.active):hover { color: var(--text); }
+  .mode-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- stats ---- */
+  .stats-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  @media (max-width: 900px) { .stats-strip { grid-template-columns: repeat(2,1fr); } }
+  .stat-tile { padding: 13px 17px; display: flex; flex-direction: column; gap: 2px; }
+  .stat-value {
+    font-family: var(--font-mono); font-weight: 600; font-size: 25px;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .stat-value.alert { color: var(--risk-severe); }
+  .stat-value.good { color: var(--caught); }
+  .stat-label {
+    font-size: 10.5px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  /* ---- layout ---- */
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 16px; flex: 1; }
+  @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+
+  .map-panel { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  .controls-row {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+    color: var(--text-muted); background: var(--base); border: none;
+    padding: 6px 13px; border-radius: var(--r-pill); cursor: pointer;
+    box-shadow: 3px 3px 7px var(--base-shadow-dark), -3px -3px 7px var(--base-shadow-light);
+    transition: all 0.15s ease;
+  }
+  .chip:hover { color: var(--text); }
+  .chip.active {
+    color: var(--accent-ink); background: var(--accent);
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.24);
+  }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .layer-switches { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+  .switch-label {
+    display: flex; align-items: center; gap: 7px; font-size: 11.5px;
+    font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none;
+  }
+  .switch {
+    width: 32px; height: 19px; border-radius: var(--r-pill); background: var(--base);
+    box-shadow: inset 2px 2px 5px var(--base-shadow-dark), inset -2px -2px 5px var(--base-shadow-light);
+    position: relative; transition: background 0.15s ease; flex-shrink: 0;
+  }
+  .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 15px; height: 15px; border-radius: 50%; background: #fff;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.28); transition: transform 0.18s ease;
+  }
+  .switch.on { background: var(--accent-soft); }
+  .switch.on::after { transform: translateX(13px); background: var(--accent); }
+
+  /* ---- map ---- */
+  .map-wrap {
+    position: relative; border-radius: var(--r-sm); overflow: hidden;
+    background: var(--map-water); flex: 1; min-height: 500px;
+    box-shadow: inset 0 2px 10px rgba(28,45,36,0.12);
+    cursor: grab; touch-action: none;
+  }
+  .map-wrap.dragging { cursor: grabbing; }
+  svg.map { display: block; width: 100%; height: 100%; }
+
+  .zoom-controls {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; flex-direction: column; gap: 6px; z-index: 5;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px; border: none; border-radius: 9px;
+    background: var(--glass-fill-strong);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    color: var(--text); font-size: 16px; font-weight: 600; cursor: pointer;
+    font-family: var(--font-body); line-height: 1;
+    box-shadow: 0 3px 10px rgba(28,45,36,0.16);
+    transition: background 0.15s ease;
+  }
+  .zoom-btn:hover { background: #fff; }
+  .zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .zoom-btn.reset { font-size: 11px; font-weight: 700; }
+
+  .zoom-level {
+    position: absolute; bottom: 10px; right: 12px; z-index: 5;
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted);
+    background: var(--glass-fill-strong); padding: 4px 9px; border-radius: var(--r-pill);
+    border: 1px solid var(--glass-border);
+  }
+
+  .state-path {
+    fill: var(--map-land); stroke: var(--map-border); stroke-width: 1;
+    transition: fill 0.2s ease, opacity 0.2s ease;
+    vector-effect: non-scaling-stroke;
+  }
+  .state-path.dimmed { opacity: 0.4; }
+  .state-path.highlighted { fill: var(--map-land-hi); }
+
+  .roads-major, .roads-minor {
+    fill: none; stroke-linecap: round; stroke-linejoin: round;
+    vector-effect: non-scaling-stroke; transition: opacity 0.2s ease;
+  }
+  .roads-major { stroke: var(--road-major); stroke-width: 1.1; opacity: 0.62; }
+  .roads-minor { stroke: var(--road-minor); stroke-width: 0.7; opacity: 0.42; }
+  .hidden-layer { opacity: 0 !important; pointer-events: none; }
+
+  .state-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    fill: #3d5647; letter-spacing: 0.04em; text-transform: uppercase;
+    pointer-events: none; opacity: 0.72;
+  }
+
+  .marker {
+    cursor: pointer; stroke: rgba(255,255,255,0.88); stroke-width: 1.3;
+    vector-effect: non-scaling-stroke; transition: opacity 0.2s ease;
+  }
+  .m-severe { fill: var(--risk-severe); }
+  .m-high { fill: var(--risk-high); }
+  .m-moderate { fill: var(--risk-moderate); }
+  .m-low { fill: var(--risk-low); }
+  .m-caught { fill: var(--caught); }
+  .m-missed { fill: var(--missed); }
+  .marker.selected { stroke: var(--accent); stroke-width: 3; }
+
+  .pulse-ring {
+    fill: none; stroke: var(--risk-severe); stroke-width: 1.5;
+    vector-effect: non-scaling-stroke; pointer-events: none;
+    animation: pulse 2.3s ease-out infinite;
+  }
+  @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 0; } }
+
+  .legend {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--text-muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-spacer { flex: 1; }
+  .legend-note { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); }
+
+  /* ---- sidebar ---- */
+  .sidebar { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .panel { display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 14px 16px 10px; }
+  .panel-header h2 {
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0;
+  }
+  .panel-header p { font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0; }
+
+  .scroll-list { overflow-y: auto; flex: 1; padding: 0 9px 9px; }
+  .risk-list { min-height: 300px; max-height: 540px; }
+
+  .risk-row {
+    display: flex; align-items: center; gap: 9px; padding: 9px;
+    margin-bottom: 5px; border-radius: var(--r-sm); cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .risk-row:hover { background: rgba(255,255,255,0.55); }
+  .risk-row.selected {
+    background: var(--base);
+    box-shadow: inset 2px 2px 5px var(--base-shadow-dark), inset -2px -2px 5px var(--base-shadow-light);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .d-severe { background: var(--risk-severe); }
+  .d-high { background: var(--risk-high); }
+  .d-moderate { background: var(--risk-moderate); }
+  .d-low { background: var(--risk-low); }
+  .d-caught { background: var(--caught); }
+  .d-missed { background: var(--missed); }
+
+  .row-main { flex: 1; min-width: 0; }
+  .row-loc {
+    font-size: 12.5px; font-weight: 600; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .row-meta {
+    font-size: 10.5px; color: var(--text-muted); margin-top: 1px;
+    font-family: var(--font-mono);
+  }
+  .row-pct {
+    font-family: var(--font-mono); font-weight: 700; font-size: 13px;
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+    padding: 3px 8px; border-radius: var(--r-pill);
+  }
+  .p-severe { color: var(--risk-severe); background: var(--risk-severe-soft); }
+  .p-high { color: var(--risk-high); background: var(--risk-high-soft); }
+  .p-moderate { color: var(--risk-moderate); background: var(--risk-moderate-soft); }
+  .p-low { color: var(--risk-low); background: var(--risk-low-soft); }
+
+  /* ---- validation ---- */
+  .case-card { padding: 12px 14px; margin-bottom: 10px; border-radius: var(--r-sm); background: rgba(255,255,255,0.5); }
+  .case-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; }
+  .case-sub { font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+  .case-note { font-size: 11.5px; color: var(--text-muted); margin: 8px 0 10px; line-height: 1.5; }
+  .case-event {
+    display: flex; align-items: center; gap: 8px; padding: 5px 0;
+    border-top: 1px solid rgba(28,45,36,0.09); font-size: 11.5px;
+  }
+  .case-event-loc { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-event-fat { font-family: var(--font-mono); font-size: 10px; color: var(--risk-severe); }
+  .case-verdict {
+    font-family: var(--font-mono); font-weight: 700; font-size: 11.5px;
+    padding: 2px 7px; border-radius: var(--r-pill); flex-shrink: 0;
+  }
+
+  .dist-chart { padding: 12px 16px 16px; }
+  .dist-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; font-size: 11px; }
+  .dist-label { width: 96px; flex-shrink: 0; color: var(--text-muted); }
+  .dist-bar-wrap { flex: 1; height: 16px; background: rgba(28,45,36,0.07); border-radius: 4px; overflow: hidden; }
+  .dist-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+  .dist-count { font-family: var(--font-mono); font-size: 11px; width: 44px; text-align: right; flex-shrink: 0; }
+
+  .imp-row { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; font-size: 11px; }
+  .imp-label { width: 128px; flex-shrink: 0; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .imp-bar-wrap { flex: 1; height: 9px; background: rgba(28,45,36,0.07); border-radius: 3px; overflow: hidden; }
+  .imp-bar { height: 100%; background: var(--accent); border-radius: 3px; }
+
+  /* ---- live probe ---- */
+  .probe { padding: 13px 16px 16px; }
+  .probe-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 9px; }
+  .probe input {
+    font-family: var(--font-mono); font-size: 12px; padding: 8px 10px;
+    border-radius: var(--r-sm); border: 1px solid rgba(28,45,36,0.14);
+    background: rgba(255,255,255,0.7); color: var(--text); width: 100%;
+  }
+  .probe input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .probe-full { grid-column: 1 / -1; }
+  .probe-btn {
+    width: 100%; padding: 9px; border: none; border-radius: var(--r-sm);
+    background: var(--accent); color: var(--accent-ink); font-weight: 600;
+    font-size: 12.5px; font-family: var(--font-body); cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .probe-btn:hover { filter: brightness(1.08); }
+  .probe-btn:disabled { opacity: 0.55; cursor: default; }
+  .probe-result { margin-top: 11px; font-size: 12px; }
+  .probe-score {
+    font-family: var(--font-mono); font-size: 26px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .probe-detail {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 11px; color: var(--text-muted); margin-top: 3px;
+    font-family: var(--font-mono);
+  }
+  .probe-detail span:last-child { color: var(--text); }
+  .probe-offline {
+    font-size: 11.5px; color: var(--text-muted); line-height: 1.55;
+    background: rgba(255,255,255,0.45); padding: 11px 13px; border-radius: var(--r-sm);
+  }
+  .probe-offline code {
+    font-family: var(--font-mono); font-size: 10.5px; background: rgba(28,45,36,0.08);
+    padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 4px;
+  }
+
+  /* ---- connection state ---- */
+  .conn-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    padding: 5px 11px; border-radius: var(--r-pill);
+    background: var(--risk-low-soft); color: var(--risk-low);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .conn-pill.offline { background: var(--risk-high-soft); color: var(--risk-high); }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .conn-pill.offline .conn-dot { animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  .queue-note {
+    font-size: 11px; color: var(--text-muted); margin-top: 9px;
+    padding: 8px 11px; border-radius: var(--r-sm);
+    background: rgba(255,255,255,0.5);
+  }
+  .queue-note.pending { background: var(--risk-moderate-soft); color: var(--risk-moderate); font-weight: 600; }
+  .field-select {
+    font-family: var(--font-body); font-size: 12px; padding: 8px 10px;
+    border-radius: var(--r-sm); border: 1px solid rgba(28,45,36,0.14);
+    background: rgba(255,255,255,0.7); color: var(--text); width: 100%;
+  }
+  .file-row { grid-column: 1 / -1; font-size: 11px; color: var(--text-muted); }
+  .file-row input { font-size: 11px; padding: 6px; }
+
+
+  /* ---- live station ---- */
+  .station-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    margin-right: 6px; flex-shrink: 0; background: var(--text-faint);
+  }
+  .station-dot.on { background: var(--caught); box-shadow: 0 0 0 3px rgba(21,128,61,.18); }
+  .station-dot.sim { background: var(--risk-moderate); box-shadow: 0 0 0 3px rgba(180,83,9,.18); }
+  .station-status {
+    display: flex; align-items: center; font-size: 11.5px;
+    color: var(--text-muted); font-weight: 600; margin-bottom: 10px;
+  }
+  .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 11px; }
+  .sensor-cell {
+    background: rgba(255,255,255,.55); border-radius: var(--r-sm); padding: 7px 9px;
+  }
+  .sensor-cell .v {
+    font-family: var(--font-mono); font-size: 15px; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--text);
+  }
+  .sensor-cell .k {
+    font-size: 9.5px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: .05em; margin-top: 1px;
+  }
+  .sensor-cell.warn .v { color: var(--risk-severe); }
+  .live-risk {
+    text-align: center; padding: 12px 0 4px;
+    border-top: 1px solid rgba(28,45,36,.1); margin-top: 4px;
+  }
+  .live-risk .n {
+    font-family: var(--font-mono); font-size: 34px; font-weight: 600;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .live-risk .b {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em;
+    margin-top: 3px; font-weight: 700;
+  }
+  .live-risk .where {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-top: 5px;
+  }
+  .hint { font-size: 10.5px; color: var(--text-faint); line-height: 1.5; margin-top: 8px; }
+
+  /* ---- tooltip ---- */
+  .tooltip {
+    position: fixed; pointer-events: none; background: var(--glass-fill-strong);
+    -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--glass-border); border-radius: var(--r-sm);
+    padding: 10px 13px; font-size: 11.5px; max-width: 250px;
+    box-shadow: 0 10px 28px rgba(28,45,36,0.22);
+    opacity: 0; transition: opacity 0.1s ease; z-index: 60;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-title { font-weight: 700; font-size: 12.5px; margin-bottom: 5px; }
+  .tooltip-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); margin-top: 3px; }
+  .tooltip-row span:last-child { font-family: var(--font-mono); color: var(--text); font-weight: 500; }
+
+  footer {
+    padding: 2px 8px; font-size: 10.5px; color: var(--text-faint);
+    font-family: var(--font-mono); text-align: center; line-height: 1.7;
+  }
+
+  .scroll-list::-webkit-scrollbar { width: 7px; }
+  .scroll-list::-webkit-scrollbar-track { background: transparent; }
+  .scroll-list::-webkit-scrollbar-thumb { background: var(--base-shadow-dark); border-radius: 4px; }
+</style>
+
+<div class="app">
+  <header class="topbar glass">
+    <div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="eyebrow">NER</span>
+        <h1>SPIREXA</h1>
+      </div>
+      <div class="subtitle">Landslide risk monitoring across the eight North Eastern states &mdash; satellite rainfall, soil moisture, terrain and radar</div>
+    </div>
+    <div class="topbar-right">
+      <div class="conn-pill" id="connPill" hidden><span class="conn-dot"></span><span id="connText">online</span></div>
+      <div class="as-of">snapshot <strong id="asOfDate">&mdash;</strong><br><span id="modelMeta">&mdash;</span></div>
+      <div class="mode-toggle neu" role="tablist">
+        <button id="btnLive" class="active" role="tab">Live</button>
+        <button id="btnHist" role="tab">Hindcast</button>
+        <button id="btnVal" role="tab">Validation</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats-strip" id="statsGrid"></div>
+
+  <main class="layout">
+    <section class="map-panel glass">
+      <div class="controls-row">
+        <div class="chips" id="stateChips"></div>
+        <div class="layer-switches">
+          <label class="switch-label" id="tglMajor"><span class="switch on"></span> Highways</label>
+          <label class="switch-label" id="tglMinor"><span class="switch on"></span> Local roads</label>
+        </div>
+      </div>
+
+      <div class="map-wrap" id="mapWrap">
+        <svg class="map" id="mapSvg" viewBox="0 0 __WIDTH__ __HEIGHT__" preserveAspectRatio="xMidYMid meet">
+          <g id="statesLayer"></g>
+          <path id="roadsMinor" class="roads-minor"></path>
+          <path id="roadsMajor" class="roads-major"></path>
+          <g id="labelsLayer"></g>
+          <g id="markersLayer"></g>
+        </svg>
+        <div class="zoom-controls">
+          <button class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+          <button class="zoom-btn" id="zoomOut" aria-label="Zoom out">&minus;</button>
+          <button class="zoom-btn reset" id="zoomReset" aria-label="Reset view">1:1</button>
+        </div>
+        <div class="zoom-level" id="zoomLevel">1.0&times;</div>
+      </div>
+
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel glass" id="livePanel">
+        <div class="panel-header">
+          <h2>Live station</h2>
+          <p id="liveSubtitle">Ground sensor plus the model at your location</p>
+        </div>
+        <div class="probe" id="liveBody"></div>
+      </div>
+
+      <div class="panel glass" id="probePanel">
+        <div class="panel-header">
+          <h2>Check any point</h2>
+          <p id="probeSubtitle">Risk for a coordinate and date</p>
+        </div>
+        <div class="probe" id="probeBody"></div>
+      </div>
+
+      <div class="panel glass" id="fieldPanel" hidden>
+        <div class="panel-header">
+          <h2>Report from the field</h2>
+          <p id="fieldSubtitle">Works without a signal &mdash; queued and sent later</p>
+        </div>
+        <div class="probe" id="fieldBody"></div>
+      </div>
+
+      <div class="panel glass" style="flex:1;">
+        <div class="panel-header">
+          <h2 id="listTitle">Highest risk</h2>
+          <p id="listSubtitle">&mdash;</p>
+        </div>
+        <div class="scroll-list risk-list" id="riskList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    Susceptibility + trigger design after NASA LHASA; factor of safety after the USGS shallow-landslide model &middot;
+    Trained on 318 recorded NER landslides (2007&ndash;2025) from the NASA Global Landslide Catalog and published GSI-derived inventories &middot;
+    Roads &copy; OpenStreetMap contributors &middot; Research prototype, not an official early-warning service
+  </footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const STATE_PATHS = __STATE_PATHS__;
+const ROADS_MAJOR = __ROADS_MAJOR__;
+const ROADS_SECONDARY = __ROADS_SECONDARY__;
+const HIST_MARKERS = __HIST_MARKERS__;
+const LIVE_MARKERS = __LIVE_MARKERS__;
+const CASE_STUDIES = __CASE_STUDIES__;
+const IMPORTANCE = __IMPORTANCE__;
+const MODEL_META = __MODEL_META__;
+const AS_OF = __AS_OF__;
+
+const W = __WIDTH__, H = __HEIGHT__;
+const LON_MIN = __LON_MIN__, LON_MAX = __LON_MAX__, LAT_MIN = __LAT_MIN__, LAT_MAX = __LAT_MAX__;
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+
+$('asOfDate').textContent = AS_OF;
+$('modelMeta').textContent = MODEL_META.auc
+  ? `ROC-AUC ${MODEL_META.auc} · ${Math.round(MODEL_META.hindcast_rate * 100)}% of past events caught`
+  : 'model not yet trained';
+$('roadsMajor').setAttribute('d', ROADS_MAJOR);
+$('roadsMinor').setAttribute('d', ROADS_SECONDARY);
+
+function band(r) {
+  if (r >= 0.75) return 'severe';
+  if (r >= 0.5) return 'high';
+  if (r >= 0.25) return 'moderate';
+  return 'low';
+}
+
+let mode = 'live';
+let stateFilter = 'All';
+let selectedId = null;
+let apiAvailable = false;
+
+/* ---------------- map pan + zoom ---------------- */
+const view = { x: 0, y: 0, w: W, h: H };
+const MIN_W = W / 14, MAX_W = W;
+
+function applyView() {
+  $('mapSvg').setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+  const z = W / view.w;
+  $('zoomLevel').textContent = z.toFixed(1) + '×';
+  // Markers keep a usable tap target as you zoom in.
+  const r = Math.max(2.2, 5 / Math.sqrt(z));
+  document.querySelectorAll('.marker').forEach(m => {
+    m.setAttribute('r', m.dataset.id === selectedId ? r * 1.7 : r);
+  });
+  document.querySelectorAll('.pulse-ring').forEach(p => p.setAttribute('r', r * 2.4));
+  document.querySelectorAll('.state-label').forEach(l => {
+    l.style.fontSize = (11 / z) + 'px';
+  });
+}
+
+function clampView() {
+  view.w = Math.min(Math.max(view.w, MIN_W), MAX_W);
+  view.h = view.w * (H / W);
+  view.x = Math.min(Math.max(view.x, -view.w * 0.2), W - view.w * 0.8);
+  view.y = Math.min(Math.max(view.y, -view.h * 0.2), H - view.h * 0.8);
+}
+
+function svgPointFromEvent(evt) {
+  const rect = $('mapWrap').getBoundingClientRect();
+  const svgEl = $('mapSvg');
+  const vb = svgEl.viewBox.baseVal;
+  // preserveAspectRatio="xMidYMid meet" letterboxes; account for it.
+  const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+  const offX = (rect.width - vb.width * scale) / 2;
+  const offY = (rect.height - vb.height * scale) / 2;
+  return {
+    x: vb.x + (evt.clientX - rect.left - offX) / scale,
+    y: vb.y + (evt.clientY - rect.top - offY) / scale,
+  };
+}
+
+$('mapWrap').addEventListener('wheel', evt => {
+  evt.preventDefault();
+  const p = svgPointFromEvent(evt);
+  const factor = evt.deltaY > 0 ? 1.16 : 1 / 1.16;
+  const prevW = view.w, prevH = view.h;
+  view.w = Math.min(Math.max(view.w * factor, MIN_W), MAX_W);
+  view.h = view.w * (H / W);
+  view.x = p.x - (p.x - view.x) * (view.w / prevW);
+  view.y = p.y - (p.y - view.y) * (view.h / prevH);
+  clampView();
+  applyView();
+}, { passive: false });
+
+let dragging = false, dragStart = null;
+$('mapWrap').addEventListener('pointerdown', evt => {
+  dragging = true;
+  dragStart = { p: svgPointFromEvent(evt), x: view.x, y: view.y };
+  $('mapWrap').classList.add('dragging');
+  $('mapWrap').setPointerCapture(evt.pointerId);
+});
+$('mapWrap').addEventListener('pointermove', evt => {
+  if (!dragging) return;
+  // svgPointFromEvent uses the live viewBox, so compare against the grab point
+  // in the pre-drag frame: shift the view by how far the cursor has moved.
+  const p = svgPointFromEvent(evt);
+  view.x = dragStart.x + (dragStart.p.x - p.x);
+  view.y = dragStart.y + (dragStart.p.y - p.y);
+  clampView();
+  applyView();
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(e =>
+  $('mapWrap').addEventListener(e, () => { dragging = false; $('mapWrap').classList.remove('dragging'); })
+);
+
+$('zoomIn').addEventListener('click', () => {
+  const prevW = view.w, prevH = view.h;
+  view.w = Math.max(view.w / 1.5, MIN_W); view.h = view.w * (H / W);
+  view.x += (prevW - view.w) / 2; view.y += (prevH - view.h) / 2;
+  clampView(); applyView();
+});
+$('zoomOut').addEventListener('click', () => {
+  const prevW = view.w, prevH = view.h;
+  view.w = Math.min(view.w * 1.5, MAX_W); view.h = view.w * (H / W);
+  view.x += (prevW - view.w) / 2; view.y += (prevH - view.h) / 2;
+  clampView(); applyView();
+});
+$('zoomReset').addEventListener('click', () => {
+  view.x = 0; view.y = 0; view.w = W; view.h = H; applyView();
+});
+
+function focusOn(x, y, targetW) {
+  view.w = targetW || W / 7;
+  view.h = view.w * (H / W);
+  view.x = x - view.w / 2;
+  view.y = y - view.h / 2;
+  clampView(); applyView();
+}
+
+/* ---------------- layers ---------------- */
+const LABEL_POS = {
+  'Arunachal Pradesh': [0.60, 0.20], 'Assam': [0.42, 0.42],
+  'Meghalaya': [0.30, 0.56], 'Nagaland': [0.68, 0.46],
+  'Manipur': [0.66, 0.62], 'Mizoram': [0.55, 0.80],
+  'Tripura': [0.38, 0.78], 'Sikkim': [0.06, 0.18],
+};
+
+function buildStates() {
+  Object.entries(STATE_PATHS).forEach(([name, d]) => {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'state-path');
+    path.dataset.state = name;
+    $('statesLayer').appendChild(path);
+
+    const [fx, fy] = LABEL_POS[name] || [0.5, 0.5];
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', fx * W);
+    label.setAttribute('y', fy * H);
+    label.setAttribute('class', 'state-label');
+    label.textContent = name.toUpperCase();
+    $('labelsLayer').appendChild(label);
+  });
+}
+
+function buildChips() {
+  ['All', ...Object.keys(STATE_PATHS)].forEach(name => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (name === 'All' ? ' active' : '');
+    chip.textContent = name;
+    chip.dataset.state = name;
+    chip.addEventListener('click', () => {
+      stateFilter = name;
+      document.querySelectorAll('.chip').forEach(c =>
+        c.classList.toggle('active', c.dataset.state === name));
+      document.querySelectorAll('.state-path').forEach(p => {
+        p.classList.toggle('dimmed', name !== 'All' && p.dataset.state !== name);
+        p.classList.toggle('highlighted', name !== 'All' && p.dataset.state === name);
+      });
+      render();
+      if (name !== 'All') {
+        const pts = currentData();
+        if (pts.length) {
+          const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+          const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+          const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+          const spanX = Math.max(...xs) - Math.min(...xs);
+          focusOn(cx, cy, Math.max(spanX * 1.7, W / 9));
+        }
+      } else {
+        view.x = 0; view.y = 0; view.w = W; view.h = H; applyView();
+      }
+    });
+    $('stateChips').appendChild(chip);
+  });
+}
+
+function setupSwitches() {
+  const wire = (id, target) => {
+    $(id).addEventListener('click', () => {
+      const sw = $(id).querySelector('.switch');
+      const on = sw.classList.toggle('on');
+      $(target).classList.toggle('hidden-layer', !on);
+    });
+  };
+  wire('tglMajor', 'roadsMajor');
+  wire('tglMinor', 'roadsMinor');
+}
+
+/* ---------------- data ---------------- */
+function currentData() {
+  const src = mode === 'live' ? LIVE_MARKERS : HIST_MARKERS;
+  return stateFilter === 'All' ? src : src.filter(m => m.state === stateFilter);
+}
+
+function markerClass(m) {
+  if (mode === 'validation') return m.risk >= 0.5 ? 'm-caught' : 'm-missed';
+  return 'm-' + band(m.risk);
+}
+function dotClass(m) {
+  if (mode === 'validation') return m.risk >= 0.5 ? 'd-caught' : 'd-missed';
+  return 'd-' + band(m.risk);
+}
+
+/* ---------------- tooltip ---------------- */
+const tooltip = $('tooltip');
+function showTooltip(evt, m) {
+  let rows = `<div class="tooltip-row"><span>${mode === 'live' ? 'Risk today' : 'Model score'}</span><span>${(m.risk * 100).toFixed(1)}%</span></div>`;
+  rows += `<div class="tooltip-row"><span>State</span><span>${m.state}</span></div>`;
+  if (mode !== 'live') {
+    rows += `<div class="tooltip-row"><span>Occurred</span><span>${m.date}</span></div>`;
+    if (m.trigger) rows += `<div class="tooltip-row"><span>Trigger</span><span>${m.trigger}</span></div>`;
+    if (m.fatalities > 0) rows += `<div class="tooltip-row"><span>Fatalities</span><span>${m.fatalities}</span></div>`;
+    if (mode === 'validation') {
+      rows += `<div class="tooltip-row"><span>Verdict</span><span>${m.risk >= 0.5 ? 'caught' : 'missed'}</span></div>`;
+    }
+  }
+  tooltip.innerHTML = `<div class="tooltip-title">${m.loc}</div>${rows}`;
+  tooltip.classList.add('visible');
+  moveTooltip(evt);
+}
+function moveTooltip(evt) {
+  const pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + 260 > window.innerWidth) x = evt.clientX - 260 - pad;
+  if (y + 140 > window.innerHeight) y = evt.clientY - 140 - pad;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+const hideTooltip = () => tooltip.classList.remove('visible');
+
+/* ---------------- render ---------------- */
+function renderMarkers(data) {
+  const layer = $('markersLayer');
+  layer.innerHTML = '';
+  data.forEach(m => {
+    if (mode !== 'validation' && band(m.risk) === 'severe') {
+      const ring = document.createElementNS(svgNS, 'circle');
+      ring.setAttribute('cx', m.x); ring.setAttribute('cy', m.y);
+      ring.setAttribute('class', 'pulse-ring');
+      layer.appendChild(ring);
+    }
+    const c = document.createElementNS(svgNS, 'circle');
+    c.setAttribute('cx', m.x); c.setAttribute('cy', m.y);
+    c.setAttribute('class', 'marker ' + markerClass(m) + (selectedId === m.id ? ' selected' : ''));
+    c.dataset.id = m.id;
+    c.addEventListener('mouseenter', e => showTooltip(e, m));
+    c.addEventListener('mousemove', moveTooltip);
+    c.addEventListener('mouseleave', hideTooltip);
+    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; render(); });
+    layer.appendChild(c);
+  });
+  applyView();
+}
+
+function renderStats(data) {
+  const total = data.length;
+  const avg = total ? data.reduce((s, m) => s + m.risk, 0) / total * 100 : 0;
+  let tiles;
+
+  if (mode === 'live') {
+    const atRisk = data.filter(m => m.risk >= 0.5).length;
+    tiles = [
+      [atRisk, 'At high or severe risk', atRisk > 0 ? 'alert' : ''],
+      [total, 'Hotspots monitored', ''],
+      [avg.toFixed(0) + '%', 'Average risk', ''],
+      [Object.keys(STATE_PATHS).length, 'States covered', ''],
+    ];
+  } else if (mode === 'hindcast') {
+    const caught = data.filter(m => m.risk >= 0.5).length;
+    tiles = [
+      [total, 'Recorded landslides', ''],
+      [Math.round(caught / Math.max(total, 1) * 100) + '%', 'Would have been flagged', 'good'],
+      [avg.toFixed(0) + '%', 'Average model score', ''],
+      [data.reduce((s, m) => s + (m.fatalities || 0), 0), 'Lives lost in these events', 'alert'],
+    ];
+  } else {
+    const caught = data.filter(m => m.risk >= 0.5).length;
+    const strong = data.filter(m => m.risk >= 0.75).length;
+    tiles = [
+      [caught + '/' + total, 'Events caught', 'good'],
+      [Math.round(strong / Math.max(total, 1) * 100) + '%', 'Caught with high confidence', ''],
+      [MODEL_META.auc ?? '—', 'ROC-AUC (cross-validated)', ''],
+      [total - caught, 'Events missed', (total - caught) > 0 ? 'alert' : ''],
+    ];
+  }
+
+  $('statsGrid').innerHTML = '';
+  tiles.forEach(([val, label, cls]) => {
+    const tile = document.createElement('div');
+    tile.className = 'stat-tile glass';
+    tile.innerHTML = `<div class="stat-value ${cls}">${val}</div><div class="stat-label">${label}</div>`;
+    $('statsGrid').appendChild(tile);
+  });
+}
+
+function renderLegend() {
+  const items = mode === 'validation'
+    ? [['var(--caught)', 'Caught (model gave &ge;50%)'], ['var(--missed)', 'Missed (&lt;50%)']]
+    : [['var(--risk-low)', 'Low &lt;25%'], ['var(--risk-moderate)', 'Moderate 25&ndash;50%'],
+       ['var(--risk-high)', 'High 50&ndash;75%'], ['var(--risk-severe)', 'Severe &gt;75%']];
+  let html = items.map(([c, l]) =>
+    `<div class="legend-item"><span class="swatch" style="background:${c}"></span>${l}</div>`).join('');
+  html += `<div class="legend-item"><span style="width:14px;height:2px;background:var(--road-major);display:inline-block"></span>Highways</div>`;
+  html += `<div class="legend-item"><span style="width:14px;height:2px;background:var(--road-minor);display:inline-block"></span>Local roads</div>`;
+  html += `<div class="legend-spacer"></div><div class="legend-note" id="markerCount"></div>`;
+  $('legend').innerHTML = html;
+}
+
+function renderList(data) {
+  const list = $('riskList');
+  list.innerHTML = '';
+
+  if (mode === 'validation') {
+    $('listTitle').textContent = 'Validation';
+    $('listSubtitle').textContent = 'Did the model see these coming?';
+
+    const dist = [
+      ['≥ 75%', data.filter(m => m.risk >= 0.75).length, 'var(--risk-severe)'],
+      ['50–75%', data.filter(m => m.risk >= 0.5 && m.risk < 0.75).length, 'var(--risk-high)'],
+      ['25–50%', data.filter(m => m.risk >= 0.25 && m.risk < 0.5).length, 'var(--risk-moderate)'],
+      ['< 25%', data.filter(m => m.risk < 0.25).length, 'var(--text-faint)'],
+    ];
+    const max = Math.max(...dist.map(d => d[1]), 1);
+    let html = '<div class="dist-chart"><div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">'
+      + 'Model score assigned to each landslide that actually happened. Scores come from '
+      + 'cross-validation folds that never saw the event during training.</div>';
+    dist.forEach(([label, n, color]) => {
+      html += `<div class="dist-row"><div class="dist-label">${label}</div>`
+        + `<div class="dist-bar-wrap"><div class="dist-bar" style="width:${n / max * 100}%;background:${color}"></div></div>`
+        + `<div class="dist-count">${n}</div></div>`;
+    });
+    html += '</div>';
+
+    CASE_STUDIES.forEach(cs => {
+      html += `<div class="case-card"><div class="case-title">${cs.title}</div>`
+        + `<div class="case-sub">${cs.subtitle}</div>`
+        + `<div class="case-note">${cs.note}</div>`;
+      cs.events.forEach(e => {
+        const b = e.risk >= 0.5 ? 'p-low' : 'p-severe';
+        const verdict = e.risk >= 0.5 ? 'caught' : 'missed';
+        html += `<div class="case-event">`
+          + `<span class="dot ${e.risk >= 0.5 ? 'd-caught' : 'd-missed'}"></span>`
+          + `<span class="case-event-loc">${e.loc}</span>`
+          + (e.fatalities ? `<span class="case-event-fat">${e.fatalities} lost</span>` : '')
+          + `<span class="case-verdict ${b}">${(e.risk * 100).toFixed(0)}% ${verdict}</span></div>`;
+      });
+      html += '</div>';
+    });
+
+    if (IMPORTANCE.length) {
+      const maxImp = Math.max(...IMPORTANCE.map(i => i.importance), 0.0001);
+      html += '<div class="case-card"><div class="case-title">What drives the prediction</div>'
+        + '<div class="case-note">Permutation importance: how much accuracy is lost when each input is shuffled.</div>';
+      IMPORTANCE.forEach(i => {
+        html += `<div class="imp-row"><div class="imp-label">${i.feature}</div>`
+          + `<div class="imp-bar-wrap"><div class="imp-bar" style="width:${Math.max(i.importance / maxImp * 100, 1)}%"></div></div></div>`;
+      });
+      html += '</div>';
+    }
+
+    list.innerHTML = html;
+    const mc = $('markerCount');
+    if (mc) mc.textContent = `${data.length} recorded events`;
+    return;
+  }
+
+  $('listTitle').textContent = mode === 'live' ? 'Highest risk now' : 'Recorded landslides';
+  $('listSubtitle').textContent = mode === 'live'
+    ? 'Ranked by risk under current conditions'
+    : 'Ranked by the score the model gave them';
+
+  [...data].sort((a, b) => b.risk - a.risk).slice(0, 80).forEach(m => {
+    const b = band(m.risk);
+    const row = document.createElement('div');
+    row.className = 'risk-row' + (selectedId === m.id ? ' selected' : '');
+    row.innerHTML = `<span class="dot ${dotClass(m)}"></span>
+      <div class="row-main">
+        <div class="row-loc">${m.loc}</div>
+        <div class="row-meta">${m.state}${mode !== 'live' ? ' · ' + m.date : ''}</div>
+      </div>
+      <div class="row-pct p-${b}">${(m.risk * 100).toFixed(0)}%</div>`;
+    row.addEventListener('click', () => {
+      selectedId = m.id;
+      render();
+      focusOn(m.x, m.y);
+    });
+    list.appendChild(row);
+  });
+
+  const mc = $('markerCount');
+  if (mc) mc.textContent = `${data.length} point${data.length === 1 ? '' : 's'}`;
+}
+
+function render() {
+  const data = currentData();
+  renderStats(data);
+  renderLegend();
+  renderMarkers(data);
+  renderList(data);
+}
+
+/* ---------------- live probe ---------------- */
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function renderProbeOffline() {
+  $('probeSubtitle').textContent = 'Needs the local server';
+  $('probeBody').innerHTML = `<div class="probe-offline">
+    This published page is a static snapshot, so it cannot run the model.
+    To score any coordinate and date live, run the project locally:
+    <code>python src/serve.py</code>
+    then open <code>http://localhost:8000</code>. The same check is available
+    on the command line with <code>python src/predict.py --lat .. --lon .. --explain</code>.
+  </div>`;
+}
+
+function renderProbeOnline() {
+  $('probeSubtitle').textContent = 'Runs the model live on any coordinate';
+  $('probeBody').innerHTML = `
+    <div class="probe-fields">
+      <input id="pLat" placeholder="latitude" value="23.73" inputmode="decimal">
+      <input id="pLon" placeholder="longitude" value="92.72" inputmode="decimal">
+      <input id="pDate" class="probe-full" placeholder="YYYY-MM-DD" value="${today()}">
+    </div>
+    <button class="probe-btn" id="pRun">Check risk</button>
+    <div class="probe-result" id="pResult"></div>`;
+
+  $('pRun').addEventListener('click', async () => {
+    const lat = $('pLat').value.trim(), lon = $('pLon').value.trim(), date = $('pDate').value.trim();
+    const btn = $('pRun'), out = $('pResult');
+    btn.disabled = true; btn.textContent = 'Querying satellites…';
+    out.innerHTML = '';
+    try {
+      const res = await fetch(`/api/predict?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&date=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const b = band(data.risk);
+      const f = data.features || {};
+      const fmt = (v, d = 1) => (v === null || v === undefined) ? '—' : Number(v).toFixed(d);
+      out.innerHTML = `
+        <div class="probe-score p-${b}" style="background:none;padding:0">${data.risk_percent}%</div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">${data.severity}</div>
+        <div style="margin-top:9px">
+          <div class="probe-detail"><span>steepest slope within 300 m</span><span>${fmt(f.slope_max_nbhd)}&deg;</span></div>
+          <div class="probe-detail"><span>local relief</span><span>${fmt(f.relief_nbhd, 0)} m</span></div>
+          <div class="probe-detail"><span>factor of safety</span><span>${fmt(f.factor_of_safety, 2)}</span></div>
+          <div class="probe-detail"><span>rain, last 24 h</span><span>${fmt(f.rain_1d)} mm</span></div>
+          <div class="probe-detail"><span>rain, last 7 d</span><span>${fmt(f.rain_7d)} mm</span></div>
+          <div class="probe-detail"><span>surface soil moisture</span><span>${fmt(f.soil_moisture_surface, 3)}</span></div>
+          <div class="probe-detail"><span>distance to nearest road</span><span>${fmt(f.dist_to_road_m, 0)} m</span></div>
+        </div>`;
+    } catch (err) {
+      out.innerHTML = `<div style="font-size:11.5px;color:var(--risk-severe)">${err.message}</div>`;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Check risk';
+    }
+  });
+}
+
+async function detectApi() {
+  try {
+    const res = await fetch('/api/health', { signal: AbortSignal.timeout(1500) });
+    const data = await res.json();
+    apiAvailable = data.status === 'ok';
+  } catch { apiAvailable = false; }
+  if (apiAvailable) { renderProbeOnline(); startLive(); }
+  else { renderProbeOffline(); renderLiveOffline(); }
+  if (apiAvailable) enableFieldMode();
+}
+
+/* ---------------- offline field mode ----------------
+ * Only runs on the local/deployed server, where a service worker is allowed.
+ * Reports are written to IndexedDB first and uploaded second, so a submission
+ * made with no signal survives the app being closed and is sent on reconnect.
+ */
+const DB_NAME = 'slopewatch';
+const OUTBOX = 'outbox';
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(OUTBOX)) {
+        db.createObjectStore(OUTBOX, { keyPath: 'client_id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function outboxAll() {
+  try {
+    const db = await openDb();
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction(OUTBOX).objectStore(OUTBOX).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch { return []; }
+}
+
+async function outboxPut(record) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX, 'readwrite');
+    tx.objectStore(OUTBOX).put(record);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function outboxDelete(id) {
+  const db = await openDb();
+  return new Promise(resolve => {
+    const tx = db.transaction(OUTBOX, 'readwrite');
+    tx.objectStore(OUTBOX).delete(id);
+    tx.oncomplete = resolve;
+  });
+}
+
+async function flushOutbox() {
+  const pending = await outboxAll();
+  let sent = 0;
+  for (const record of pending) {
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...record, queued_offline: true }),
+      });
+      if (res.ok) { await outboxDelete(record.client_id); sent++; }
+    } catch { break; }  // still offline; leave the rest queued
+  }
+  await refreshQueueNote();
+  return sent;
+}
+
+async function refreshQueueNote() {
+  const note = $('fieldQueue');
+  if (!note) return;
+  const pending = await outboxAll();
+  if (pending.length) {
+    note.className = 'queue-note pending';
+    note.textContent = `${pending.length} report${pending.length === 1 ? '' : 's'} waiting to upload. `
+      + `They will send automatically when there is a signal.`;
+  } else {
+    note.className = 'queue-note';
+    note.textContent = 'Nothing waiting to upload.';
+  }
+}
+
+function updateConnPill() {
+  const pill = $('connPill');
+  pill.hidden = false;
+  const online = navigator.onLine;
+  pill.classList.toggle('offline', !online);
+  $('connText').textContent = online ? 'online' : 'offline · using last sync';
+}
+
+function enableFieldMode() {
+  $('fieldPanel').hidden = false;
+  updateConnPill();
+  window.addEventListener('online', () => { updateConnPill(); flushOutbox(); });
+  window.addEventListener('offline', updateConnPill);
+
+  $('fieldBody').innerHTML = `
+    <div class="probe-fields">
+      <input id="fLat" placeholder="latitude" inputmode="decimal">
+      <input id="fLon" placeholder="longitude" inputmode="decimal">
+      <select id="fHazard" class="field-select probe-full">
+        <option value="crack">New cracks in ground or wall</option>
+        <option value="slope_movement">Slope moving / tilting trees</option>
+        <option value="road_blocked">Road blocked by debris</option>
+        <option value="water">Muddy water or new spring from slope</option>
+        <option value="collapse">Slope already collapsed</option>
+      </select>
+      <input id="fNote" class="probe-full" placeholder="what you can see (optional)">
+      <input id="fReporter" class="probe-full" placeholder="your name or post (optional)">
+      <div class="file-row"><input type="file" id="fPhoto" accept="image/*" capture="environment"></div>
+    </div>
+    <button class="probe-btn" id="fUseGps" style="background:var(--base);color:var(--text);box-shadow:3px 3px 7px var(--base-shadow-dark),-3px -3px 7px var(--base-shadow-light);margin-bottom:8px">Use my location</button>
+    <button class="probe-btn" id="fSubmit">Submit report</button>
+    <div class="queue-note" id="fieldQueue">Nothing waiting to upload.</div>
+    <div class="probe-result" id="fResult"></div>`;
+
+  $('fUseGps').addEventListener('click', () => {
+    const out = $('fResult');
+    if (!navigator.geolocation) { out.textContent = 'This device has no location service.'; return; }
+    out.textContent = 'Getting location…';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        $('fLat').value = pos.coords.latitude.toFixed(5);
+        $('fLon').value = pos.coords.longitude.toFixed(5);
+        out.textContent = `Location set (accurate to about ${Math.round(pos.coords.accuracy)} m).`;
+      },
+      err => { out.textContent = 'Could not get location: ' + err.message; },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+
+  $('fSubmit').addEventListener('click', async () => {
+    const btn = $('fSubmit'), out = $('fResult');
+    const lat = parseFloat($('fLat').value), lon = parseFloat($('fLon').value);
+    if (Number.isNaN(lat) || Number.isNaN(lon)) {
+      out.innerHTML = '<div style="color:var(--risk-severe);font-size:11.5px">Enter a location, or tap "Use my location".</div>';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const file = $('fPhoto').files[0];
+    const photo = file ? await new Promise(r => {
+      const reader = new FileReader();
+      reader.onload = () => r(reader.result);
+      reader.onerror = () => r(null);
+      reader.readAsDataURL(file);
+    }) : null;
+
+    const record = {
+      client_id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())).slice(0, 12),
+      lat, lon,
+      hazard: $('fHazard').value,
+      note: $('fNote').value,
+      reporter: $('fReporter').value,
+      observed_at: new Date().toISOString(),
+      photo,
+    };
+
+    // Queue first, upload second: if the network drops mid-submit, the
+    // report is already durable on the device.
+    await outboxPut(record);
+    await refreshQueueNote();
+
+    const sent = await flushOutbox();
+    if (sent > 0) {
+      out.innerHTML = '<div style="color:var(--risk-low);font-size:11.5px;font-weight:600">Report sent.</div>';
+      ['fNote', 'fReporter'].forEach(id => { $(id).value = ''; });
+      $('fPhoto').value = '';
+    } else {
+      out.innerHTML = '<div style="color:var(--risk-moderate);font-size:11.5px;font-weight:600">'
+        + 'Saved on this device. It will upload by itself once you have a signal.</div>';
+    }
+    btn.disabled = false; btn.textContent = 'Submit report';
+  });
+
+  refreshQueueNote();
+  flushOutbox();
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    navigator.serviceWorker.addEventListener('message', evt => {
+      if (evt.data && evt.data.type === 'flush-reports') flushOutbox();
+    });
+  } catch (err) {
+    console.warn('service worker registration failed:', err.message);
+  }
+}
+
+
+/* ---------------- live station panel ---------------- */
+let myCoords = null;
+let livePollTimer = null;
+
+function renderLiveOffline() {
+  $('liveSubtitle').textContent = 'Needs the local server';
+  $('liveBody').innerHTML = `<div class="probe-offline">
+    The published page cannot reach a sensor or run the model. Start the
+    project locally with <code>python src/serve.py</code>, plug in the
+    Arduino, and run <code>python hardware/spirexa_node/serial_bridge.py</code>.
+  </div>`;
+}
+
+function renderLiveShell() {
+  $('liveSubtitle').textContent = 'Ground sensor plus the model at your location';
+  $('liveBody').innerHTML = `
+    <div class="station-status" id="stationStatus">
+      <span class="station-dot" id="stationDot"></span>
+      <span id="stationText">checking for a station...</span>
+    </div>
+    <div class="sensor-grid" id="sensorGrid"></div>
+    <button class="probe-btn" id="locateBtn">Use my location</button>
+    <div id="liveRiskBox"></div>
+    <div class="hint" id="liveHint">
+      The station measures rainfall and air conditions at the site. Soil moisture,
+      rainfall history and terrain come from satellites. The station does not judge
+      slope stability &mdash; the model does that.
+    </div>`;
+  $('locateBtn').addEventListener('click', locateMe);
+}
+
+function locateMe() {
+  const btn = $('locateBtn');
+  if (!navigator.geolocation) {
+    $('liveHint').textContent = 'This browser will not share a location.';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Asking for location...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      myCoords = { lat: +pos.coords.latitude.toFixed(4), lon: +pos.coords.longitude.toFixed(4) };
+      btn.textContent = 'Reading satellites...';
+      pollLive(true).finally(() => {
+        btn.disabled = false; btn.textContent = 'Refresh';
+      });
+    },
+    err => {
+      btn.disabled = false; btn.textContent = 'Use my location';
+      $('liveHint').textContent = 'Location refused: ' + err.message;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function sensorCells(r) {
+  const cells = [];
+  const add = (v, k, warn) => cells.push(
+    `<div class="sensor-cell${warn ? ' warn' : ''}"><div class="v">${v}</div><div class="k">${k}</div></div>`);
+  if (r.rain_pct !== undefined) add(r.rain_pct.toFixed(0) + '%', 'rain now', r.rain_pct > 60);
+  if (r.temperature_c !== undefined) add(r.temperature_c.toFixed(1) + '&deg;', 'temperature');
+  if (r.humidity_pct !== undefined) add(r.humidity_pct.toFixed(0) + '%', 'humidity');
+  if (r.soil_moisture_pct !== undefined) add(r.soil_moisture_pct.toFixed(0) + '%', 'soil (station)');
+  if (r.wetness_pct !== undefined) add(r.wetness_pct.toFixed(0) + '%', 'site wetness', r.wetness_pct > 65);
+  return cells.join('');
+}
+
+async function pollLive(withModel) {
+  let url = '/api/live';
+  if (withModel && myCoords) url += `?lat=${myCoords.lat}&lon=${myCoords.lon}`;
+  let data;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    data = await res.json();
+  } catch { return; }
+
+  const st = data.station || {};
+  const dot = $('stationDot'), txt = $('stationText');
+  if (dot && txt) {
+    dot.className = 'station-dot' + (st.connected ? (st.simulated ? ' sim' : ' on') : '');
+    txt.textContent = !st.connected
+      ? (st.node_id ? `${st.node_id} silent for ${Math.round(st.age_seconds)}s` : 'no station connected')
+      : st.simulated
+        ? `${st.node_id} connected (simulated)`
+        : `${st.node_id} connected`;
+  }
+  const grid = $('sensorGrid');
+  if (grid) grid.innerHTML = st.readings ? sensorCells(st.readings)
+    : '<div class="hint" style="grid-column:1/-1">Plug in the Arduino and start the bridge to see live readings.</div>';
+
+  if (data.model) {
+    const m = data.model, b = band(m.risk_percent / 100);
+    $('liveRiskBox').innerHTML = `
+      <div class="live-risk">
+        <div class="n p-${b}" style="background:none;padding:0">${m.risk_percent}%</div>
+        <div class="b p-${b}" style="background:none">${m.severity}</div>
+        <div class="where">${m.lat}, ${m.lon} &middot; ${m.date}</div>
+      </div>`;
+    $('liveHint').innerHTML =
+      `Model risk where you are standing, from satellite rainfall, soil moisture and terrain.` +
+      (m.features && m.features.slope_max_nbhd !== null
+        ? ` Steepest slope within 300 m: <b>${Number(m.features.slope_max_nbhd).toFixed(0)}&deg;</b>.` : '');
+  }
+}
+
+function startLive() {
+  renderLiveShell();
+  pollLive(false);
+  clearInterval(livePollTimer);
+  livePollTimer = setInterval(() => pollLive(false), 5000);
+}
+
+/* ---------------- mode switching ---------------- */
+function setMode(next, btnId) {
+  mode = next; selectedId = null;
+  ['btnLive', 'btnHist', 'btnVal'].forEach(id => $(id).classList.toggle('active', id === btnId));
+  render();
+}
+$('btnLive').addEventListener('click', () => setMode('live', 'btnLive'));
+$('btnHist').addEventListener('click', () => setMode('hindcast', 'btnHist'));
+$('btnVal').addEventListener('click', () => setMode('validation', 'btnVal'));
+
+buildStates();
+buildChips();
+setupSwitches();
+render();
+applyView();
+detectApi();
+registerServiceWorker();
+</script>

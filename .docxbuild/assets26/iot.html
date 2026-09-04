@@ -1,0 +1,40 @@
+<meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1360px;padding:22px 26px;background:#fff;font-family:'Helvetica Neue',Arial,sans-serif}
+.wrap{display:flex;align-items:center;gap:16px}
+.stack{display:flex;flex-direction:column;gap:9px}
+.s{border:2px solid #1E6B52;background:#f1f9f4;border-radius:10px;padding:8px 12px;width:250px}
+.s b{display:block;font-size:14px;color:#1E6B52}
+.s span{font-size:11px;color:#4a5c52}
+.mcu{border:3px solid #1F3864;background:#f1f5fc;border-radius:12px;padding:14px 16px;width:250px;text-align:center}
+.mcu b{display:block;font-size:17px;color:#1F3864}
+.mcu span{font-size:11.5px;color:#54637f}
+.radio{border:2px solid #8A5A2B;background:#fdf6ef;border-radius:10px;padding:10px 13px;width:232px}
+.radio b{display:block;font-size:14px;color:#8A5A2B}
+.radio span{font-size:11px;color:#6b563f}
+.cloud{border:3px solid #2E75B6;background:#f0f7fd;border-radius:12px;padding:13px 15px;width:262px}
+.cloud b{display:block;font-size:15px;color:#2E75B6}
+.cloud span{font-size:11.5px;color:#4a6customer}
+.cloud span{font-size:11.5px;color:#4a6a86}
+.ar{color:#9aa5b5;font-size:26px;padding:0 3px}
+.cap{margin-top:14px;font-size:11.5px;color:#7c8794;font-style:italic}
+.pill{display:inline-block;background:#FEF3C7;color:#92670A;font-size:10.5px;font-weight:700;
+      padding:3px 9px;border-radius:99px;margin-bottom:9px}
+</style>
+<div class="pill">PHASE 2 PROTOTYPE — demo unit for the judging round</div>
+<div class="wrap">
+  <div class="stack">
+    <div class="s"><b>Soil moisture probe</b><span>capacitive · buried 30 cm &amp; 60 cm</span></div>
+    <div class="s"><b>Temperature + humidity</b><span>DHT22 · surface conditions</span></div>
+    <div class="s"><b>Tipping-bucket rain gauge</b><span>true local rainfall in mm</span></div>
+    <div class="s"><b>Tilt / vibration</b><span>MPU6050 · detects slope creep</span></div>
+  </div>
+  <div class="ar">→</div>
+  <div class="mcu"><b>ESP32</b><span>reads every 15 min<br>deep-sleep between<br>solar + Li-ion, 14-day autonomy</span></div>
+  <div class="ar">→</div>
+  <div class="radio"><b>LoRa SX1276</b><span>10 km range · no mobile tower<br>store-and-forward if link drops</span></div>
+  <div class="ar">→</div>
+  <div class="cloud"><b>SPIREXA model</b><span>ground reading replaces the 11 km<br>satellite estimate at that point<br>— sensor absent? satellite still runs</span></div>
+</div>
+<div class="cap">Validated approach: IIT Mandi runs the same sensor set at 60 sites in Himachal Pradesh for ~₹1 lakh per node, 200× cheaper than conventional instrumentation.</div>

@@ -1,0 +1,16 @@
+{
+  "_name": "Nagamese",
+  "_native_name": "Nagamese",
+  "_verified": false,
+  "_translation_confidence": "low - drafted without native review, must be checked before deployment",
+  "severity_severe": "BISI KHARAP",
+  "severity_high": "DANGAR",
+  "severity_moderate": "MAJHI",
+  "severity_low": "KOM",
+  "alert_body": "{location}, {state} usorte mati khohi ja-bole {severity} bhoi ase. Bhoi mapkani {percent}%.",
+  "action_severe": "Etiya he pahar laga dhal chari dibi. Pahar pora dur, khula aru saman jagate jabi. Dhal laga niche laga rasta te na jabi.",
+  "action_high": "Dhal aru tar niche laga rasta pora dur thakibi. Borokhun ahi thakile ulai jabole taiyar thakibi.",
+  "action_moderate": "Hoshiar thakibi. Notun phatani, hela hoi thaka gash, aru dhal pora ulai thaka boka pani sabi.",
+  "action_low": "Eku koribole nalage. Halat sai thaka ase.",
+  "signature": "NER Slope Watch (automatic). Apuni laga district administration laga kotha mani thakibi."
+}

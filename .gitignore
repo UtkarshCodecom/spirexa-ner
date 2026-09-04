@@ -1,0 +1,19 @@
+# Python environment - platform-specific, rebuild it on each machine
+venv/
+__pycache__/
+*.pyc
+
+# Node deps for the slide-deck generator - reinstall with npm install
+.docxbuild/node_modules/
+
+# Runtime logs and local test artifacts
+logs_*.txt
+data/reports/*.jsonl
+data/reports/photos/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Local secrets, if any ever get added
+.env

@@ -1,0 +1,301 @@
+id,date,location,lat,lon,fatalities,type,trigger,state,location_accuracy
+GLC57,2007-04-11,"Sikkim, 13 km north of Gangtok",27.4459,88.6193,0,landslide,downpour,Sikkim,5km
+GLC78,2007-05-23,"Pangthang, on road b/t Gangtok and North Sikkim",27.3383,88.6069,0,landslide,rain,Sikkim,50km
+GLC126,2007-07-16,Bardang near Singtam,27.1499,88.38,0,mudslide,rain,Sikkim,25km
+GLC141,2007-07-26,Singtam,25.38,91.88,0,landslide,rain,Meghalaya,50km
+GLC147,2007-07-30,Lawngtlai,22.533,92.899,0,landslide,downpour,Mizoram,25km
+GLC148,2007-07-30,Saiha,22.479,92.967,0,landslide,downpour,Mizoram,25km
+GLC212,2007-08-26,National Highway No 44 at Sonarpur in Meghalaya,25.5576,91.8506,0,complex,rain,Meghalaya,unknown
+GLC213,2007-08-26,Shillong Road at Kuliang in the Jaintia Hills,25.2946,92.8339,0,landslide,rain,Assam,unknown
+GLC215,2007-08-28,Phesema area at National Highway 39,25.7428,93.9136,1,landslide,rain,Nagaland,50km
+GLC220,2007-08-31,"Velnal village, Tamei sub-division and Toribari village (3 kilometer toward Tamei from Kangpokpi)",25.1333,93.9667,0,landslide,rain,Manipur,25km
+GLC247,2007-09-08,"Lower Shajouba village near Tadubi along NH 39, Manipur",25.0604,93.9877,0,landslide,rain,Manipur,50km
+GLC256,2007-09-10,Rhodong village near Rhey in East Sikkim,27.3425,88.6236,0,landslide,rain,Sikkim,10km
+GLC255,2007-09-10,Wamkhu village along the Tengnoupal-Joupi road in Chandel district,24.2451,94.0691,0,landslide,rain,Manipur,25km
+GLC258,2007-09-11,"NH-39 at Imphal-Moreh section, Lokchao largest event",24.4279,94.0564,3,landslide,rain,Manipur,50km
+GLC269,2007-09-18,Geyzing-Jorethang road and Naya Bazar-Legship road,27.2872,88.2816,0,landslide,rain,Sikkim,50km
+GLC285,2007-09-29,"National Highway, 45 Aizwal (Mizoram)",24.1293,92.6921,0,landslide,rain,Mizoram,50km
+GLC322,2007-10-21,National Highway 53 at Nungba in Tamenglong district of Manipur,24.75,93.4333,0,landslide,rain,Assam,25km
+GLC545,2008-05-20,"A Cachar District village, near village of Srinager, Assam",24.9849,92.8411,5,mudslide,mining,Assam,50km
+GLC580,2008-06-09,"near Kuloor church, in Manipur along National Highway",24.6596,93.9784,0,landslide,monsoon,Manipur,unknown
+GLC585,2008-06-14,"Itanagar-Naharlagun, Arunachal Pradesh",27.0998,93.6287,21,landslide,rain,Arunachal Pradesh,25km
+GLC587,2008-06-15,"Lakhimpur district, Bihpuria, Assam",27.2298,94.0989,17,landslide,downpour,Assam,25km
+GLC594,2008-06-19,"Namkaoluang village, Tamenglong-Sangrung (Khongsang) road, NH-53, Manipur",24.9336,93.8275,0,mudslide,monsoon,Manipur,25km
+GLC692,2008-08-07,"National Highway-39, Dimapur-Imphal road and another under Kiphire district of Nagaland",25.705,94.04,0,landslide,downpour,Nagaland,10km
+GLC714,2008-08-14,"Kimin-Ziro road in Papum Pare district, road between Doimukh and Sagalee, Doimukh-Hoj road; Arunacha",27.163,94.0,0,landslide,rain,Assam,50km
+GLC731,2008-08-19,"Akuk village, Wokha District, Nagaland",26.138,94.25,4,mudslide,downpour,Nagaland,50km
+GLC755,2008-08-28,"Ranka, Sikkim and Louing road",27.337,88.609,0,landslide,downpour,Sikkim,25km
+GLC760,2008-08-29,"Kohima, Nagaland",25.67,94.1066,0,complex,downpour,Nagaland,25km
+GLC870,2008-10-29,"West Kameng, Arunachal Pradesh",27.4,92.35,12,mudslide,downpour,Arunachal Pradesh,50km
+GLC869,2008-10-29,North Lakhimpur,27.2333,94.1167,0,landslide,downpour,Assam,50km
+GLC868,2008-10-29,"Kamrup, and Sonitpur, Assam",26.3333,91.25,7,landslide,downpour,Assam,50km
+GLC1061,2009-07-01,"4th Mile, Lower Mangshila in North Sikkim",27.478,88.527,0,landslide,downpour,Sikkim,1km
+GLC1084,2009-08-12,"Upper Subansiri District, Arunanchal Pradesh",27.7,92.8,0,landslide,downpour,Arunachal Pradesh,5km
+GLC1109,2009-08-20,Lumding-Badarpur section in North Cachar Hills district,25.5215,93.1645,0,landslide,downpour,Assam,25km
+GLC1112,2009-08-20,"NH31A, Mile 27 near Rambi",27.1761,88.5287,0,mudslide,downpour,Sikkim,25km
+GLC1108,2009-08-20,"Tamei, Tamenglong district on Imphal-Tamenglong (IT) road",24.9925,93.5,0,landslide,downpour,Assam,10km
+GLC1125,2009-08-26,"17th Mile towards Tsomgo Lake, near Kyongsala, Sikkim",27.3746,88.7648,0,landslide,rain,Sikkim,25km
+GLC1127,2009-08-27,between Mahur and Phaiding railway stations on Barail hills (Mahur and Barail hills located),25.1718,93.123,0,landslide,downpour,Assam,10km
+GLC1129,2009-08-30,"Road stretch from Gammom to Chamu village, under Kamjong block, Ukhrul district, Manipur",24.8628,94.4182,0,landslide,downpour,Manipur,50km
+GLC1168,2009-09-17,"4th Mile on road between Rongli, Rhenock and Rangpo in East Sikkim.",27.1954,88.6115,0,landslide,rain,Sikkim,5km
+GLC1222,2009-10-05,"Chhinga Veng, Aizawl",23.73478778,92.72124394,3,landslide,downpour,Mizoram,5km
+GLC1596,2010-03-27,"LangthAbal Khoupum, Imphal, Manipur",24.7339,93.9161,0,mudslide,downpour,Manipur,5km
+GLC1611,2010-04-01,"Paglanala village, Dholai Block, near Dwarbandh locality of the district, Cachar district (could onl",25.1553,93.028,3,landslide,downpour,Assam,25km
+GLC1613,2010-04-02,"Koloriang, Kuring Kumey district, Arunachal Pradesh",27.8997,93.3497,12,mudslide,downpour,Arunachal Pradesh,1km
+GLC1755,2010-04-17,"Natl. Highway 31-A at Pani House(?), Gangtok",27.3341,88.6083,0,landslide,downpour,Sikkim,5km
+GLC1756,2010-04-17,"Nam Nang, Gangtok",27.322,88.6087,0,landslide,downpour,Sikkim,1km
+GLC1771,2010-04-20,"Raj Bhavan Guwahati, Assam",26.1978,91.7665,0,landslide,downpour,Assam,exact
+GLC1770,2010-04-20,"Kharghuli, Guwahati, Assam",26.1965,91.763,0,landslide,downpour,Assam,1km
+GLC1775,2010-04-21,Arunachal Pradesh,27.8965,96.1779,12,landslide,downpour,Arunachal Pradesh,unknown
+GLC1857,2010-05-11,"National highway 44 at Sunapur and Tongseng in Jaintia Hills district, eastern Meghalaya",25.3433,92.2897,0,landslide,downpour,Meghalaya,25km
+GLC1930,2010-05-31,"Anini-Roing road,  Dibang Valley,  Arunachal Pradesh",28.4298,95.8776,0,landslide,downpour,Arunachal Pradesh,50km
+GLC1929,2010-05-31,"North Sikkiim Highway, periphery of Gangtok, Sikkim East district",27.3543,88.6428,0,landslide,downpour,Sikkim,5km
+GLC1935,2010-06-03,"atharamura hills, Highway 44, Tripura",23.8986,91.7599,0,landslide,downpour,Tripura,5km
+GLC1934,2010-06-03,Rongpur village under Bhairabhnagar panchayat in Karimganj district,24.6005,92.3814,2,landslide,downpour,Assam,25km
+GLC1954,2010-06-07,"Irang(?) and Barak(?) and Makru(?) on highway 53 between Imphal and Jiribam, Manipur",24.7543,93.5039,0,landslide,rain,Manipur,50km
+GLC1961,2010-06-09,"Ishok Chingphu(?), Bishnupur, Assam",25.8833,91.2,0,landslide,downpour,Meghalaya,50km
+GLC1994,2010-06-16,"rails between Jatinga and Longrangjao(?), Assam",25.0633,92.8025,0,landslide,downpour,Assam,25km
+GLC1996,2010-06-17,"Shayoung Ward(?), Longleng, Nagaland",26.4333,94.8833,0,landslide,downpour,Nagaland,25km
+GLC2025,2010-06-28,"Police CID complex(?), Shillong, Meghalaya",25.5728,91.885,1,landslide,downpour,Meghalaya,5km
+GLC2026,2010-06-28,"Borsorsa(?), West Khasi Hills, Meghalaya",25.4916,91.2698,0,landslide,downpour,Meghalaya,50km
+GLC2045,2010-07-06,"Tuensang, Nagaland",26.2363,94.8133,0,mudslide,monsoon,Nagaland,5km
+GLC2044,2010-07-06,"Kiphire,  Nagaland",25.8877,94.7861,0,mudslide,monsoon,Nagaland,5km
+GLC2042,2010-07-06,"Zunheboto, Nagaland",26.0093,94.5238,0,mudslide,monsoon,Nagaland,5km
+GLC2098,2010-07-19,"Jahjon ward(?), Mon town, Nagaland",26.7215,95.0283,0,landslide,downpour,Nagaland,5km
+GLC2106,2010-07-20,"road to Oting near Longlam village, 13 km from Tizit subdivision, Mon district, Nagaland",26.8716,94.9921,0,landslide,downpour,Nagaland,25km
+GLC2113,2010-07-21,"Singtam-Mangan rd, Sikkim",27.3773,88.559,0,landslide,downpour,Sikkim,25km
+GLC2112,2010-07-21,"Zang(?), east Sikkim",27.5509,88.6475,0,landslide,downpour,Sikkim,unknown
+GLC2140,2010-07-25,"road between Halfong and Redzol(?) or Silchar, Assam",25.0477,92.801,0,landslide,downpour,Assam,25km
+GLC2164,2010-07-29,"Chingai-Kuingai(Quingai) route (16 kms), Chingai subdivision, Ukhrul district, Manipur",25.3098633,94.48214677,0,landslide,downpour,Manipur,25km
+GLC2166,2010-07-29,"Highway 53 at Tupul, Tamenglong district",24.9786,93.5027,0,landslide,downpour,Assam,10km
+GLC2182,2010-07-31,Dimapur-Imphal highway (NH 39) near Manipur,24.9356,93.8443,0,landslide,rain,Manipur,25km
+GLC2205,2010-08-06,"Dawrpui Vengthar cemetary, Aizwal, Mizoram",23.7365,92.7146,0,landslide,downpour,Mizoram,1km
+GLC2243,2010-08-13,"NH-39 near Kohima Municipality Council(KMC) dumping ground, between Zubza(Sechu) and Kohima, Nagalan",25.70223725,94.04619681,0,landslide,downpour,Nagaland,5km
+GLC2249,2010-08-14,"Kiphire-Tuensang rd, Nagaland",26.0814,94.803,0,landslide,downpour,Nagaland,25km
+GLC2248,2010-08-14,"Noklak-Tuensang road, Nagaland",26.222,94.9152,0,landslide,downpour,Nagaland,25km
+GLC2253,2010-08-15,"Chingai-Kuingai(Quingai) route (16 kms), Chingai subdivision, Ukhrul district, Manipur",25.31006064,94.48265093,0,landslide,downpour,Manipur,25km
+GLC2282,2010-08-19,"Tuensang-Kohima rd, 3 km outside Tuensang, Nagaland",26.1984,94.8158,0,landslide,downpour,Nagaland,1km
+GLC2283,2010-08-19,"2 km from Khongsang village(?), road between Tamenglong and Imphal or Nungba, Manipur",24.8961,93.4957,0,mudslide,downpour,Manipur,5km
+GLC2281,2010-08-19,"Kisima, Nagaland",25.61560252,94.11603493,0,landslide,downpour,Nagaland,5km
+GLC2296,2010-08-20,"many locations around Namchi, Sikkim",27.167,88.3652,0,complex,downpour,Sikkim,10km
+GLC2304,2010-08-21,"NH 39 at Kigwema(?), between Mao Gate and Kohima, Nagaland",25.5718,94.1211,0,landslide,downpour,Nagaland,10km
+GLC2344,2010-08-27,"NH-53 at Nungba police station, Kambirong(?), Manipur",24.7505,93.4221,0,landslide,downpour,Assam,5km
+GLC2343,2010-08-27,"NH-39 at Ekai village(?), 2 km for Tadubi, Manipur",25.4786,94.1327,0,landslide,downpour,Nagaland,5km
+GLC2345,2010-08-27,"Daragaon(?), Gangtok city, Sikkim",27.3392,88.6188,0,landslide,downpour,Sikkim,5km
+GLC2392,2010-09-04,"17th mile(?), Jawaharlal Nehru Marg hwy, between Gangtok and Nathu La, Sikkim",27.3702,88.7334,0,landslide,downpour,Sikkim,10km
+GLC2405,2010-09-09,"Mossing(Mosing) village(?), Upper Siang district, Arunachal Pradesh",28.3036,95.4112,10,landslide,downpour,Arunachal Pradesh,unknown
+GLC2411,2010-09-10,"districts Lakhimpur, Dhemaji, Golaghat, and Sonitpur, Assam province",27.0011,93.7273,0,landslide,downpour,Arunachal Pradesh,unknown
+GLC2424,2010-09-13,"near Tuivawl(?), Aizawl-Champhai rd, Aizawl district, Mizoram",23.591,92.9296,0,landslide,downpour,Mizoram,25km
+GLC2421,2010-09-13,"road to Muanna Godown, Zuangtui, Mizoram",23.75406693,92.74128531,0,landslide,downpour,Mizoram,1km
+GLC2422,2010-09-13,"Hunthar Veng, Mizoram",23.74182634,92.7141905,0,landslide,downpour,Mizoram,1km
+GLC2426,2010-09-13,"Hual(Hu) village(?), Lunglei-Lawngtlai rd, Mizoram",22.7176,92.8416,0,landslide,downpour,Mizoram,25km
+GLC2423,2010-09-13,"road to Kanan Veng from Hunthar Veng, Mizoram",23.73504471,92.71060943,0,landslide,downpour,Mizoram,1km
+GLC2425,2010-09-13,"near Tuichang(?) on Tuichang river, Aizawl-Champhai rd, Mizoram",23.3439,93.0748,0,landslide,downpour,Mizoram,25km
+GLC2436,2010-09-16,"Taithu village, Churanchandpur district, Mizoram, Manipur",24.3069,93.125,0,landslide,downpour,Mizoram,5km
+GLC2437,2010-09-16,"Aizawl-Lengpui rd 3km from Aizawl, Mizoram, Manipur",23.7527,92.694,0,landslide,downpour,Mizoram,5km
+GLC2566,2010-10-08,"Sahong, Tabu and Pani village under Tadubi police station of Senapati district, NH-39",25.4769,94.1351,0,mudslide,downpour,Nagaland,5km
+GLC2567,2010-10-08,"Phek, Manipur",25.6633,94.4703,0,complex,downpour,Manipur,5km
+GLC2570,2010-10-08,"Tharon(?) and Langol Tarung villages, Thangmeiband constituency, Imphal, Manipur",24.837,93.9128,0,landslide,downpour,Manipur,5km
+GLC2569,2010-10-08,"Bungte Chiru village(?), Senapati district, Manipur",25.2745,94.0212,0,landslide,downpour,Nagaland,5km
+GLC2568,2010-10-08,"Nungba, Tamenglong, Manipur",24.7679,93.4108,0,landslide,downpour,Assam,25km
+GLC2578,2010-10-09,"NH-39 in Karong area, Manipur",25.3179,94.0462,0,landslide,downpour,Nagaland,5km
+GLC2575,2010-10-09,"road between Haflong and Lanka, Assam",25.5242,92.9914,0,landslide,downpour,Assam,50km
+GLC2577,2010-10-09,"NH-39 near Khongnem(?) village, between Imphal and Dimapur, Manipur",25.5265,93.8673,0,landslide,downpour,Nagaland,50km
+GLC2576,2010-10-09,"NH-39 at Tobio village(?), 7 km form Tadubi, Manipur",25.4788,94.1399,0,landslide,downpour,Nagaland,10km
+GLC2579,2010-10-09,"Lower Pezielietsie(Tinpati), Kohima, Manipur",25.682,94.1076,0,landslide,downpour,Nagaland,1km
+GLC2587,2010-10-10,"Lower Chandmari area, PWD department, Kohima, Manipur",25.6623,94.1072,0,landslide,downpour,Nagaland,1km
+GLC2743,2010-11-22,"Tawang Monastery, Arunachal Pradesh",27.5798729,91.85672387,0,landslide,unknown,Arunachal Pradesh,1km
+GLC3269,2011-03-22,"road from other districts to Hawai(Tawai?) which is  on Lojit river, near Hayuliang,  Anjaw district",28.0791,96.5242,0,landslide,downpour,Arunachal Pradesh,10km
+GLC3525,2011-05-22,"Kaiphundai(?)-Tousem(in Assam) road, Tamenglong district, Manipur",25.0672,93.4093,0,landslide,downpour,Assam,25km
+GLC3532,2011-05-24,"Silchar-Haflong rd., at Reko(Rekha )(?), near Harangajao, Barail Hills, Assam",25.0888,92.8551,0,complex,downpour,Assam,10km
+GLC3560,2011-05-31,"Gaoilung(Gadailong) village(?), Ward 4(?), Tamenglong, Manipur",24.8286,93.5935,2,landslide,downpour,Manipur,50km
+GLC3556,2011-05-31,"Roads between Tamei(Tamma?), Kangpokpi and Chalwa, Manipur",25.1555,93.8474,0,landslide,continuous_rain,Manipur,25km
+GLC3633,2011-06-20,Mokokchung,26.3186,94.5121,0,landslide,downpour,Nagaland,5km
+GLC3637,2011-06-21,"Lasumi village in Phek district, Kohima",25.51614662,94.2341227,0,landslide,rain,Nagaland,1km
+GLC3663,2011-06-28,"Ruzapfu valley, Kikruma Village, Phek District, Nagaland",25.6682,94.1099,0,landslide,downpour,Nagaland,50km
+GLC3662,2011-06-28,"Ikou-Gangpijang road, near: Ikou, Saikul, and Gangpijang; Imphal India",25.03561729,94.0144205,0,landslide,rain,Manipur,25km
+GLC3672,2011-06-29,"Portions of NH 39, Connectin Manipur with Assam via Nagaland",25.5125,93.3613,0,landslide,downpour,Assam,unknown
+GLC3683,2011-07-01,NH-61 between Botsa and Chiechama,25.8782,94.1739,0,landslide,downpour,Nagaland,10km
+GLC3738,2011-07-06,"National Highway 53, Sinam Khul (near Kotlen; ~25 km from Imphal)",24.8063,93.9482,6,landslide,downpour,Manipur,50km
+GLC3741,2011-07-07,Maram (80 km north of Imphal),25.4191,94.1079,0,landslide,rain,Nagaland,5km
+GLC3760,2011-07-11,"NH-61, 1 km before reaching Botsa",25.6703,94.1095,0,landslide,downpour,Nagaland,25km
+GLC3776,2011-07-15,Itanagar/Naharlagur/Nirjuli,27.125,93.7145,0,landslide,downpour,Arunachal Pradesh,5km
+GLC3789,2011-07-16,Mebua (8 km from Seppa),27.2743,92.9064,0,landslide,downpour,Arunachal Pradesh,10km
+GLC3806,2011-07-19,"Itanagar (one near Pachali power house, one near Heema Hospital, and one nearRomik Colony at P Secto",27.1032,93.6884,3,landslide,downpour,Arunachal Pradesh,10km
+GLC3805,2011-07-19,200 meters from Teesta Bridge towards Siliguri,27.05374234,88.42572376,0,landslide,rain,Sikkim,1km
+GLC3830,2011-07-22,Manipur,24.3527,94.3429,0,landslide,downpour,Manipur,10km
+GLC3837,2011-07-24,NH 37,26.5836,93.0038,0,landslide,downpour,Assam,50km
+GLC3840,2011-07-25,Manipur,24.6869,93.9157,0,landslide,downpour,Manipur,50km
+GLC3860,2011-07-29,"Maram, Manipur",25.4192,94.108,0,landslide,rain,Nagaland,10km
+GLC3881,2011-08-05,Itanagar,27.1034,93.6885,0,landslide,downpour,Arunachal Pradesh,5km
+GLC3912,2011-08-12,East Kameng district in Arunachal Pradesh bordering China,27.44,92.2833,0,landslide,rain,Arunachal Pradesh,50km
+GLC3916,2011-08-13,"Chumukedima, Dimapur",25.7713,93.8067,0,mudslide,downpour,Assam,10km
+GLC3925,2011-08-15,"East Kameng, Arunachal Pradesh",27.4888,93.0153,0,landslide,downpour,Arunachal Pradesh,50km
+GLC3965,2011-09-06,NH 37 at Awang Khul,24.808,93.117,3,landslide,rain,Assam,1km
+GLC3983,2011-09-23,"Maighuli, Guwahati, Meghalaya",26.1548,91.7351,4,landslide,downpour,Assam,unknown
+GLC4241,2012-03-04,Tamei constituency in Tamenlong district,25.1604,93.6795,0,landslide,unknown,Manipur,25km
+GLC4313,2012-04-08,"Endulin Nallah, Mayodia, 17-camp, 83-camp",28.4659,95.86,0,landslide,downpour,Arunachal Pradesh,50km
+GLC4377,2012-06-02,"Guwahati, Assam",26.1475,91.7356,0,landslide,downpour,Assam,5km
+GLC4378,2012-06-02,"Arunachal Pradesh, Dibang,",28.8254,96.1517,0,landslide,downpour,Arunachal Pradesh,50km
+GLC4382,2012-06-03,"between Harangajao and Mailongdisa, Assa,",25.1175,92.8573,0,landslide,downpour,Assam,5km
+GLC4385,2012-06-03,"lachen, Sikkim",27.7167,88.5577,0,landslide,downpour,Sikkim,5km
+GLC4394,2012-06-07,"Rolep, South Sikkim( Mapping to Rhenock 12 miles from Rolep)",27.1748,88.6458,7,landslide,rain,Sikkim,25km
+GLC4393,2012-06-07,"Nathang Maong, Sikkim",27.7565,88.632,7,landslide,downpour,Sikkim,25km
+GLC4403,2012-06-10,"Imphal-Jiribam section of NH-37 , Manipur",24.8142,93.5444,0,landslide,downpour,Manipur,50km
+GLC4407,2012-06-13,"NH44, Malidhor area,  Baleswar",25.0951,92.3567,0,landslide,downpour,Assam,50km
+GLC4408,2012-06-13,"NH44, Kuliang",25.5498,92.0757,0,landslide,downpour,Meghalaya,unknown
+GLC4424,2012-06-20,"Lalunggaon, Guwahati,  Assam",26.149,91.7351,0,landslide,downpour,Assam,1km
+GLC4426,2012-06-22,Lalunggaon near Gorchuk area,26.1226,91.7162,3,landslide,downpour,Assam,5km
+GLC4435,2012-06-25,"Tirap , Arunachal Pradesh",27.174,95.8011,0,landslide,downpour,Arunachal Pradesh,10km
+GLC4436,2012-06-25,"Khonsa, Arunachal Pradesh",26.9986,95.4993,0,landslide,downpour,Arunachal Pradesh,50km
+GLC4434,2012-06-25,"Sonaighuli area near Kahilipara, Guwahati City, Assam",26.1049,91.7369,1,landslide,downpour,Assam,1km
+GLC4446,2012-07-05,"Tuting, Upper Siang , Arunachal Pradesh",28.9986,94.8885,0,landslide,downpour,Arunachal Pradesh,5km
+GLC4556,2012-09-16,"Namchi to Phongla, Namchi to Melli ,Namchi to Sumbuk",27.1675,88.3651,0,landslide,downpour,Sikkim,5km
+GLC4570,2012-09-19,Arunachal Pradesh,27.8458,95.2253,0,landslide,downpour,Arunachal Pradesh,1km
+GLC4610,2012-11-11,"Dapchhuah, Mamit, Mizoram",23.7705,92.5217,4,landslide,downpour,Mizoram,5km
+GLC4757,2013-02-18,"East Siang, Arunachal Pradesh",28.1193,95.1645,3,landslide,rain,Arunachal Pradesh,5km
+GLC4798,2013-04-07,"Dibang Valley, Arunachal Pradesh",28.8254,96.1509,0,landslide,rain,Arunachal Pradesh,unknown
+GLC4845,2013-05-07,"Kolasib, Saiha, Mizoram,",24.2315,92.6755,0,mudslide,rain,Mizoram,50km
+GLC4858,2013-05-11,"Nursery, North Guwahati, Guwahati, Assam,",26.1662,91.7138,0,landslide,rain,Assam,50km
+GLC4859,2013-05-11,"Sarania Hills, North Guwahati, Guwahati, Assam,",26.1771,91.7599,0,landslide,rain,Assam,5km
+GLC4857,2013-05-11,"Laipuitland , Aizawl, Mizoram",23.7281,92.7175,15,landslide,rain,Mizoram,25km
+GLC4860,2013-05-11,"Boragaon, North Guwahati, Guwahati, Assam,",26.1016,91.6906,0,landslide,rain,Assam,5km
+GLC4892,2013-06-01,Upper Subansiri,27.8776,94.25,0,landslide,downpour,Arunachal Pradesh,50km
+GLC4906,2013-06-07,"Helipong-Chessore Road, Nagaland",26.0977,94.7499,0,landslide,unknown,Nagaland,10km
+GLC4905,2013-06-07,"Kuthur – Huker Road Via Y Anner, Chessore, Nagaland",26.0977,94.7031,0,landslide,unknown,Nagaland,25km
+GLC4908,2013-06-08,"15 Km From Gangtok, Himalayans",27.3721,88.708,0,landslide,downpour,Sikkim,25km
+GLC4990,2013-06-27,"Near Changu Lake, 15Km Away From Nathu La, On India-China Border In Eastern Sikkim",27.3765,88.7628,0,landslide,downpour,Sikkim,1km
+GLC5006,2013-07-01,"Thillong Village, Doyang Along State Highway 1, Wokha To Merapani Road",26.1147,94.3864,0,landslide,downpour,Nagaland,1km
+GLC5005,2013-07-01,"Walo Ward, Mon Town, Wokha District, Nagaland",26.72,95.029,0,landslide,downpour,Nagaland,5km
+GLC5084,2013-07-12,"National Highway 2 Near Phesama Village Close To Kisama Naha Heritage Site, Kohima District, Nagalan",25.616,94.1167,0,landslide,downpour,Nagaland,10km
+GLC5087,2013-07-12,"National Highway 29 Near Phesama Village, Nagaland",25.6269,94.1139,0,landslide,downpour,Nagaland,10km
+GLC5107,2013-07-15,"National Highway 29 Near Phesama Village, Nagaland",25.6269,94.1139,0,landslide,rain,Nagaland,10km
+GLC5122,2013-07-17,"National Highway 29 Between Patkai Bridge And Kukidolong, Nagaland",25.7658,93.9413,0,mudslide,rain,Nagaland,50km
+GLC5123,2013-07-17,"National Highway 2 Near Meriema Village, 10 Km Away From Kohima",25.7131,94.0885,0,mudslide,rain,Nagaland,50km
+GLC5250,2013-08-01,"Polo River At Polosang, Arunachal Pradesh",27.8837,93.0515,0,mudslide,rain,Arunachal Pradesh,10km
+GLC5271,2013-08-04,"Nanga, Nagaland",26.284,94.5808,0,landslide,continuous_rain,Nagaland,5km
+GLC5268,2013-08-04,"Zunheboto, Nagaland",26.0137,94.5163,0,landslide,continuous_rain,Nagaland,25km
+GLC5269,2013-08-04,"Tizu, Nagaland",25.8376,94.5234,0,landslide,continuous_rain,Nagaland,unknown
+GLC5270,2013-08-04,"Phizo, Nagaland",26.0481,94.4619,0,landslide,continuous_rain,Nagaland,unknown
+GLC5273,2013-08-04,"Zhekuto, Nagaland",26.1807,94.5497,0,landslide,monsoon,Nagaland,5km
+GLC5272,2013-08-04,"Longsa, Nagaland",26.2083,94.5438,0,landslide,monsoon,Nagaland,1km
+GLC5274,2013-08-04,"Suruhuto Town, Nagaland",26.0838,94.564,0,landslide,rain,Nagaland,25km
+GLC5275,2013-08-04,"Suruhuto Town, Nagaland",26.1498,94.6055,0,landslide,monsoon,Nagaland,10km
+GLC5300,2013-08-09,"Senapati, Manipur",25.318,94.0441,0,landslide,downpour,Nagaland,50km
+GLC5312,2013-08-11,Kangtsung Village,26.7103,94.693,0,landslide,downpour,Assam,10km
+GLC5427,2013-08-15,"Koide Government High School, Senapati, Manipur",25.3833,94.1884,0,landslide,downpour,Nagaland,5km
+GLC5338,2013-08-16,"Longlem, Nagaland",26.8727,94.9275,0,landslide,rain,Assam,25km
+GLC5337,2013-08-16,"Yakshu, Nagaland",26.4205,94.9731,0,landslide,rain,Nagaland,5km
+GLC5336,2013-08-16,"Tobu, Nagaland",26.3897,94.9439,0,landslide,rain,Nagaland,10km
+GLC5343,2013-08-17,The Imphal-Jiribam Section Of Nh-37 In Tamenglong District,24.7625,93.4341,0,landslide,continuous_rain,Assam,10km
+GLC5421,2013-08-30,"Yakshu, Nagaland",26.4205,94.9731,0,mudslide,unknown,Nagaland,5km
+GLC5431,2013-09-01,"Tamenglong, Manipur",24.9829,93.5063,0,mudslide,continuous_rain,Assam,5km
+GLC5430,2013-09-01,"Tamenglong- Khongsang Road, Manipur",24.9037,93.487,0,mudslide,continuous_rain,Manipur,25km
+GLC5429,2013-09-01,Tamabong Village In Sikkim State,27.3425,88.2426,5,landslide,downpour,Sikkim,50km
+GLC5442,2013-09-02,Arunachal Pradesh,27.1614,93.7525,0,landslide,downpour,Arunachal Pradesh,unknown
+GLC5441,2013-09-02,"Gosang Village Under Jengging Circle, Arunachal Pradesh",28.611,94.9829,0,landslide,downpour,Arunachal Pradesh,5km
+GLC5476,2013-09-07,14 Milestone Of J N Marg Near Kyangnosola (East Sikkim),27.3736,88.7323,0,landslide,rain,Sikkim,25km
+GLC5552,2013-09-24,"Ukhrul, Manipur",25.0985,94.3619,0,landslide,unknown,Manipur,5km
+GLC5575,2013-10-05,"Chiechama, Nagaland",25.8266,94.1497,0,mudslide,continuous_rain,Nagaland,5km
+GLC5582,2013-10-06,"Batahguli, Guwahati, Assam",26.1309,91.8383,1,landslide,downpour,Assam,5km
+GLC5603,2013-10-13,"Tusom, Manipur",25.426,94.6024,0,mudslide,downpour,Manipur,5km
+GLC6015,2014-05-08,Lohit District of Arunachal Pradesh,27.9032,96.174,0,mudslide,rain,Arunachal Pradesh,1km
+GLC6016,2014-05-09,"Satgarakul Village, Karimganj, Assam State",24.8669,92.3576,7,landslide,rain,Assam,1km
+GLC6105,2014-06-26,Arunachal Pradesh,28.9205,95.3429,0,landslide,continuous_rain,Arunachal Pradesh,unknown
+GLC6106,2014-06-26,Narakasur,26.1407,91.7645,3,landslide,continuous_rain,Assam,5km
+GLC6107,2014-06-26,Bamunimaidam,26.1844,91.7896,1,landslide,continuous_rain,Assam,5km
+GLC6110,2014-06-27,"Bhangagarh, Assam",26.1619,91.7697,3,landslide,rain,Assam,exact
+GLC6143,2014-07-14,"Zembabawk, Aizawl",23.7327,92.7463,1,landslide,downpour,Mizoram,5km
+GLC6513,2014-08-14,Sabroom,23.0137,91.7174,3,mudslide,downpour,Tripura,5km
+GLC6200,2014-08-17,Arunachal Pradesh/Itanagar,27.0869,93.6086,0,landslide,downpour,Arunachal Pradesh,10km
+GLC6288,2014-09-22,Noonmati,26.1985,91.7998,0,landslide,rain,Assam,5km
+GLC6283,2014-09-22,Dakhingaon,26.1314,91.7548,0,landslide,rain,Assam,1km
+GLC6286,2014-09-22,Garchuk,26.1044,91.7082,0,landslide,rain,Assam,5km
+GLC6284,2014-09-22,Batahghuli,26.1324,91.8342,0,landslide,rain,Assam,5km
+GLC6287,2014-09-22,Dhirenpara,26.1295,91.7056,0,landslide,rain,Assam,5km
+GLC6285,2014-09-22,VIP Road,26.159,91.8178,0,landslide,rain,Assam,5km
+GLC6292,2014-09-23,Hatsingimari,25.7238,89.9032,1,landslide,continuous_rain,Assam,5km
+GLC6290,2014-09-23,Mawbah under Mawprem area,25.5772,91.8666,8,landslide,continuous_rain,Meghalaya,5km
+GLC6222,2014-10-01,Karsingsa block point,27.1249,93.7706,5,landslide,unknown,Arunachal Pradesh,5km
+GLC6293,2014-10-20,South West Garo Hills,25.5006,90.0896,6,landslide,rain,Meghalaya,50km
+GLC7591,2015-03-19,Ratacherra,25.0318,92.4584,0,landslide,rain,Assam,5km
+GLC7031,2015-05-24,"Bop, Sikkim",27.6163,88.6586,0,landslide,unknown,Sikkim,1km
+GLC6971,2015-06-09,"Itanagar, Arunachal Pradesh",27.0987,93.816,2,landslide,continuous_rain,Arunachal Pradesh,5km
+GLC6968,2015-06-13,"Ratacherra village along the NH-44 connecting to Barak Valley in Assam and Tripura, Meghalaya, Mizor",25.463,92.2121,4,landslide,continuous_rain,Meghalaya,5km
+GLC6969,2015-06-16,"Nakham Bazaar, Tura, Meghalaya",25.5114,90.215,4,landslide,downpour,Meghalaya,1km
+GLC6970,2015-06-16,Akonggre,25.5084,90.2191,1,rock_fall,downpour,Meghalaya,1km
+GLC6963,2015-06-19,"Muanna locality, Mizoram",23.7131,92.7362,0,landslide,rain,Mizoram,50km
+GLC6945,2015-06-19,"amei to Kangpokpi via Imphal road, 0.5 km from Tamei, Tamenglang District",25.16,93.686,0,landslide,monsoon,Manipur,1km
+GLC6990,2015-06-24,"New Land (""""New Colony"""")",26.0319,94.5466,0,landslide,continuous_rain,Nagaland,5km
+GLC7214,2015-07-15,Type-IV Colony of Seppa in East Kameng,27.36,93.0385,3,landslide,monsoon,Arunachal Pradesh,5km
+GLC7263,2015-07-22,"15 kms from Maram, National Highway-102/A (Maram Peren road)",25.4477,94.0489,0,landslide,continuous_rain,Manipur,1km
+GLC7264,2015-07-22,22 kms to 30 kms between Sangkungmai and Willong,25.4538,93.9827,0,landslide,continuous_rain,Manipur,5km
+GLC7253,2015-07-22,Lakhipur,24.7979,92.9974,5,landslide,continuous_rain,Assam,5km
+GLC7265,2015-07-22,Willong-Yangkhullen stretch,25.5007,93.9854,0,landslide,continuous_rain,Manipur,5km
+GLC7266,2015-07-22,Yangkhullen-Tamphung road till Nagaland border,25.5098,93.8794,0,landslide,continuous_rain,Manipur,10km
+GLC7279,2015-07-24,Tamenglong Ward No-IV,24.9818,93.5142,0,mudslide,monsoon,Manipur,50km
+GLC7276,2015-07-25,,26.1062,91.8717,2,landslide,continuous_rain,Assam,5km
+GLC7364,2015-07-31,Phungyar road,24.819,94.3551,0,landslide,continuous_rain,Manipur,10km
+GLC7372,2015-07-31,Naga Gate along the Ukhrul-Imphal route,25.0634,94.3415,0,mudslide,continuous_rain,Manipur,10km
+GLC7370,2015-08-01,between Moltuk to New Songjang village,24.1419,94.1078,0,landslide,continuous_rain,Manipur,5km
+GLC7385,2015-08-01,"Holenjang, Chandel district",24.004,93.9815,0,landslide,continuous_rain,Manipur,10km
+GLC7369,2015-08-01,between Chalong and Paraolon,24.1988,94.1016,0,landslide,continuous_rain,Manipur,10km
+GLC7383,2015-08-01,"Tuitung village, Khengjoi",23.899,94.1434,0,landslide,rain,Manipur,5km
+GLC7373,2015-08-01,between Maku village and Kamjong sub division,24.9111,94.4759,0,landslide,continuous_rain,Manipur,10km
+GLC7389,2015-08-01,between Bongyang and Lokchao along the Imphal-Moreh highway,24.4072,94.0644,0,landslide,continuous_rain,Manipur,5km
+GLC7371,2015-08-01,near S Lamphei Lamkhai and Sehlon village,23.9939,94.0573,0,landslide,continuous_rain,Manipur,50km
+GLC7388,2015-08-01,Senam,24.416,94.0984,0,landslide,continuous_rain,Manipur,5km
+GLC7374,2015-08-01,Ukhrul town Circular road from Rayotang to Viewland Zone II,25.1122,94.3591,0,landslide,continuous_rain,Manipur,10km
+GLC7409,2015-08-02,Meluri Sub-Division in Phek District of Nagaland,25.72,94.6219,0,landslide,continuous_rain,Nagaland,10km
+GLC7666,2015-08-11,Tousem,25.1019,93.3729,0,landslide,continuous_rain,Manipur,5km
+GLC7664,2015-08-11,Nungba,24.7459,93.4251,0,landslide,continuous_rain,Manipur,10km
+GLC7665,2015-08-11,Khoupum,24.7016,93.5291,0,landslide,continuous_rain,Manipur,5km
+GLC7660,2015-08-12,Phesama village,25.6237,94.1136,0,mudslide,continuous_rain,Nagaland,5km
+GLC7887,2015-08-16,Hawai,27.8835,96.9262,0,landslide,continuous_rain,Arunachal Pradesh,50km
+GLC7335,2015-08-18,Tura Civil Hospital,25.5145,90.2023,0,landslide,continuous_rain,Meghalaya,1km
+GLC7334,2015-08-18,Arunachal Pradesh,28.1737,94.7596,1,landslide,unknown,Arunachal Pradesh,unknown
+GLC7701,2015-08-19,Phesama,25.6278,94.1051,0,landslide,continuous_rain,Nagaland,5km
+GLC7699,2015-08-19,Zunheboto district,26.0214,94.5224,0,landslide,continuous_rain,Nagaland,50km
+GLC7589,2015-08-19,National Highway 44,25.2568,92.3825,0,landslide,rain,Meghalaya,25km
+GLC7590,2015-08-19,Tongseng,25.1416,92.3807,0,landslide,rain,Meghalaya,5km
+GLC7706,2015-08-19,National Highway at Kuliang,25.0728,92.3636,0,landslide,rain,Meghalaya,5km
+GLC7336,2015-08-19,NH-62 at Sibbari,25.2193,90.5549,0,landslide,continuous_rain,Meghalaya,10km
+GLC7727,2015-08-20,between Phesama and Kuima in Nagaland,25.6263,94.1057,0,landslide,continuous_rain,Nagaland,5km
+GLC7728,2015-08-22,Natonal Highway in Jorabat area,26.1028,91.8806,0,landslide,continuous_rain,Assam,5km
+GLC7780,2015-08-26,Sailam village,23.3572,92.7878,1,landslide,continuous_rain,Mizoram,5km
+GLC7778,2015-08-26,Phullen’s main road,23.8447,93.0514,0,mudslide,continuous_rain,Mizoram,10km
+GLC7836,2015-08-27,"National Highway 54, at Kawnpui town",24.042,92.6724,0,landslide,downpour,Mizoram,10km
+GLC7933,2015-09-01,Maligaon,26.1868,91.6739,2,rock_fall,rain,Assam,1km
+GLC7923,2015-09-01,Amingaon,26.49349035,91.72137514,2,landslide,rain,Assam,10km
+GLC7956,2015-09-05,Byrnihat,26.048,91.8695,0,landslide,unknown,Meghalaya,1km
+GLC8012,2015-09-06,"Umling, Meghalaya 793102, India",25.9703,91.8584,0,landslide,unknown,Meghalaya,1km
+GLC8224,2015-09-14,"Aizawl, Mizoram, India",23.7313,92.7187,0,landslide,downpour,Mizoram,5km
+GLC8223,2015-09-14,"Aizawl, Mizoram, India",23.7348,92.7187,0,landslide,downpour,Mizoram,5km
+GLC8339,2015-09-23,Kamakhya Temple,26.1666,91.7042,0,landslide,continuous_rain,Assam,1km
+GLC8366,2015-09-23,"Shillong, Meghalaya, India",25.583,91.893,2,landslide,downpour,Meghalaya,5km
+GLC9405,2016-04-19,"Techahan Ward, Mon, Nagaland, India",26.7223,95.0243,0,landslide,continuous_rain,Nagaland,1km
+GLC7655,2016-04-22,"Tawang, Arunachal Pradesh",27.5799,91.8569,17,landslide,continuous_rain,Arunachal Pradesh,5km
+GLC9404,2016-05-01,"Hayuliang, Anjaw district,Arunachal Pradesh, India",28.0822,96.5316,0,landslide,downpour,Arunachal Pradesh,1km
+GLC9335,2016-05-18,"Bilaipur, Hailakandi district, Assam, India",24.5202,92.7239,2,landslide,continuous_rain,Assam,1km
+GLC9338,2016-05-18,"Sonachirra, Karimganj district, Assam, India",24.4638,92.4943,5,landslide,continuous_rain,Assam,10km
+GLC9334,2016-05-18,"Bilaipur, Hailakandi district, Assam, India",24.5204,92.7264,2,landslide,continuous_rain,Assam,1km
+GLC9168,2016-06-12,"NH 13 10 kilometers from Old Ziro, Arunachal Pradesh, India",27.6438,93.871,0,landslide,downpour,Arunachal Pradesh,10km
+GLC9142,2016-06-14,"lower Majakong Ward, Mokokchung, Nagaland, India",26.3185,94.5247,0,landslide,continuous_rain,Nagaland,1km
+GLC8222,2016-06-22,"Piyali Phukan Nagar, Guwahati, India",26.1961,91.7825,1,mudslide,downpour,Assam,5km
+GLC8237,2016-07-01,"Old Inspection Bungalow, Bhalukpong town, West Kameng, Arunachal Pradesh, India",27.0136,92.6351,5,landslide,downpour,Arunachal Pradesh,1km
+GLC8900,2016-07-07,"Imphal-Ukhrul sector of National Highway 102, Manipur, India",25.0118,94.3136,0,landslide,monsoon,Manipur,25km
+GLC8684,2016-07-07,"Kamrup district, Assam, India",25.9611,91.3681,2,landslide,continuous_rain,Assam,50km
+GLC8901,2016-07-10,"National Highway 2, near Kohima, Nagaland, India",25.7902,94.1318,0,landslide,downpour,Nagaland,25km
+GLC8930,2016-07-11,"North Point Colony, Akuluto, Nagaland, India",26.1699,94.4922,0,landslide,unknown,Nagaland,1km
+GLC8995,2016-07-14,"Noonmati Nijarapar area of the city, Guwahati, Assam, India",26.1963,91.8074,1,landslide,monsoon,Assam,5km
+GLC8996,2016-07-14,"Pub Sarania hill, South Sarania, Guwahati, Assam, India",26.1768,91.7702,1,landslide,monsoon,Assam,1km
+GLC9051,2016-07-19,"12th Mile area at Jorabat, Meghalaya, India",26.09748244,91.8744337,0,landslide,unknown,Meghalaya,25km
+GLC9124,2016-07-19,"Rongthragittim Songittal village, near Sibbari, South Garo Hills District, Meghalaya, India",25.203,90.5573,0,translational_slide,continuous_rain,Meghalaya,5km
+GLC9186,2016-07-25,"Imphal-Dimapur road  in Tadubi, Senapati district, Manipur, India",25.48,94.1383,0,landslide,continuous_rain,Manipur,1km
+GLC9219,2016-07-26,"Zunheboto, Nagaland, India",26.0101,94.5282,0,landslide,downpour,Nagaland,5km
+GLC9251,2016-07-28,"Government Middle School (GMS) Kiphire station “B”, Kiphire, Nagaland, India",25.8702,94.7844,0,landslide,downpour,Nagaland,1km
+GLC9232,2016-07-28,"Ngur, near Mizoram-Myanmar border, India",23.5397,93.3783,2,landslide,continuous_rain,Mizoram,1km
+GLC9252,2016-07-28,"Dolma Lhakang complex, Lumla, Tawang,  Arunachal Pradesh, India",27.5748,91.8644,0,landslide,monsoon,Arunachal Pradesh,5km
+GLC9464,2016-08-05,Babrang village under Jang circle in Tawang district,27.5754,91.9754,0,landslide,downpour,Arunachal Pradesh,5km
+GLC9620,2016-10-15,Rangpo,27.172,88.5292,0,landslide,downpour,Sikkim,5km
+GLC9619,2016-10-15,Namchi,27.1695,88.3664,0,landslide,rain,Sikkim,5km

@@ -1,0 +1,19 @@
+id,date,location,lat,lon,fatalities,type,trigger,state
+LS1,2016-09-17,Tlangval,23.73,92.72,5,Debris slide,Monsoon,Mizoram
+LS2,2017-09-17,College Veng,23.72,92.72,0,Shale failure,Monsoon,Mizoram
+LS3,2019-07-02,Durtlang Leitan,23.77,92.74,3,Translational slide,Monsoon,Mizoram
+LS5,2021-06-13,"Ngaizel, Kulikawn",23.73,92.73,0,Rockslide,Monsoon,Mizoram
+LS6,2024-05-28,Melthum quarry,23.70,92.72,15,Quarry collapse,Cyclone Remal,Mizoram
+LS7,2024-05-28,Hlimen,23.70,92.72,6,Debris slide,Cyclone Remal,Mizoram
+LS8,2024-05-28,Salem Veng,23.74,92.72,3,Building collapse,Cyclone Remal,Mizoram
+LS9,2024-05-28,Falkawn,23.68,92.73,2,Debris slide,Cyclone Remal,Mizoram
+LS10,2024-05-28,Chawnpui,23.72,92.71,8,Debris slide,Cyclone Remal,Mizoram
+LS11,2024-05-28,Republic Veng cemetery,23.73,92.72,0,Multiple slides,Cyclone Remal,Mizoram
+LS12,2024-05-28,"BSUP, Durtlang",23.77,92.74,0,Debris flow,Cyclone Remal,Mizoram
+LS13,2024-05-28,"NH-6, Hunthar",23.74,92.71,0,Road blockage,Cyclone Remal,Mizoram
+LS14,2024-05-30,Thuampui,23.75,92.73,1,Wall failure,Monsoon,Mizoram
+LS15,2024-07-02,Zemabawk,23.76,92.74,3,Debris slide,Monsoon,Mizoram
+LS16,2024-07-02,Zuangtui,23.76,92.73,0,Debris slide,Monsoon,Mizoram
+LS17,2024-08-28,Kawnpui,24.03,92.62,0,Landslide,Monsoon,Mizoram
+LS18,2025-05-30,Thuampui,23.75,92.73,1,Wall failure,Monsoon,Mizoram
+LS19,2025-05-30,Rangvamual,23.74,92.72,0,Rockfall,Monsoon,Mizoram

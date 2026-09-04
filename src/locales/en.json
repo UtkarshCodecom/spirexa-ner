@@ -1,0 +1,15 @@
+{
+  "_name": "English",
+  "_native_name": "English",
+  "_verified": true,
+  "severity_severe": "SEVERE",
+  "severity_high": "HIGH",
+  "severity_moderate": "MODERATE",
+  "severity_low": "LOW",
+  "alert_body": "{severity} landslide risk near {location}, {state}. Risk level {percent}%.",
+  "action_severe": "Leave the slope now. Move to open, level ground away from the hillside. Do not use the road below the slope.",
+  "action_high": "Avoid the slope and the road beneath it. Be ready to move if rain continues.",
+  "action_moderate": "Stay alert. Watch for new cracks, tilting trees or muddy water from the slope.",
+  "action_low": "No action needed. Conditions are being monitored.",
+  "signature": "NER Slope Watch (automated). Follow instructions from your district administration."
+}

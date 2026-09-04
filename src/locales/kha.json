@@ -1,0 +1,16 @@
+{
+  "_name": "Khasi",
+  "_native_name": "Ka Ktien Khasi",
+  "_verified": false,
+  "_translation_confidence": "low - drafted without native review, must be checked before deployment",
+  "severity_severe": "SNGEWBHA SNIEW",
+  "severity_high": "KHRAW",
+  "severity_moderate": "PDIANG",
+  "severity_low": "RIT",
+  "alert_body": "Ka jingeh {severity} ba ka mynda kan sa hap hajan {location}, {state}. Ka rukom jingeh {percent}%.",
+  "action_severe": "Mih noh na ka jaka ba tluh mynta. Leit sha ka jaka bakhraw bad ba jylliew ba jngai na ka lum. Wat pyndonkam ia ka surok harum ka jaka ba tluh.",
+  "action_high": "Wat leit sha ka jaka ba tluh bad ka surok harum ka. Buh sngewbha ban mih lada ka slap ka dang sa wan.",
+  "action_moderate": "Sngew ryngkat. Peit ia ki jingpiah bathymmai, ki dieng ba tluh, ne ki um bad dew ba mih na ka jaka ba tluh.",
+  "action_low": "Ym don ei ei ban leh. Dang pyrkhat ia ka jinglong.",
+  "signature": "NER Slope Watch (automatic). Bat ia ki hukum jong ka district administration jong phi."
+}

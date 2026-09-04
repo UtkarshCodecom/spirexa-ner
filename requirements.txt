@@ -1,0 +1,6 @@
+earthengine-api
+pandas
+numpy
+scikit-learn
+joblib
+pyserial

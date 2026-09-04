@@ -1,0 +1,74 @@
+<meta charset="utf-8">
+<style>
+*{margin:0;box-sizing:border-box}
+body{width:1500px;padding:26px 30px;background:#fff;font-family:'Helvetica Neue',Arial,sans-serif}
+.row{display:flex;align-items:center;gap:20px}
+.col{display:flex;flex-direction:column;gap:10px}
+.lbl{font-size:11.5px;letter-spacing:.16em;color:#8A94A6;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.src{border:2px solid #C9D6E4;background:#F6F9FC;border-radius:10px;padding:11px 15px;width:243px}
+.src b{font-size:15.5px;color:#1F3864;display:block}
+.src span{font-size:11.5px;color:#6B7A8D}
+.src.osm{border-color:#D97706;background:#FEF7EE}
+.src.osm b{color:#B45309}
+.src.lab{border-style:dashed;border-color:#9AA5B4;background:#fff}
+.src.lab b{color:#54637A}
+.mid{border:3px solid #1F3864;background:#F1F5FC;border-radius:13px;padding:16px 19px;width:262px}
+.mid b{font-size:18px;color:#1F3864;display:block;margin-bottom:7px}
+.mid li{font-size:12.5px;color:#3D4F66;list-style:none;margin:3px 0}
+.model{border:3px solid #1E6B52;background:#EFF8F3;border-radius:13px;padding:16px 19px;width:250px}
+.model b{font-size:19px;color:#1E6B52;display:block;margin-bottom:7px}
+.model li{font-size:12.5px;color:#37564A;list-style:none;margin:3px 0}
+.model .auc{font-size:15px;font-weight:800;color:#1E6B52;margin-top:8px}
+.out{border:2px solid #C9D6E4;background:#F6F9FC;border-radius:10px;padding:11px 15px;width:250px}
+.out b{font-size:14.5px;color:#1F3864;display:block}
+.out span{font-size:11.5px;color:#6B7A8D}
+.ar{color:#A9B4C4;font-size:30px}
+.note{margin-top:15px;font-size:12px;color:#8A94A6;font-style:italic}
+</style>
+<div class="row">
+  <div>
+    <div class="lbl">What we observe</div>
+    <div class="col">
+      <div class="src"><b>Rainfall</b><span>NASA GPM &mdash; updated every 30 min</span></div>
+      <div class="src"><b>Soil moisture</b><span>NASA SMAP &mdash; how wet the ground is</span></div>
+      <div class="src"><b>Slope &amp; terrain</b><span>SRTM elevation model</span></div>
+      <div class="src"><b>Vegetation cover</b><span>MODIS &mdash; root strength proxy</span></div>
+      <div class="src"><b>Ground radar</b><span>Sentinel-1 &mdash; sees through cloud</span></div>
+      <div class="src osm"><b>Road network</b><span>OpenStreetMap</span></div>
+      <div class="src lab"><b>318 past landslides</b><span>teaching examples only</span></div>
+    </div>
+  </div>
+  <div class="ar">&rarr;</div>
+  <div>
+    <div class="lbl">How we combine it</div>
+    <div class="mid">
+      <b>17 signals per location</b>
+      <li>&bull; slope read across a 300 m area</li>
+      <li>&bull; rain over 1, 3, 7, 15, 30 days</li>
+      <li>&bull; USGS slope-stability equation</li>
+      <li>&bull; distance to nearest road</li>
+    </div>
+  </div>
+  <div class="ar">&rarr;</div>
+  <div>
+    <div class="lbl">The AI</div>
+    <div class="model">
+      <b>Random Forest</b>
+      <li>&bull; 400 decision trees vote</li>
+      <li>&bull; share voting &ldquo;landslide&rdquo; = risk %</li>
+      <li>&bull; tested against boosting; forest won</li>
+      <div class="auc">0.933 accuracy &middot; 87% of past events caught</div>
+    </div>
+  </div>
+  <div class="ar">&rarr;</div>
+  <div>
+    <div class="lbl">What people get</div>
+    <div class="col">
+      <div class="out"><b>Risk map</b><span>which roads and villages are exposed</span></div>
+      <div class="out"><b>Any point, any date</b><span>a risk % in about 10 seconds</span></div>
+      <div class="out"><b>Alerts in 9 languages</b><span>SMS-ready for basic phones</span></div>
+      <div class="out"><b>Works offline</b><span>for areas with no signal</span></div>
+    </div>
+  </div>
+</div>
+<div class="note">Past landslides teach the model. They are never an input when scoring a new location &mdash; that is what makes it a prediction rather than a lookup.</div>

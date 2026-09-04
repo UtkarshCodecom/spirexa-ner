@@ -1,0 +1,16 @@
+{
+  "_name": "Mizo",
+  "_native_name": "Mizo ṭawng",
+  "_verified": false,
+  "_translation_confidence": "low - drafted without native review, must be checked before deployment",
+  "severity_severe": "NASA TAK",
+  "severity_high": "SANG",
+  "severity_moderate": "LAILUNG",
+  "severity_low": "TLEM",
+  "alert_body": "{location}, {state} bulah lei tlak {severity} hlauhawm. Hlauhawmzia {percent}%.",
+  "action_severe": "Tualtah chu tuna chhuahsan nghal rawh. Tlang bul hla, hmun zauh leh dawnah kal rawh. Tualtah hnuaia kawng chu hmang suh.",
+  "action_high": "Tualtah leh a hnuaia kawng chu pumpelh rawh. Ruah a sur zawm chuan pem chhuak tur in inpeih rawh.",
+  "action_moderate": "Fimkhur rawh. Kepui thar, thing kau leh tualtah ata tui hnawk lo chhuak en reng rawh.",
+  "action_low": "Engmah tih a ngai lo. Dinhmun chu en reng a ni.",
+  "signature": "NER Slope Watch (mimal thu hriattirna). In district sawrkar thupek zui rawh."
+}
