@@ -9,7 +9,7 @@ satellite data and a model trained on 318 recorded landslides (2007–2025).
 Everything here runs on a laptop. Earth Engine does the heavy geospatial work
 server-side; only a small table of numbers is trained on locally.
 
-**Running on Windows?** See [WINDOWS.md](WINDOWS.md) for the full setup,
+**Running on Windows?** See [WINDOWS.md](WINDOWS.md) for the full setup
 including the Arduino IDE and the ground sensor node.
 
 ---
