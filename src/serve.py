@@ -55,8 +55,27 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print(f"  {self.address_string()} {fmt % args}")
 
+    @staticmethod
+    def _finite(value):
+        """Replaces NaN and infinities with null, recursively.
+
+        pandas produces NaN for any missing cell, and Python's json.dumps
+        writes that as a bare NaN token. Python reads it back happily, so the
+        problem is invisible from here -- but NaN is not valid JSON, and every
+        strict parser rejects the whole document: Android's org.json,
+        JavaScript's JSON.parse, Go, Swift. One empty location name was enough
+        to make /api/risk unreadable to the mobile app.
+        """
+        if isinstance(value, float):
+            return None if (value != value or value in (float("inf"), float("-inf"))) else value
+        if isinstance(value, dict):
+            return {k: Handler._finite(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [Handler._finite(v) for v in value]
+        return value
+
     def _json(self, payload, status=200):
-        body = json.dumps(payload, default=str).encode()
+        body = json.dumps(self._finite(payload), default=str).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -152,6 +171,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/decision":
                 self._json(self._decision(params))
+            elif route == "/api/notifications":
+                import notifications
+
+                self._json(notifications.since(params.get("since", ["0"])[0]))
             else:
                 self._json({"error": "not found", "path": route}, status=404)
         except Exception as exc:  # surface the real problem to the caller
@@ -165,6 +188,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._receive_report())
             elif parsed.path == "/api/sensor":
                 self._json(self._receive_sensor())
+            elif parsed.path == "/api/notify":
+                self._json(self._notify())
             else:
                 self._json({"error": "not found", "path": parsed.path}, status=404)
         except Exception as exc:
@@ -291,6 +316,24 @@ class Handler(BaseHTTPRequestHandler):
               f"{reading.get('tilt_deg')} deg -> field risk "
               f"{reading.get('field_risk')}%")
         return {"status": "stored", "node_id": reading.get("node_id")}
+
+    def _notify(self):
+        """Dashboard -> mobile app. The alert text is rendered by the caller
+        (the same bilingual text shown in the preview modal), so what the
+        responder approved on screen is exactly what reaches the phone."""
+        import notifications
+
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > 64 * 1024:
+            return {"error": "empty or oversized body"}
+        payload = json.loads(self.rfile.read(length).decode())
+
+        record = notifications.send(payload)
+        if "error" not in record:
+            langs = ", ".join(m.get("language", "?") for m in record["messages"])
+            print(f"  notify #{record['id']} -> {record['location']} "
+                  f"[{record['severity']}] in {langs}")
+        return record
 
     def _list_sensors(self):
         if not os.path.exists(SENSOR_INDEX):

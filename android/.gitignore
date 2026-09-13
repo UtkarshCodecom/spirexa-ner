@@ -1,0 +1,8 @@
+# Build output and local machine config
+build/
+.gradle/
+local.properties
+*.apk
+*.iml
+.idea/
+captures/

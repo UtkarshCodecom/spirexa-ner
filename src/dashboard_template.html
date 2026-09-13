@@ -1026,6 +1026,7 @@
     <div class="warn-foot">
       <div class="warn-note-text">Simulation only — no message is sent</div>
       <div class="warn-btns">
+        <button class="warn-copy-btn" id="warnSendApp">Send to app</button>
         <button class="warn-copy-btn" id="warnCopy">Copy all</button>
         <button class="warn-close-btn" id="warnCloseBtn">Close</button>
       </div>
@@ -2222,6 +2223,21 @@ function showWarningModal(m) {
     localBlock.style.display = 'none';
   }
 
+  // kept so "Send to app" can attach the location this alert is about
+  window.__warnContext = {
+    location, state, lat: m.lat, lon: m.lon,
+    risk_percent: pct, severity: sev,
+    messages: [
+      { code: 'en', language: 'English', text: msgEn, verified: true },
+      ...(msgLocal ? [{ code: localCode, language: localName,
+                        native_name: localName, text: msgLocal,
+                        verified: localVerified }] : []),
+    ],
+  };
+
+  const sendBtn = $('warnSendApp');
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send to app'; }
+
   $('warnOverlay').classList.add('visible');
   $('warnCloseBtn').focus();
 }
@@ -2233,6 +2249,32 @@ $('warnOverlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') $('warnOverlay').classList.remove('visible');
 });
+/* Pushes the alert exactly as previewed to the delivery queue the mobile
+   app polls. The responder sends what they just read on screen -- the text
+   is not re-rendered on the way out. */
+$('warnSendApp').addEventListener('click', async () => {
+  const btn = $('warnSendApp');
+  const ctx = window.__warnContext;
+  if (!ctx) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...ctx, sent_by: 'SPIREXA dashboard' }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    btn.textContent = `Sent to app (#${data.id})`;
+  } catch (err) {
+    btn.textContent = 'Send failed';
+    btn.disabled = false;
+    console.warn('notify failed:', err);
+  }
+});
+
 $('warnCopy').addEventListener('click', () => {
   const en = $('warnMsgEn').textContent;
   const localBlock = $('warnLocalBlock');
