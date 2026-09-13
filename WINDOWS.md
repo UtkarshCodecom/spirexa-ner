@@ -65,15 +65,34 @@ hindcast and validation views.
 ### 6. Only if you want *live* predictions for a new coordinate
 
 The **Check any point** panel makes a real Earth Engine query, which needs
-your own Google account authenticated on this machine:
+your own Google account and your own Cloud project. Two separate steps:
+
+**a. Register a Cloud project.** Go to
+[console.cloud.google.com/earth-engine](https://console.cloud.google.com/earth-engine),
+sign in, create or pick a project, and register it for **noncommercial /
+academic** use. It is free and access is granted immediately. Note the
+project ID — something like `ee-yourname`.
+
+**b. Authenticate this machine.**
 
 ```powershell
-venv\Scripts\earthengine --project=project-77313e00-dc69-4c84-9cd authenticate
+venv\Scripts\earthengine authenticate
 ```
 
-This opens a browser for Google sign-in — use the same account the project
-was registered under (or your own, if you register it fresh — see the main
-[README](README.md) for the Earth Engine sign-up steps). One-time only.
+This opens a browser for Google sign-in. One-time only. Note that it takes
+no project argument — authentication only establishes *who you are*.
+
+**c. Point the code at your project.** This is the step people miss. Open
+`src\config.py` and replace the project ID with your own:
+
+```python
+GEE_PROJECT = "project-77313e00-dc69-4c84-9cd"    # <- put YOUR project ID here
+```
+
+That value is what gets passed to `ee.Initialize(project=...)`, and it
+decides which Cloud project the API calls are attributed to. The ID shipped
+in the repo belongs to the original author's account — leaving it in place
+gives you a permissions error, not access.
 
 ---
 

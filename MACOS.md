@@ -104,6 +104,18 @@ Note the **project ID** — it looks like `ee-yourname` or
 A browser window opens for Google sign-in. Approve it, and the credentials
 are stored under `~/.config/earthengine/`. This is a one-time step per Mac.
 
+Note that this command takes **no project argument**. Authentication and
+project selection are two different things, and conflating them is the usual
+source of confusion:
+
+| | What it establishes | Set where |
+|---|---|---|
+| `earthengine authenticate` | **who you are** (OAuth identity) | once per machine |
+| `GEE_PROJECT` in `config.py` | **which Cloud project** the calls bill to | every run |
+
+You need both. Signing in as yourself does not grant access to somebody
+else's project.
+
 ### 3. Point the project at *your* Earth Engine project
 
 This is the step people miss. The repo ships with the original author's
