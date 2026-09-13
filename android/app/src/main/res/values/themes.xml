@@ -1,7 +1,10 @@
 <resources>
-    <style name="Theme.SPIREXA" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#EEF1F6</item>
-        <item name="android:navigationBarColor">#EEF1F6</item>
-        <item name="android:windowLightStatusBar">true</item>
+    <!-- The window itself is dark; Compose paints the gradient over it. A
+         light window flashes white for a frame on cold start. -->
+    <style name="Theme.SPIREXA" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#070B14</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

@@ -101,6 +101,29 @@ object Api {
         return out to latest
     }
 
+    /**
+     * Map geometry. Fetched once per connection and held in memory: it is
+     * ~130 KB and never changes while the server is up.
+     */
+    fun geo(): Geo? = try {
+        val root = JSONObject(get("/api/geo", 20000))
+        val statesJson = root.getJSONObject("states")
+        val states = LinkedHashMap<String, androidx.compose.ui.graphics.Path>()
+        statesJson.keys().forEach { name ->
+            states[name] = Geo.parsePath(statesJson.getString(name))
+        }
+        Geo(
+            width = root.optDouble("width", 900.0).toFloat(),
+            height = root.optDouble("height", 805.0).toFloat(),
+            states = states,
+            roadsMajor = Geo.parsePath(root.optString("roads_major")),
+            roadsMinor = Geo.parsePath(root.optString("roads_minor")),
+        )
+    } catch (e: Exception) {
+        // an older server has no /api/geo; the map falls back to markers only
+        null
+    }
+
     fun station(): Station? = try {
         val st = JSONObject(get("/api/live", 6000)).optJSONObject("station") ?: return null
         val readings = HashMap<String, Double>()
