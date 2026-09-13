@@ -1158,6 +1158,15 @@ $('zoomReset').addEventListener('click', () => {
   view.x = 0; view.y = 0; view.w = W; view.h = H; applyView();
 });
 
+/* mapWrap captures the pointer on pointerdown to drive panning. Capture
+   retargets the following pointerup to mapWrap, so a press on a zoom button
+   never produces a click on that button. Stopping the event at the button
+   means mapWrap's handler never runs, so no capture is taken and the click
+   is synthesised normally. */
+['zoomIn', 'zoomOut', 'zoomReset'].forEach(id => {
+  $(id).addEventListener('pointerdown', evt => evt.stopPropagation());
+});
+
 function focusOn(x, y, targetW) {
   view.w = targetW || W / 7;
   view.h = view.w * (H / W);
@@ -1296,7 +1305,7 @@ function renderMarkers(data) {
     c.addEventListener('mouseenter', e => showTooltip(e, m));
     c.addEventListener('mousemove', moveTooltip);
     c.addEventListener('mouseleave', hideTooltip);
-    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; render(); showWarningModal(m); });
+    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; fillPanelsFromMarker(m); render(); showWarningModal(m); });
     layer.appendChild(c);
   });
   applyView();
@@ -1504,6 +1513,30 @@ function renderProbeOnline() {
     } finally {
       btn.disabled = false; btn.textContent = 'Check risk';
     }
+  });
+}
+
+/* Clicking a marker drops its coordinates into every panel that takes one,
+   so a judge can go straight from "that red dot" to a live query without
+   copying numbers by hand. Each field is guarded: the probe and analysis
+   panels only exist when the API is reachable. */
+function fillPanelsFromMarker(m) {
+  if (m.lat === undefined || m.lon === undefined) return;
+  const lat = String(m.lat), lon = String(m.lon);
+
+  [['pLat', lat], ['pLon', lon], ['aLat', lat], ['aLon', lon],
+   ['fLat', lat], ['fLon', lon]].forEach(([id, val]) => {
+    const el = $(id);
+    if (el) el.value = val;
+  });
+
+  if (m.date && $('pDate')) $('pDate').value = m.date;
+
+  const label = m.loc ? `${m.loc}${m.state ? ', ' + m.state : ''}` : `${lat}, ${lon}`;
+  [['probeSubtitle', `Ready to query ${label}`],
+   ['analysisSubtitle', `Ready to analyse ${label}`]].forEach(([id, text]) => {
+    const el = $(id);
+    if (el) el.textContent = text;
   });
 }
 
