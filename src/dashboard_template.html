@@ -1118,6 +1118,11 @@ $('mapWrap').addEventListener('wheel', evt => {
 
 let dragging = false, dragStart = null;
 $('mapWrap').addEventListener('pointerdown', evt => {
+  // The zoom controls live inside mapWrap. Capturing the pointer here would
+  // retarget pointerup to mapWrap, so down and up would no longer share a
+  // target and the browser would never synthesise a click on the button --
+  // leaving +, - and 1:1 dead. Let presses that start on a control through.
+  if (evt.target.closest && evt.target.closest('.zoom-controls')) return;
   dragging = true;
   dragStart = { p: svgPointFromEvent(evt), x: view.x, y: view.y };
   $('mapWrap').classList.add('dragging');
