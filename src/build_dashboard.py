@@ -125,6 +125,10 @@ def main():
                 "id": r["id"],
                 "x": x,
                 "y": y,
+                # kept alongside the projected x/y so clicking a marker can
+                # populate the coordinate inputs in the sidebar
+                "lat": round(float(r["lat"]), 5),
+                "lon": round(float(r["lon"]), 5),
                 "loc": r["location"],
                 "state": r["state"],
                 "date": str(r["date"])[:10],
@@ -145,6 +149,8 @@ def main():
                     "id": r["id"],
                     "x": x,
                     "y": y,
+                    "lat": round(float(r["lat"]), 5),
+                    "lon": round(float(r["lon"]), 5),
                     "loc": r["location"],
                     "state": r["state"],
                     "risk": round(float(r["live_risk"]), 3),
