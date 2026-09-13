@@ -9,7 +9,7 @@
  * rather than a browser error page.
  */
 
-const CACHE = 'slopewatch-v1';
+const CACHE = 'slopewatch-v2';   // bump to purge stale builds
 const SHELL = ['/', '/static/manifest.json'];
 
 self.addEventListener('install', event => {
