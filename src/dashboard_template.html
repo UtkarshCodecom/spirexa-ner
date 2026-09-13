@@ -108,6 +108,16 @@
   }
   .subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
   .topbar-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .sim-link {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: 11px; text-decoration: none;
+    font-size: 12.5px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, #3d6fd8, #5b8cff);
+    box-shadow: 0 6px 18px rgba(59,110,216,.35);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .sim-link:hover { transform: translateY(-1px); box-shadow: 0 9px 22px rgba(59,110,216,.45); }
+  .sim-link span { font-size: 14px; line-height: 1; }
   .as-of {
     font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
     text-align: right; line-height: 1.45;
@@ -695,6 +705,7 @@
     </div>
     <div class="topbar-right">
       <div class="conn-pill" id="connPill" hidden><span class="conn-dot"></span><span id="connText">online</span></div>
+      <a class="sim-link" href="/simulator"><span>&#9968;</span>3D Slope Simulator</a>
       <div class="as-of">today <strong id="asOfDate">&mdash;</strong><br><span id="modelMeta">&mdash;</span></div>
       <div class="mode-toggle neu" role="tablist">
         <button id="btnLive" class="active" role="tab">Right Now</button>
