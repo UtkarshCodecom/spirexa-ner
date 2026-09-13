@@ -157,7 +157,75 @@
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 16px; flex: 1; }
   @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
 
+  /* the map used to be the only thing in this column, so the grid stretched
+     its glass panel to the sidebar's height and left ~900px of empty card
+     under the legend */
+  .mapcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
   .map-panel { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  /* ---- panels under the map ---- */
+  .under { padding: 15px 18px 17px; }
+  .under h2 {
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0;
+  }
+  .under .sub { font-size: 11.5px; color: var(--text-muted); margin: 4px 0 15px; }
+
+  .bd-row {
+    display: grid; grid-template-columns: 108px minmax(0,1fr) 62px;
+    align-items: center; gap: 11px; margin-bottom: 8px;
+  }
+  .bd-row:last-child { margin-bottom: 0; }
+  .bd-name {
+    font-size: 11.5px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bd-bar {
+    display: flex; height: 15px; border-radius: var(--r-pill); overflow: hidden;
+    background: var(--base);
+    box-shadow: inset 2px 2px 5px var(--base-shadow-dark),
+                inset -2px -2px 5px var(--base-shadow-light);
+  }
+  .bd-seg { height: 100%; transition: width 0.3s ease; }
+  .bd-count {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .bd-count b { color: var(--risk-severe); font-weight: 600; }
+  .bd-count b.ok { color: var(--caught); }
+
+  .sp-chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; }
+  .sp-bin { flex: 1; border-radius: 4px 4px 0 0; min-height: 2px; transition: height 0.3s ease; }
+  .sp-axis {
+    display: flex; justify-content: space-between; margin-top: 8px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+  }
+  .sp-note { font-size: 11.5px; color: var(--text-muted); margin-top: 11px; line-height: 1.55; }
+  .sp-note b { color: var(--text); font-weight: 600; }
+
+  .rep-row {
+    display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px;
+    border-radius: var(--r-sm); background: rgba(255,255,255,0.55); margin-bottom: 6px;
+  }
+  .rep-row:last-child { margin-bottom: 0; }
+  .rep-kind { font-size: 12px; font-weight: 600; }
+  .rep-meta { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .rep-note { font-size: 11.5px; margin-top: 4px; }
+  .rep-empty { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
+
+  /* takes up whatever height the sidebar has over the map column, so the
+     column ends level instead of trailing off into blank page */
+  .sim-panel { flex: 1 0 auto; display: flex; flex-direction: column; }
+  .sim-panel .sub { margin-bottom: 12px; }
+  .sim-figure { flex: 1 1 auto; display: flex; align-items: center;
+    justify-content: center; min-height: 0; margin: 2px 0 12px; }
+  .sim-figure svg { width: 100%; max-width: 520px; height: auto; max-height: 200px; }
+  .sim-foot { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .sim-points { flex: 1 1 240px; min-width: 0; margin: 0; padding-left: 16px;
+    font-size: 11.5px; color: var(--text-muted); line-height: 1.75; }
+  .sim-points b { color: var(--text); font-weight: 600; }
+  .sim-foot .sim-link { flex-shrink: 0; padding: 11px 20px; font-size: 13px; }
 
   .controls-row {
     display: flex; justify-content: space-between; align-items: center;
@@ -755,6 +823,7 @@
   </details>
 
   <main class="layout">
+   <div class="mapcol">
     <section class="map-panel glass">
       <div class="controls-row">
         <div class="chips" id="stateChips"></div>
@@ -782,6 +851,99 @@
 
       <div class="legend" id="legend"></div>
     </section>
+
+    <section class="under glass">
+      <h2 id="bdTitle">Where the risk sits</h2>
+      <p class="sub" id="bdSub">&mdash;</p>
+      <div id="bdRows"></div>
+    </section>
+
+    <section class="under glass">
+      <h2 id="spTitle">How the risk is spread</h2>
+      <p class="sub" id="spSub">&mdash;</p>
+      <div class="sp-chart" id="spChart"></div>
+      <div class="sp-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+      <div class="sp-note" id="spNote"></div>
+    </section>
+
+    <section class="under glass">
+      <h2>Field reports</h2>
+      <p class="sub">Sent from the panel on the right, and from offline devices once they reconnect</p>
+      <div id="repList"><div class="rep-empty">Loading&hellip;</div></div>
+    </section>
+
+    <section class="under glass sim-panel">
+      <h2>Play with the slope yourself</h2>
+      <p class="sub">The same model, on a 3D hillside you can push until it gives way</p>
+
+      <div class="sim-figure">
+        <svg viewBox="0 0 520 176" role="img"
+             aria-label="Cross-section of a hillside: rain falls on the slope, a curved failure
+                         surface runs from a crack at the crown down to a road cut into the bench,
+                         and the material above it slides onto the road.">
+          <defs>
+            <marker id="simArrow" viewBox="0 0 10 10" refX="8" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--risk-severe)"></path>
+            </marker>
+          </defs>
+
+          <!-- hillside profile: crest, bench cut for the road, valley below -->
+          <path d="M6,34 L196,112 L312,112 L446,170 L6,170 Z"
+                fill="var(--map-land-hi)" stroke="var(--map-border)" stroke-width="1.4"></path>
+          <path d="M6,34 L196,112 L312,112 L446,170 L446,176 L6,176 Z"
+                fill="none"></path>
+
+          <!-- the mass that moves, above the failure surface -->
+          <path d="M78,62 Q104,126 196,112 L78,62 Z" fill="var(--risk-severe-soft)"></path>
+
+          <!-- failure surface -->
+          <path d="M78,62 Q104,126 196,112" fill="none" stroke="var(--risk-severe)"
+                stroke-width="2" stroke-dasharray="5 4"></path>
+          <text x="112" y="146" font-size="10.5" fill="var(--risk-severe)"
+                font-family="var(--font-body)">failure surface</text>
+
+          <!-- tension crack at the crown -->
+          <path d="M78,56 L78,70" stroke="var(--risk-severe)" stroke-width="2.4"></path>
+          <text x="60" y="46" font-size="10.5" fill="var(--text-muted)"
+                font-family="var(--font-body)" text-anchor="middle">crack</text>
+
+          <!-- direction of movement -->
+          <path d="M116,84 Q140,104 168,106" fill="none" stroke="var(--risk-severe)"
+                stroke-width="1.6" marker-end="url(#simArrow)"></path>
+
+          <!-- road on the bench, with a vehicle -->
+          <rect x="198" y="104" width="112" height="8" rx="1.5" fill="#5b6570"></rect>
+          <rect x="238" y="94" width="19" height="8" rx="2" fill="#3f6fd8"></rect>
+          <rect x="243" y="89" width="9" height="6" rx="1.5" fill="#1b2533"></rect>
+          <text x="254" y="126" font-size="10.5" fill="var(--text-muted)"
+                font-family="var(--font-body)" text-anchor="middle">road on the cut bench</text>
+
+          <!-- rain -->
+          <g stroke="#7aa6d8" stroke-width="1.5" opacity="0.75">
+            <path d="M40,10 L36,22"></path><path d="M78,6 L74,18"></path>
+            <path d="M116,14 L112,26"></path><path d="M154,8 L150,20"></path>
+            <path d="M192,16 L188,28"></path><path d="M230,8 L226,20"></path>
+            <path d="M268,18 L264,30"></path><path d="M306,10 L302,22"></path>
+            <path d="M344,20 L340,32"></path><path d="M382,12 L378,24"></path>
+          </g>
+          <text x="512" y="24" font-size="10.5" fill="#5b83ad" text-anchor="end"
+                font-family="var(--font-body)">rain loads the slope</text>
+        </svg>
+      </div>
+
+      <div class="sim-foot">
+        <ul class="sim-points">
+          <li>Move <b>rainfall, soil moisture, slope and forest cover</b> and watch both
+              the model and the factor of safety respond</li>
+          <li>Past <b>50%</b> the slope fails on its own &mdash; with three seconds'
+              warning to pull it back</li>
+          <li>Tap the hillside to choose <b>where</b> it gives way</li>
+        </ul>
+        <a class="sim-link" href="/simulator"><span>&#9968;</span>Open the simulator</a>
+      </div>
+    </section>
+   </div>
 
     <aside class="sidebar">
       <div class="panel glass" id="livePanel">
@@ -1501,12 +1663,131 @@ function renderList(data) {
   if (mc) mc.textContent = `${data.length} point${data.length === 1 ? '' : 's'}`;
 }
 
+/* ---------------- panels under the map ---------------- */
+const BAND_ORDER = ['severe', 'high', 'moderate', 'low'];
+const BAND_VAR = {
+  severe: 'var(--risk-severe)', high: 'var(--risk-high)',
+  moderate: 'var(--risk-moderate)', low: 'var(--risk-low)',
+};
+const SCORE_WORD = () => mode === 'live' ? 'risk today' : 'model score';
+// "How accurate?" colours the map by whether the model caught the event, not
+// by risk band; the charts under it have to say the same thing.
+function segColor(bandName, riskMid) {
+  if (mode === 'validation') return riskMid >= 0.5 ? 'var(--caught)' : 'var(--missed)';
+  return BAND_VAR[bandName];
+}
+const BAND_MID = {severe: 0.875, high: 0.625, moderate: 0.375, low: 0.125};
+
+function renderBreakdown(data) {
+  // Every state the map knows about, not just the ones with points today --
+  // a state showing zero is information, and a disappearing row is not.
+  const names = stateFilter === 'All' ? Object.keys(STATE_PATHS) : [stateFilter];
+  const rows = names.map(name => {
+    const pts = data.filter(m => m.state === name);
+    const counts = {severe: 0, high: 0, moderate: 0, low: 0};
+    pts.forEach(m => counts[band(m.risk)]++);
+    return {name, total: pts.length, counts, hot: counts.severe + counts.high};
+  }).sort((a, b) => b.hot - a.hot || b.total - a.total);
+
+  const widest = Math.max(1, ...rows.map(r => r.total));
+  $('bdSub').textContent =
+    mode === 'live'     ? 'Monitored points by state, split by risk band — widest bar is the most points'
+  : mode === 'validation' ? 'Recorded landslides by state — green is what the model caught in advance'
+                          : 'Recorded landslides by state, split by the score the model gave them';
+
+  $('bdRows').innerHTML = rows.map(r => {
+    const segs = BAND_ORDER.map(b => r.counts[b]
+      ? `<span class="bd-seg" style="width:${r.counts[b] / r.total * 100}%;background:${segColor(b, BAND_MID[b])}" title="${r.counts[b]} ${b}"></span>`
+      : '').join('');
+    // bars are scaled against the busiest state so the comparison is by count,
+    // not just by proportion
+    const scale = r.total / widest * 100;
+    return `<div class="bd-row">
+      <div class="bd-name">${r.name}</div>
+      <div class="bd-bar" style="width:${Math.max(scale, 2)}%">${segs}</div>
+      <div class="bd-count">${r.hot ? `<b class="${mode === 'validation' ? 'ok' : ''}">${r.hot}</b>` : '0'} / ${r.total}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSpread(data) {
+  const BINS = 20;
+  const counts = new Array(BINS).fill(0);
+  data.forEach(m => counts[Math.min(BINS - 1, Math.floor(m.risk * BINS))]++);
+  const peak = Math.max(1, ...counts);
+
+  $('spSub').textContent =
+    `All ${data.length} points, bucketed by ${SCORE_WORD()} in 5% steps`;
+  $('spChart').innerHTML = counts.map((n, i) => {
+    const mid = (i + 0.5) / BINS;
+    return `<div class="sp-bin" style="height:${n / peak * 100}%;background:${segColor(band(mid), mid)}"
+      title="${(i * 5)}–${(i + 1) * 5}%: ${n} point${n === 1 ? '' : 's'}"></div>`;
+  }).join('');
+
+  const above = data.filter(m => m.risk >= 0.5).length;
+  const pct = data.length ? Math.round(above / data.length * 100) : 0;
+  $('spNote').innerHTML = mode === 'live'
+    ? `<b>${above}</b> of ${data.length} sit at or above the 50% line, where an alert is raised — ${pct}% of everything being watched. Hover a bar for its count.`
+    : `<b>${above}</b> of ${data.length} recorded slides scored 50% or more, which is what the model would have flagged in advance.`;
+}
+
+let reportsLoaded = false;
+const HAZARD_LABEL = {
+  crack: 'New cracks in ground or wall',
+  slope_movement: 'Slope moving / tilting trees',
+  road_blocked: 'Road blocked by debris',
+  water: 'Muddy water or new spring',
+  collapse: 'Slope already collapsed',
+};
+function whenWord(iso) {
+  const t = Date.parse(iso);
+  if (!isFinite(t)) return '';
+  const mins = Math.round((Date.now() - t) / 60000);
+  if (mins < 60) return mins <= 1 ? 'just now' : mins + ' min ago';
+  const hrs = Math.round(mins / 60);
+  if (hrs < 48) return hrs + ' h ago';
+  return Math.round(hrs / 24) + ' days ago';
+}
+async function renderReports() {
+  const box = $('repList');
+  try {
+    const d = await (await fetch('/api/reports')).json();
+    const list = (d.reports || []).slice(0, 5);
+    reportsLoaded = true;
+    if (!list.length) {
+      box.innerHTML = `<div class="rep-empty">Nothing reported yet. A report filed from the
+        panel on the right — or from a phone that was offline at the time — shows up here,
+        with what was seen and where.</div>`;
+      return;
+    }
+    box.innerHTML = list.map(r => `<div class="rep-row">
+      <span class="dot d-${r.hazard === 'collapse' || r.hazard === 'road_blocked' ? 'severe' : 'moderate'}" style="margin-top:4px"></span>
+      <div style="min-width:0">
+        <div class="rep-kind">${HAZARD_LABEL[r.hazard] || r.hazard}</div>
+        <div class="rep-meta">${(+r.lat).toFixed(3)}, ${(+r.lon).toFixed(3)}
+          &middot; ${whenWord(r.observed_at) || 'time not given'}
+          ${r.queued_offline ? '&middot; sent from offline queue' : ''}
+          ${r.reporter ? '&middot; ' + r.reporter : ''}</div>
+        ${r.note ? `<div class="rep-note">${r.note}</div>` : ''}
+      </div>
+    </div>`).join('');
+  } catch (e) {
+    // static copy of the dashboard, or the server is not reachable
+    box.innerHTML = `<div class="rep-empty">Field reports are only available when the
+      dashboard is served by <code>src/serve.py</code> — the published copy has no
+      server behind it to hold them.</div>`;
+  }
+}
+
 function render() {
   const data = currentData();
   renderStats(data);
   renderLegend();
   renderMarkers(data);
   renderList(data);
+  renderBreakdown(data);
+  renderSpread(data);
+  if (!reportsLoaded) renderReports();
 }
 
 /* ---------------- live probe ---------------- */
