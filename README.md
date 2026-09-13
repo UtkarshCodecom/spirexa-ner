@@ -223,6 +223,13 @@ drives the physics.
 three.js is vendored to `static/vendor/` — an exhibition hall is no place to
 depend on a CDN.
 
+### Android app
+
+`android/` is a Jetpack Compose client for the same server — pushed alerts in
+every district language, the live risk map, and the ground sensor readout,
+over the local network. Build and setup instructions are in
+[android/README.md](android/README.md).
+
 ### API endpoints
 
 | Endpoint | Returns |
@@ -233,6 +240,7 @@ depend on a CDN.
 | `GET /api/alerts?threshold=0.6` | locations currently above threshold, with translated messages |
 | `GET /api/predict?lat=&lon=&date=` | live prediction plus the feature values behind it |
 | `GET /api/score?rain_7d=&slope=&...` | scores raw feature values directly, no satellite call (drives the 3D simulator) |
+| `GET /api/geo` | state outlines and roads, projected and thinned for the Android map |
 | `GET /api/reports` | field reports received |
 | `POST /api/reports` | submit a field report (used by the offline queue) |
 

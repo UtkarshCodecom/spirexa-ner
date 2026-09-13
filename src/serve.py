@@ -173,6 +173,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/score":
                 self._json(self._score(params))
+            elif route == "/api/geo":
+                # map geometry for the Android client, thinned for a phone
+                import mobile_geo
+
+                self._json(mobile_geo.payload())
             elif route == "/api/decision":
                 self._json(self._decision(params))
             elif route == "/api/notifications":
