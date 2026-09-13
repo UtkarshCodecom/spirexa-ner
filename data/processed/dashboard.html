@@ -1538,6 +1538,40 @@ function fillPanelsFromMarker(m) {
     const el = $(id);
     if (el) el.textContent = text;
   });
+
+  showMarkerSummary(m, label);
+}
+
+/* The marker already carries its score, so the panel can be populated the
+   instant it is clicked. Only the 17 features and the what-changed history
+   need a live satellite query, and those stay behind their buttons rather
+   than firing on every click. */
+async function showMarkerSummary(m, label) {
+  const out = $('pResult');
+  if (!out || m.risk === undefined) return;
+
+  const b = band(m.risk);
+  const pct = (m.risk * 100).toFixed(1);
+  const stored = (mode === 'live')
+    ? `today's daily score`
+    : `model score for ${m.date || 'this event'}`;
+
+  out.innerHTML = `
+    <div class="probe-score p-${b}" style="background:none;padding:0">${pct}%</div>
+    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">${b}</div>
+    <div style="font-size:11.5px;margin-top:6px">${label}</div>
+    <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px">
+      ${stored} &middot; press <strong>Check risk</strong> for a live satellite query
+    </div>
+    <div id="pDecision"></div>`;
+
+  try {
+    const res = await fetch(`/api/decision?risk=${encodeURIComponent(m.risk)}`);
+    const d = await res.json();
+    if (!d || d.error) return;
+    const target = $('pDecision');
+    if (target) target.innerHTML = anDecisionHtml(d);
+  } catch { /* decision is a nicety; the score above still stands */ }
 }
 
 /* ---------------- analysis panel ----------------
