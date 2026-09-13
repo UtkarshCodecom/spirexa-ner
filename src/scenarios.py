@@ -63,7 +63,11 @@ SIMULATABLE = [
     {"key": "rain_30d", "min": 0, "max": 2000, "step": 10},
     {"key": "soil_moisture_surface", "min": 0.0, "max": 0.6, "step": 0.01},
     {"key": "soil_moisture_subsurface", "min": 0.0, "max": 0.6, "step": 0.01},
-    {"key": "ndvi", "min": -0.2, "max": 1.0, "step": 0.01},
+    # MODIS NDVI is stored at its native scale (roughly -400..9200 in the
+    # training data), not the -1..1 the index is usually quoted at. A slider
+    # spanning -0.2..1.0 sits entirely below the model's first split point,
+    # so every value scores identically and the control does nothing.
+    {"key": "ndvi", "min": 0, "max": 9200, "step": 100},
 ]
 
 

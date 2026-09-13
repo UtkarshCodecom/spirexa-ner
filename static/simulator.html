@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPIREXA — Slope Simulator</title>
+<style>
+  :root{
+    --ink:#0e1420; --muted:#7d8798; --accent:#5b8cff;
+    --low:#22c55e; --mod:#f59e0b; --high:#f97316; --sev:#ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#05070c;
+    font-family:"Avenir Next","Helvetica Neue",system-ui,sans-serif;color:#eaf0fb}
+  /* a canvas is a replaced element: inset:0 alone does NOT stretch it, it
+     lays out at its intrinsic (drawing-buffer) size. Size it explicitly. */
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+  .panel{
+    position:fixed;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.16);border-radius:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+
+  /* ---- readout ---- */
+  /* readout and caption share one column so the caption cannot land on top
+     of a panel whatever the window size */
+  #leftstack{position:fixed;top:22px;left:22px;display:flex;flex-direction:column;
+    gap:12px;align-items:flex-start;max-width:340px}
+  #readout{position:static;padding:18px 22px;min-width:290px;align-self:stretch}
+  #risk{font-size:62px;font-weight:600;line-height:1;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;transition:color .35s}
+  #band{font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);margin-top:4px}
+  #fosbox{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12)}
+  #fosbox h4{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600}
+  #fos{font-size:12.5px;color:#c9d3e4;margin-top:5px}
+  #fos b{color:#eaf0fb;font-weight:600;font-size:19px;
+    font-variant-numeric:tabular-nums;vertical-align:-1px;margin-right:5px}
+  .warn{color:var(--sev);font-weight:600}
+
+  /* ---- controls ---- */
+  #controls{top:22px;right:22px;padding:18px 20px;width:310px}
+  #controls h2{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin-bottom:14px}
+  .ctl{margin-bottom:15px}
+  .ctl label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}
+  .ctl label span:last-child{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:5px;
+    background:rgba(255,255,255,.18);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+    border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+  .hint{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:4px}
+
+  #actions{display:flex;gap:8px;margin-top:16px}
+  button{flex:1;padding:10px;border:none;border-radius:12px;cursor:pointer;
+    font-family:inherit;font-size:12px;font-weight:600;transition:transform .12s}
+  button:active{transform:scale(.97)}
+  #trigger{background:var(--sev);color:#fff}
+  #reset{background:rgba(255,255,255,.14);color:#eaf0fb}
+
+  /* ---- actions / decision ---- */
+  #decision{bottom:22px;left:22px;padding:16px 20px;max-width:330px}
+  #decision h3{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:10px}
+  #posture{font-size:13px;font-weight:600;margin-bottom:8px}
+  #acts{font-size:11.5px;line-height:1.65;color:#c9d3e4;padding-left:15px}
+
+  #title{position:fixed;bottom:22px;right:22px;text-align:right}
+  #title b{font-size:15px;letter-spacing:.02em}
+  #title div{font-size:10.5px;color:var(--muted);margin-top:3px}
+  #hintbar{position:fixed;bottom:96px;right:22px;font-size:10.5px;color:var(--muted)}
+
+  /* ---- failure caption ---- */
+  /* centred in the one part of the frame the four panels leave clear */
+  #caption{position:static;transform:translateY(-8px);
+    opacity:0;pointer-events:none;align-self:stretch;
+    padding:13px 22px;border-radius:16px;
+    background:rgba(10,14,24,.62);border:1px solid rgba(239,68,68,.45);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 18px 50px rgba(0,0,0,.55);
+    transition:opacity .5s ease,transform .5s ease}
+  #caption.on{opacity:1;transform:translateY(0)}
+  #caption b{display:block;font-size:21px;font-weight:600;letter-spacing:.02em;
+    color:var(--sev)}
+  #caption span{display:block;font-size:11px;color:#dbe3f2;margin-top:5px;
+    letter-spacing:.09em;text-transform:uppercase}
+
+  #flash{position:fixed;inset:0;background:var(--sev);opacity:0;
+    pointer-events:none;transition:opacity .25s}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="flash"></div>
+
+<div id="leftstack">
+  <div class="panel" id="readout">
+    <div id="risk">--</div>
+    <div id="band">calculating</div>
+    <div id="fosbox">
+      <h4>Physics check</h4>
+      <div id="fos"></div>
+    </div>
+  </div>
+  <div id="caption"><b>Slope failed</b><span>Debris across the carriageway</span></div>
+</div>
+
+<div class="panel" id="controls">
+  <h2>Conditions</h2>
+
+  <div class="ctl">
+    <label><span>Rainfall, last 7 days</span><span id="vRain">90 mm</span></label>
+    <input type="range" id="sRain" min="0" max="320" step="5" value="90">
+  </div>
+  <div class="ctl">
+    <label><span>Soil moisture</span><span id="vSoil">0.30</span></label>
+    <input type="range" id="sSoil" min="0.05" max="0.51" step="0.01" value="0.30">
+  </div>
+  <div class="ctl">
+    <label><span>Slope angle</span><span id="vSlope">46&deg;</span></label>
+    <input type="range" id="sSlope" min="10" max="70" step="1" value="46">
+  </div>
+  <div class="ctl">
+    <label><span>Forest cover</span><span id="vTree">60%</span></label>
+    <input type="range" id="sTree" min="0" max="100" step="1" value="70">
+    <div class="hint">Two independent views: a Random Forest trained on 318
+      recorded slides, and the textbook infinite-slope factor of safety.
+      Rain drives the model; slope and moisture drive the physics.</div>
+  </div>
+
+  <div id="actions">
+    <button id="trigger">Force failure</button>
+    <button id="reset">Reset</button>
+  </div>
+</div>
+
+<div class="panel" id="decision">
+  <h3>Recommended action</h3>
+  <div id="posture">--</div>
+  <ul id="acts"></ul>
+</div>
+
+<div id="hintbar">drag to orbit &middot; scroll to zoom</div>
+<div id="title">
+  <b>SPIREXA</b>
+  <div>Live Random Forest &middot; 318 recorded NER landslides</div>
+</div>
+
+<script type="module">
+// absolute: the page is served at /simulator, so a relative path would
+// resolve to /vendor/... and 404
+import * as THREE from '/static/vendor/three.module.min.js';
+
+/* ============================ scene ============================ */
+const canvas = document.getElementById('scene');
+// preserveDrawingBuffer so the canvas can be screenshotted -- useful for
+// reports and posters, and it makes the scene captureable at all
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true,
+  preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f1c33);
+scene.fog = new THREE.Fog(0x0f1c33, 110, 330);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 700);
+
+/* Simple orbit: the core three build has no OrbitControls, and one more
+   file to download is one more thing to fail in an exhibition hall. */
+// The eye sits above the valley looking up the cut slope, so the road
+// crosses the lower third and the hillside fills the frame behind it.
+let camYaw = 0.30, camPitch = 0.34, camDist = 104;
+const target = new THREE.Vector3(0, 12, -6);
+function placeCamera(){
+  camera.position.set(
+    target.x + camDist*Math.cos(camPitch)*Math.sin(camYaw),
+    target.y + camDist*Math.sin(camPitch),
+    target.z + camDist*Math.cos(camPitch)*Math.cos(camYaw));
+  camera.lookAt(target);
+}
+
+// Idle drift: an exhibition stand needs motion to pull people in, but it
+// must yield the instant somebody touches it.
+let idleSince = performance.now(), driftDir = 1;
+const touched = () => { idleSince = performance.now(); };
+
+let dragging=false, px=0, py=0;
+canvas.addEventListener('pointerdown', e=>{dragging=true;px=e.clientX;py=e.clientY;touched();});
+addEventListener('pointerup', ()=>dragging=false);
+addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  camYaw   -= (e.clientX-px)*0.006;
+  camPitch  = Math.max(0.10, Math.min(1.15, camPitch + (e.clientY-py)*0.005));
+  px=e.clientX; py=e.clientY; placeCamera(); touched();
+});
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  camDist = Math.max(52, Math.min(230, camDist + e.deltaY*0.09));
+  placeCamera(); touched();
+}, {passive:false});
+
+/* ============================ lights ============================ */
+scene.add(new THREE.HemisphereLight(0x9ec5ff, 0x2a2418, 0.78));
+const sun = new THREE.DirectionalLight(0xfff1d8, 1.7);
+sun.position.set(-62, 92, 48);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-100; sun.shadow.camera.right=100;
+sun.shadow.camera.top=100;  sun.shadow.camera.bottom=-100;
+sun.shadow.camera.far = 300;
+scene.add(sun);
+
+/* ============================ terrain ============================ */
+const SIZE = 170, SEG = 170;
+const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+geo.rotateX(-Math.PI/2);
+const base = Float32Array.from(geo.attributes.position.array);
+
+// deterministic pseudo-noise; a real noise lib is overkill for one ridge
+function n2(x,z){
+  return Math.sin(x*0.09)*Math.cos(z*0.075)*0.6
+       + Math.sin(x*0.031+1.7)*Math.cos(z*0.043-0.6)*1.5
+       + Math.sin(x*0.21+3.1)*0.18;
+}
+const ROAD_Z = 14, ROAD_HALF = 11;
+const BENCH_N = ROAD_Z - ROAD_HALF;     // uphill edge of the cut
+const BENCH_F = ROAD_Z + ROAD_HALF;     // valley edge of the cut
+
+function slopeHeight(x, z, angleDeg){
+  const k = Math.tan(angleDeg*Math.PI/180);
+  if (z > BENCH_F){                            // downhill valley side
+    return -(z-BENCH_F)*0.55 + n2(x,z)*0.5;
+  }
+  if (z >= BENCH_N) return 0;                  // the road bench, cut flat
+  const up = BENCH_N - z;                      // distance up the hillside
+  return up*k*0.5 + n2(x,z)*(1.6 + up*0.02);
+}
+
+const scar = new Float32Array((SEG+1)*(SEG+1));   // per-vertex failure amount
+function buildTerrain(angleDeg){
+  const pos = geo.attributes.position;
+  for (let i=0;i<pos.count;i++){
+    const x = base[i*3], z = base[i*3+2];
+    pos.setY(i, slopeHeight(x,z,angleDeg));
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+}
+buildTerrain(46);
+
+// Vertex colours so the failure scar reads as a brown gash in a green
+// hillside. Tinting the whole material instead turns the entire mountain
+// khaki, which looks like a lighting bug rather than a landslide.
+const colAttr = new THREE.BufferAttribute(
+  new Float32Array(geo.attributes.position.count*3), 3);
+geo.setAttribute('color', colAttr);
+const SCAR_COLOR = new THREE.Color(0x6d5233);
+const _c = new THREE.Color();
+function paintTerrain(t){
+  for(let i=0;i<colAttr.count;i++){
+    const s = scarAt(base[i*3], base[i*3+2]);
+    _c.copy(groundColor);
+    if (s > 0 && t > 0) _c.lerp(SCAR_COLOR, Math.min(1, s*1.5)*t);
+    colAttr.setXYZ(i, _c.r, _c.g, _c.b);
+  }
+  colAttr.needsUpdate = true;
+}
+
+const terrainMat = new THREE.MeshStandardMaterial({
+  color:0xffffff, vertexColors:true, roughness:0.95, metalness:0.0,
+});
+const terrain = new THREE.Mesh(geo, terrainMat);
+terrain.receiveShadow = true; terrain.castShadow = true;
+scene.add(terrain);
+
+/* Distant ridges: without them the terrain plane ends in a dead straight
+   line against the sky, which reads as a bug rather than a horizon. Basic
+   material so they take the fog colour and sit back in the haze. */
+function ridge(width, height, z, y, color, seed){
+  const g = new THREE.PlaneGeometry(width, height, 48, 1);
+  const pos = g.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    if (pos.getY(i) > 0){
+      const x = pos.getX(i);
+      pos.setY(i, height/2 + Math.sin(x*0.021+seed)*height*0.20
+                           + Math.sin(x*0.049+seed*2.3)*height*0.10
+                           + Math.sin(x*0.006-seed)*height*0.14);
+    }
+  }
+  pos.needsUpdate = true;
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color}));
+  m.position.set(0, y, z);
+  return m;
+}
+// lighter than they "should" be: two thirds of each is fogged out, and a
+// ridge the same value as the sky is a ridge nobody sees
+scene.add(ridge(560, 140, -145, 36, 0x6d8aa8, 0.8));
+scene.add(ridge(700, 165, -205, 32, 0x53708e, 2.4));
+
+/* ============================ road ============================ */
+const road = new THREE.Mesh(
+  new THREE.BoxGeometry(SIZE, 0.5, ROAD_HALF*2),
+  new THREE.MeshStandardMaterial({color:0x50565f, roughness:0.8}));
+road.position.set(0, 0.26, ROAD_Z);
+road.receiveShadow = true;
+scene.add(road);
+
+const lineM = new THREE.MeshStandardMaterial({color:0xf0efe6, roughness:.55});
+for(let x=-SIZE/2+4; x<SIZE/2; x+=9){            // centre dashes
+  const d = new THREE.Mesh(new THREE.BoxGeometry(4.6,0.07,0.55), lineM);
+  d.position.set(x, 0.53, ROAD_Z); scene.add(d);
+}
+for(const off of [-ROAD_HALF+1.1, ROAD_HALF-1.1]){   // solid edge lines
+  const e = new THREE.Mesh(new THREE.BoxGeometry(SIZE,0.07,0.5), lineM);
+  e.position.set(0, 0.53, ROAD_Z + off); scene.add(e);
+}
+
+/* guard rail along the valley edge -- reads instantly as "mountain road" */
+const railM  = new THREE.MeshStandardMaterial({color:0xb8c0cc, roughness:.5, metalness:.35});
+const postG  = new THREE.BoxGeometry(0.32, 1.35, 0.32);
+const posts  = new THREE.InstancedMesh(postG, railM, Math.ceil(SIZE/5)+2);
+posts.castShadow = true;
+const pd = new THREE.Object3D();
+let pi = 0;
+for(let x=-SIZE/2+2.5; x<SIZE/2 && pi<posts.count; x+=5, pi++){
+  pd.position.set(x, 0.68, BENCH_F-0.9); pd.updateMatrix();
+  posts.setMatrixAt(pi, pd.matrix);
+}
+for(; pi<posts.count; pi++){ pd.scale.setScalar(0.0001); pd.updateMatrix(); posts.setMatrixAt(pi, pd.matrix); }
+scene.add(posts);
+for(const y of [1.22, 0.78]){
+  const r = new THREE.Mesh(new THREE.BoxGeometry(SIZE, 0.16, 0.14), railM);
+  r.position.set(0, y, BENCH_F-0.9); r.castShadow = true; scene.add(r);
+}
+
+/* three vehicles, so the consequence of a failure is legible at a glance */
+const bodyM  = [0xd8503f, 0xe8e4dc, 0x3f6fd8].map(c =>
+  new THREE.MeshStandardMaterial({color:c, roughness:.42, metalness:.15}));
+const glassM = new THREE.MeshStandardMaterial({color:0x1b2533, roughness:.15, metalness:.5});
+const lampM  = new THREE.MeshStandardMaterial({color:0xffe9b0, emissive:0xffd98a, emissiveIntensity:1.6});
+const vehicles = [];
+[[-38,-4.2,0],[-4,4.2,1],[40,-4.2,2]].forEach(([x,lane,ci])=>{
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(5.0,1.5,2.3), bodyM[ci]);
+  b.position.y = 1.05; b.castShadow = true; g.add(b);
+  const c = new THREE.Mesh(new THREE.BoxGeometry(2.6,1.15,2.0), glassM);
+  c.position.set(-0.3,2.2,0); c.castShadow = true; g.add(c);
+  const dir = lane < 0 ? -1 : 1;                 // headlights face travel
+  for(const dz of [-0.72,0.72]){
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.25,10,8), lampM);
+    l.position.set(dir*2.45, 1.0, dz); g.add(l);
+  }
+  g.position.set(x, 0.5, ROAD_Z + lane);
+  g.userData = {x0:x, lane};
+  scene.add(g); vehicles.push(g);
+});
+
+/* ============================ forest ============================ */
+const MAX_TREES = 520;
+const trunkG = new THREE.CylinderGeometry(0.13,0.2,1.7,5);
+const leafG  = new THREE.ConeGeometry(1.05,3.2,7);
+const trunkM = new THREE.MeshStandardMaterial({color:0x54402c, roughness:1});
+const leafM  = new THREE.MeshStandardMaterial({color:0x2f6b33, roughness:.9});
+const trunks = new THREE.InstancedMesh(trunkG, trunkM, MAX_TREES);
+const leaves = new THREE.InstancedMesh(leafG,  leafM,  MAX_TREES);
+trunks.castShadow = leaves.castShadow = true;
+scene.add(trunks, leaves);
+
+const treeSpots = [];
+for(let i=0;i<MAX_TREES;i++){
+  const x = (Math.random()-0.5)*SIZE*0.96;
+  const z = -SIZE/2 + Math.random()*(SIZE/2 + BENCH_N - 3);
+  treeSpots.push({x, z, s: 0.75 + Math.random()*0.6, r: Math.random()*Math.PI});
+}
+const dummy = new THREE.Object3D();
+function layoutTrees(count, angleDeg){
+  for(let i=0;i<MAX_TREES;i++){
+    const t = treeSpots[i];
+    const show = i < count;
+    const s = scarAt(t.x, t.z);
+    // trees inside the scar ride the failing mass down the hill
+    const dz = s * slideT * 22;
+    const x = t.x, z = t.z + dz;
+    const y = show ? slopeHeight(t.x,t.z,angleDeg) - s*9*slideT : -999;
+    const tilt = s*slideT*0.9;
+    dummy.position.set(x, y + 1.0*t.s, z);
+    dummy.rotation.set(tilt, t.r, tilt*0.4);
+    dummy.scale.setScalar(show ? t.s : 0.0001);
+    dummy.updateMatrix(); trunks.setMatrixAt(i, dummy.matrix);
+    dummy.position.y = y + 3.1*t.s;
+    dummy.updateMatrix(); leaves.setMatrixAt(i, dummy.matrix);
+  }
+  trunks.instanceMatrix.needsUpdate = leaves.instanceMatrix.needsUpdate = true;
+}
+
+/* ============================ rain ============================ */
+// Line segments, not points: a dot reads as snow, a streak reads as rain.
+const RAIN_N = 5200, DROP = 2.1;
+const rainPos = new Float32Array(RAIN_N*6);
+for(let i=0;i<RAIN_N;i++){
+  const x = (Math.random()-0.5)*SIZE*1.1, z = (Math.random()-0.5)*SIZE*1.1;
+  const y = Math.random()*95;
+  rainPos[i*6]   = x; rainPos[i*6+1] = y;      rainPos[i*6+2] = z;
+  rainPos[i*6+3] = x; rainPos[i*6+4] = y-DROP; rainPos[i*6+5] = z;
+}
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos,3));
+const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({
+  color:0xbcd9ff, transparent:true, opacity:0.0}));
+rain.raycast = () => {};          // never let rain intercept a pick
+scene.add(rain);
+
+/* ============================ landslide ============================ */
+let slideT = 0, sliding = false;
+const SCAR_X = -6, SCAR_Z = -20, SCAR_R = 25;
+
+// Stretched downhill: a real slide leaves a tongue running from the crown
+// to the runout, not the circular crater a plain radius gives you.
+function scarAt(x,z){
+  const d = Math.hypot((x-SCAR_X)/0.8, (z-SCAR_Z)/1.6);
+  if (d > SCAR_R) return 0;
+  return Math.cos(d/SCAR_R*Math.PI/2) ** 2;
+}
+
+// A mound fills the gaps; the boulders on top of it sell the motion.
+const debris = new THREE.Mesh(
+  new THREE.SphereGeometry(1,9,6),
+  new THREE.MeshStandardMaterial({color:0x6b5137, roughness:1, flatShading:true}));
+debris.castShadow = true; debris.visible = false; scene.add(debris);
+
+const BOULDERS = 54;
+const rockG = new THREE.DodecahedronGeometry(1, 0);
+const rockM = new THREE.MeshStandardMaterial({color:0x7c6449, roughness:1, flatShading:true});
+const rocks = new THREE.InstancedMesh(rockG, rockM, BOULDERS);
+rocks.castShadow = true; scene.add(rocks);
+const rockSpots = [];
+for(let i=0;i<BOULDERS;i++){
+  const a = Math.random()*Math.PI*2, r = Math.sqrt(Math.random())*SCAR_R*0.85;
+  rockSpots.push({
+    x0: SCAR_X + Math.cos(a)*r*0.8,
+    z0: SCAR_Z + Math.sin(a)*r*1.5,
+    spread: (Math.random()-0.5)*30,
+    lag: Math.random()*0.4,
+    s: 0.45 + Math.random()*1.45,
+    rx: Math.random()*6, rz: Math.random()*6,
+    spin: 3 + Math.random()*5,
+  });
+}
+
+function applySlide(t, angleDeg){
+  const pos = geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x = base[i*3], z = base[i*3+2];
+    const s = scarAt(x,z);
+    if (s <= 0 || z >= BENCH_N) continue;
+    pos.setY(i, slopeHeight(x,z,angleDeg) - s*9*t);
+  }
+  pos.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
+
+  debris.visible = t > 0.02;
+  const reach = SCAR_Z + (ROAD_Z + 2 - SCAR_Z)*t;
+  debris.position.set(SCAR_X, 0.9, reach);
+  debris.scale.set(17*t, 2.8*t, 11*t);
+
+  for(let i=0;i<BOULDERS;i++){
+    const b = rockSpots[i];
+    const u = Math.max(0, Math.min(1, (t - b.lag)/(1 - b.lag)));
+    const z = b.z0 + (ROAD_Z + 7 - b.z0)*u;
+    const x = b.x0 + b.spread*u;
+    const ground = slopeHeight(x,z,angleDeg) - (z < BENCH_N ? scarAt(x,z)*9*t : 0);
+    const sc = u <= 0 ? 0.0001 : b.s*Math.min(1, u*5);
+    dummy.position.set(x, ground + sc*0.75, z);
+    dummy.rotation.set(b.rx + b.spin*u, 0, b.rz + b.spin*u*0.6);
+    dummy.scale.setScalar(sc);
+    dummy.updateMatrix(); rocks.setMatrixAt(i, dummy.matrix);
+  }
+  rocks.instanceMatrix.needsUpdate = true;
+
+  // vehicles inside the debris path get shoved and tipped
+  for(const v of vehicles){
+    const hit = Math.max(0, 1 - Math.abs(v.userData.x0 - SCAR_X)/22);
+    const k = hit * Math.max(0, (t - 0.55)/0.45);
+    v.position.z = ROAD_Z + v.userData.lane + k*7.5;
+    v.rotation.z = k*0.55;
+    v.rotation.y = k*0.4;
+    v.position.y = 0.5 - k*0.22;
+  }
+
+  paintTerrain(t);
+}
+
+/* ============================ model wiring ============================ */
+const $ = id => document.getElementById(id);
+const BAND_COLOR = {LOW:'#22c55e', MODERATE:'#f59e0b', HIGH:'#f97316', SEVERE:'#ef4444'};
+const groundColor = new THREE.Color(0x4e7a45);
+let lastRisk = 0, pending = null;
+
+function readControls(){
+  const r = +$('sRain').value;
+  return {
+    rain_7d: r,
+    rain_1d: r/7,
+    rain_3d: r*0.45,
+    // The 15- and 30-day totals carry most of the model's signal. Leaving
+    // them at the training median pins risk near 53% no matter where the
+    // slider goes; a week of R mm sits inside a wetter month, so they move
+    // with it.
+    rain_15d: r*1.7,
+    rain_30d: r*2.9,
+    soil_moisture_surface: +$('sSoil').value,
+    soil_moisture_subsurface: +$('sSoil').value*0.92,
+    slope_max_nbhd: +$('sSlope').value,
+    slope: Math.max(4, +$('sSlope').value - 8),
+    // the model learned MODIS' native scale, not -1..1
+    ndvi: Math.round(+$('sTree').value/100*9000),
+  };
+}
+
+async function refresh(){
+  const c = readControls();
+  const q = Object.entries(c).map(([k,v])=>`${k}=${v}`).join('&');
+  try{
+    const d = await (await fetch(`/api/score?${q}`)).json();
+    if (d.error) return;
+    lastRisk = d.risk;
+
+    $('risk').textContent = d.risk_percent + '%';
+    $('risk').style.color = BAND_COLOR[d.severity];
+    $('band').textContent = d.severity;
+    $('fos').innerHTML = d.factor_of_safety === null ? '' :
+      `<b>${d.factor_of_safety}</b>` + (d.factor_of_safety < 1
+        ? '<span class="warn">below 1 &mdash; theoretically unstable</span>'
+        : 'above 1 &mdash; slope holds');
+
+    $('posture').textContent = d.decision.posture;
+    $('posture').style.color = BAND_COLOR[d.severity];
+    $('acts').innerHTML = d.decision.actions.map(a=>`<li>${a}</li>`).join('');
+
+    if (d.risk >= 0.75 && !sliding) startSlide();
+  }catch(e){ /* server not reachable; the scene still runs */ }
+}
+function scheduleRefresh(){ clearTimeout(pending); pending = setTimeout(refresh, 90); }
+
+/* ============================ interaction ============================ */
+function syncLabels(){
+  $('vRain').textContent  = $('sRain').value + ' mm';
+  $('vSoil').textContent  = fmt2($('sSoil').value);
+  $('vSlope').textContent = $('sSlope').value + '°';
+  $('vTree').textContent  = $('sTree').value + '%';
+}
+function fmt2(v){ return (+v).toFixed(2); }
+
+function onInput(){
+  syncLabels();
+  const angle = +$('sSlope').value;
+  buildTerrain(angle);
+  // wetter ground reads darker, as it does in the field
+  const wet = (+$('sSoil').value - 0.05)/0.46;
+  groundColor.lerpColors(new THREE.Color(0x629054), new THREE.Color(0x3f6038), wet);
+  paintTerrain(slideT);
+  if (sliding || slideT>0) applySlide(slideT, angle);
+  layoutTrees(Math.round(+$('sTree').value/100*MAX_TREES), angle);
+  scheduleRefresh();
+  touched();
+}
+['sRain','sSoil','sSlope','sTree'].forEach(id=>$(id).addEventListener('input', onInput));
+
+function startSlide(){
+  if (sliding) return;
+  sliding = true;
+  const f = $('flash'); f.style.opacity = .28;
+  setTimeout(()=>f.style.opacity = 0, 260);
+}
+$('trigger').addEventListener('click', ()=>{ touched(); startSlide(); });
+$('reset').addEventListener('click', ()=>{
+  sliding = false; slideT = 0;
+  debris.visible = false;
+  $('caption').classList.remove('on');
+  for(const v of vehicles){
+    v.position.set(v.userData.x0, 0.5, ROAD_Z + v.userData.lane);
+    v.rotation.set(0,0,0);
+  }
+  dummy.scale.setScalar(0.0001); dummy.position.set(0,-999,0);
+  dummy.rotation.set(0,0,0); dummy.updateMatrix();
+  for(let i=0;i<BOULDERS;i++) rocks.setMatrixAt(i, dummy.matrix);
+  rocks.instanceMatrix.needsUpdate = true;
+  onInput();
+});
+
+/* ============================ loop ============================ */
+function resize(){
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w,h);          // updateStyle:true -- keep CSS size in sync
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+let last = performance.now();
+function tick(now){
+  const dt = Math.min((now-last)/1000, 0.05); last = now;
+
+  // rain density follows the slider; the sky dims as it intensifies
+  const intensity = Math.min(1, +$('sRain').value/260);
+  rain.material.opacity = intensity*0.75;
+  const p = rainGeo.attributes.position;
+  const fall = (34 + intensity*110)*dt;
+  for(let i=0;i<RAIN_N;i++){
+    let y = p.array[i*6+1] - fall;
+    if (y < 0) y = 85 + Math.random()*20;
+    p.array[i*6+1] = y;
+    p.array[i*6+4] = y - DROP;
+  }
+  p.needsUpdate = true;
+  scene.background.lerpColors(new THREE.Color(0x16264a), new THREE.Color(0x080c17), intensity);
+  scene.fog.color.copy(scene.background);
+
+  if (sliding && slideT < 1){
+    slideT = Math.min(1, slideT + dt*0.5);
+    applySlide(slideT, +$('sSlope').value);
+    layoutTrees(Math.round(+$('sTree').value/100*MAX_TREES), +$('sSlope').value);
+    if (slideT > 0.75) $('caption').classList.add('on');
+  }
+
+  if (!dragging && now - idleSince > 9000){
+    camYaw += driftDir*dt*0.035;
+    if (camYaw > 0.62) driftDir = -1;
+    if (camYaw < -0.10) driftDir = 1;
+    placeCamera();
+  }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+// exposed so the framing can be measured rather than guessed at
+window.__dbg = {THREE, camera, road, terrain, scene, vehicles,
+  cam:()=>({yaw:camYaw,pitch:camPitch,dist:camDist,target:target.toArray()})};
+
+resize(); placeCamera(); onInput(); refresh();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -203,6 +203,26 @@ Served locally, the dashboard gets a **Check any point** panel that runs the mod
 live on any coordinate you type. The published/static copy cannot do this — it
 falls back to instructions — because a static page has no model behind it.
 
+### 3D slope simulator
+
+**http://localhost:8000/simulator** — also linked from the dashboard header.
+
+A hillside, a bench-cut mountain road and a forest, rendered in three.js. Four
+sliders (7-day rainfall, soil moisture, slope angle, forest cover) reshape the
+terrain and re-score the *same* Random Forest on every drag, through
+`/api/score`, which scores raw feature values with no Earth Engine call — 7–11 ms,
+and it keeps working with no internet. Push the risk past SEVERE and the slope
+fails on its own: the scar opens, debris runs out across the carriageway and a
+vehicle gets shoved into the rail.
+
+Alongside the model it shows the textbook infinite-slope **factor of safety**,
+which is computed from slope and moisture rather than learned. The two disagree
+in interesting places, which is the point: rainfall drives the model, geometry
+drives the physics.
+
+three.js is vendored to `static/vendor/` — an exhibition hall is no place to
+depend on a CDN.
+
 ### API endpoints
 
 | Endpoint | Returns |
@@ -212,6 +232,7 @@ falls back to instructions — because a static page has no model behind it.
 | `GET /api/sync` | compact snapshot for offline caching (~36 KB) |
 | `GET /api/alerts?threshold=0.6` | locations currently above threshold, with translated messages |
 | `GET /api/predict?lat=&lon=&date=` | live prediction plus the feature values behind it |
+| `GET /api/score?rain_7d=&slope=&...` | scores raw feature values directly, no satellite call (drives the 3D simulator) |
 | `GET /api/reports` | field reports received |
 | `POST /api/reports` | submit a field report (used by the offline queue) |
 

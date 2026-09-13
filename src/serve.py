@@ -136,6 +136,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if route in ("/", "/index.html"):
                 self._html(DASHBOARD_PATH)
+            elif route == "/simulator":
+                self._static("/static/simulator.html")
             elif route == "/sw.js":
                 # Served from root so its scope covers the whole app.
                 self._static("/static/sw.js")
@@ -169,6 +171,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._simulate(params))
             elif route == "/api/whatchanged":
                 self._json(self._whatchanged(params))
+            elif route == "/api/score":
+                self._json(self._score(params))
             elif route == "/api/decision":
                 self._json(self._decision(params))
             elif route == "/api/notifications":
@@ -487,6 +491,41 @@ class Handler(BaseHTTPRequestHandler):
         result.update({"lat": lat, "lon": lon, "date": date,
                        "compared_with": earlier, "days": days})
         return result
+
+    def _score(self, params):
+        """Scores raw feature values directly, with no Earth Engine call.
+
+        The 3D simulator moves sliders continuously, so this has to answer in
+        microseconds and keep working with no internet -- an exhibition hall
+        is the last place to depend on a satellite query. Anything not
+        supplied falls back to the training median, exactly as the live path
+        does, so the two remain comparable.
+        """
+        import scenarios
+
+        feats = {}
+        for key in scenarios.LABELS:
+            if key in params:
+                try:
+                    feats[key] = float(params[key][0])
+                except (TypeError, ValueError):
+                    return {"error": f"{key} must be a number"}
+
+        # Slope and soil moisture drive the factor of safety; recompute it
+        # rather than let the caller pass an inconsistent pair.
+        feats = scenarios.apply_overrides(feats, {})
+        risk = scenarios.score(feats)
+
+        return {
+            "risk": round(risk, 4),
+            "risk_percent": round(risk * 100, 1),
+            "severity": scenarios.band(risk),
+            "factor_of_safety": (
+                round(feats["factor_of_safety"], 3)
+                if feats.get("factor_of_safety") is not None else None
+            ),
+            "decision": scenarios.decision_for(risk),
+        }
 
     def _decision(self, params):
         import scenarios
