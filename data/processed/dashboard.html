@@ -189,9 +189,18 @@
   /* ---- map ---- */
   .map-wrap {
     position: relative; border-radius: var(--r-sm); overflow: hidden;
-    background: var(--map-water); flex: 1; min-height: 500px;
+    background: var(--map-water); min-height: 500px;
     box-shadow: inset 0 2px 10px rgba(28,45,36,0.12);
     cursor: grab; touch-action: none;
+    /* The page is a grid whose columns stretch to the taller of the two. With
+       flex:1 the map grew to match the sidebar - past 1700px on a long
+       sidebar - and because the SVG preserves its aspect ratio the map
+       collapsed to a thin band adrift in an enormous box. Pinning the box to
+       the projection's own ratio keeps the map the right shape no matter how
+       long the sidebar gets. */
+    flex: 0 0 auto;
+    aspect-ratio: 900 / 805;
+    max-height: 78vh;
   }
   .map-wrap.dragging { cursor: grabbing; }
   svg.map { display: block; width: 100%; height: 100%; }
@@ -235,6 +244,7 @@
   }
   .roads-major { stroke: var(--road-major); stroke-width: 1.1; opacity: 0.62; }
   .roads-minor { stroke: var(--road-minor); stroke-width: 0.7; opacity: 0.42; }
+  .marker-hit { fill: transparent; stroke: none; cursor: pointer; }
   .hidden-layer { opacity: 0 !important; pointer-events: none; }
 
   .state-label {
@@ -1076,6 +1086,9 @@ function applyView() {
   document.querySelectorAll('.marker').forEach(m => {
     m.setAttribute('r', m.dataset.id === selectedId ? r * 1.7 : r);
   });
+  document.querySelectorAll('.marker-hit').forEach(m => {
+    m.setAttribute('r', Math.max(r * 3, 7));   // generous, always invisible
+  });
   document.querySelectorAll('.pulse-ring').forEach(p => p.setAttribute('r', r * 2.4));
   document.querySelectorAll('.state-label').forEach(l => {
     l.style.fontSize = (11 / z) + 'px';
@@ -1118,11 +1131,15 @@ $('mapWrap').addEventListener('wheel', evt => {
 
 let dragging = false, dragStart = null;
 $('mapWrap').addEventListener('pointerdown', evt => {
-  // The zoom controls live inside mapWrap. Capturing the pointer here would
-  // retarget pointerup to mapWrap, so down and up would no longer share a
-  // target and the browser would never synthesise a click on the button --
-  // leaving +, - and 1:1 dead. Let presses that start on a control through.
-  if (evt.target.closest && evt.target.closest('.zoom-controls')) return;
+  // Everything interactive on the map lives inside mapWrap. Capturing the
+  // pointer here retargets pointerup to mapWrap, so down and up no longer
+  // share a target and the browser never synthesises a click on what was
+  // actually pressed -- which silently killed both the zoom buttons and
+  // every marker. Presses that begin on something interactive skip the drag.
+  const t = evt.target;
+  if (t && t.closest && t.closest('.zoom-controls')) return;
+  if (t && t.classList &&
+      (t.classList.contains('marker') || t.classList.contains('marker-hit'))) return;
   dragging = true;
   dragStart = { p: svgPointFromEvent(evt), x: view.x, y: view.y };
   $('mapWrap').classList.add('dragging');
@@ -1302,11 +1319,32 @@ function renderMarkers(data) {
     c.setAttribute('cx', m.x); c.setAttribute('cy', m.y);
     c.setAttribute('class', 'marker ' + markerClass(m) + (selectedId === m.id ? ' selected' : ''));
     c.dataset.id = m.id;
-    c.addEventListener('mouseenter', e => showTooltip(e, m));
-    c.addEventListener('mousemove', moveTooltip);
-    c.addEventListener('mouseleave', hideTooltip);
-    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; fillPanelsFromMarker(m); render(); showWarningModal(m); });
+
+    // A drawn marker is about 6px across, which is a hard target with a mouse
+    // and an unusable one on a touchscreen or from across a room. This
+    // invisible disc widens the hit area without changing what is drawn.
+    const hit = document.createElementNS(svgNS, 'circle');
+    hit.setAttribute('cx', m.x); hit.setAttribute('cy', m.y);
+    hit.setAttribute('class', 'marker-hit');
+    hit.dataset.id = m.id;
+
+    const onEnter = e => showTooltip(e, m);
+    const onClick = e => {
+      e.stopPropagation();
+      selectedId = m.id;
+      fillPanelsFromMarker(m);
+      render();
+      showWarningModal(m);
+    };
+    [c, hit].forEach(el => {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mousemove', moveTooltip);
+      el.addEventListener('mouseleave', hideTooltip);
+      el.addEventListener('click', onClick);
+    });
+
     layer.appendChild(c);
+    layer.appendChild(hit);
   });
   applyView();
 }
@@ -2104,7 +2142,7 @@ registerServiceWorker();
 /* Printed so a stale page can be identified at a glance. If this timestamp
    is older than your last rebuild, the browser or service worker is serving
    a cached copy and nothing you change will appear until it is reloaded. */
-const BUILD_ID = "2026-09-14 00:32:35";
+const BUILD_ID = "2026-09-14 00:39:24";
 console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
             'color:#1d3a5c;font-weight:600');
 {
