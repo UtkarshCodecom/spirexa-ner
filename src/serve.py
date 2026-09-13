@@ -23,7 +23,10 @@ import datetime
 import json
 import mimetypes
 import os
+import subprocess
 import sys
+import threading
+import time
 import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -388,11 +391,47 @@ def _band(risk):
     return "LOW"
 
 
+REFRESH_INTERVAL_HOURS = 20
+
+
+def _daily_refresh_loop():
+    """Background thread: rebuild the dashboard once per day."""
+    while True:
+        time.sleep(3600)  # check every hour
+        try:
+            live_csv = LIVE_RISK_CSV
+            if os.path.exists(live_csv):
+                age_hours = (time.time() - os.path.getmtime(live_csv)) / 3600
+            else:
+                age_hours = float("inf")
+
+            if age_hours >= REFRESH_INTERVAL_HOURS:
+                print(f"[refresh] live_risk.csv is {age_hours:.1f}h old — rebuilding…")
+                base = os.path.dirname(os.path.abspath(__file__))
+                python = sys.executable
+                for script in ("compute_live_risk.py", "build_dashboard.py"):
+                    result = subprocess.run(
+                        [python, os.path.join(base, script)],
+                        capture_output=True, text=True
+                    )
+                    if result.returncode != 0:
+                        print(f"[refresh] {script} failed:\n{result.stderr}")
+                        break
+                    else:
+                        print(f"[refresh] {script} done")
+        except Exception as exc:
+            print(f"[refresh] error: {exc}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
+
+    t = threading.Thread(target=_daily_refresh_loop, daemon=True)
+    t.start()
+    print("  auto-refresh every 20 h (background thread)")
 
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"NER Slope Watch running at http://{args.host}:{args.port}")

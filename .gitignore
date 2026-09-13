@@ -8,8 +8,13 @@ __pycache__/
 
 # Runtime logs and local test artifacts
 logs_*.txt
-data/reports/*.jsonl
-data/reports/photos/
+# live sensor readings + field reports - per-machine runtime data
+data/reports/
+*.simulated-backup
+
+# Duplicate blank templates downloaded to the repo root; the filled versions
+# live in exhibition/
+/Startup_*Template*.pptx
 
 # OS clutter
 .DS_Store

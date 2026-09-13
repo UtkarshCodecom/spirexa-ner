@@ -72,14 +72,38 @@ def post(server, reading):
         return None
 
 
+def _num(value, spec, suffix=""):
+    """Formats a reading, or '--' when the node sent null for it.
+
+    A DHT that misses a read sends JSON null, which arrives as None. Passing
+    that to a format spec raises, and an unhandled raise here would take the
+    whole bridge down mid-demo over one dropped temperature reading.
+    """
+    if value is None:
+        return f"{'--':>{len(format(0, spec))}}{suffix}"
+    try:
+        return f"{value:{spec}}{suffix}"
+    except (TypeError, ValueError):
+        return f"{value}{suffix}"
+
+
 def show(reading):
-    wet = reading.get("wetness_pct", 0)
-    parts = [f"rain {reading.get('rain_pct', 0):5.1f}%",
-             f"{reading.get('temperature_c', 0):5.1f}C",
-             f"hum {reading.get('humidity_pct', 0):4.0f}%"]
-    if reading.get("soil_moisture_pct", -1) >= 0:
-        parts.append(f"soil {reading['soil_moisture_pct']:5.1f}%")
-    print("  " + "   ".join(parts) + f"   -> site wetness {wet:3d}%")
+    parts = [
+        "rain " + _num(reading.get("rain_pct"), "5.1f", "%"),
+        _num(reading.get("temperature_c"), "5.1f", "C"),
+        "hum " + _num(reading.get("humidity_pct"), "4.0f", "%"),
+    ]
+
+    soil = reading.get("soil_moisture_pct")
+    if soil is not None and soil >= 0:
+        parts.append("soil " + _num(soil, "5.1f", "%"))
+
+    if reading.get("touch"):
+        parts.append("TOUCH")
+
+    wet = reading.get("wetness_pct")
+    print("  " + "   ".join(parts)
+          + "   -> site wetness " + _num(wet, "3d", "%"))
 
 
 def simulate(server):

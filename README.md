@@ -9,8 +9,13 @@ satellite data and a model trained on 318 recorded landslides (2007–2025).
 Everything here runs on a laptop. Earth Engine does the heavy geospatial work
 server-side; only a small table of numbers is trained on locally.
 
-**Running on Windows?** See [WINDOWS.md](WINDOWS.md) for the full setup,
-including the Arduino IDE and the ground sensor node.
+**Setting this up from scratch?** See **[MACOS.md](MACOS.md)** or
+**[WINDOWS.md](WINDOWS.md)** for the full walkthrough, including Google Earth
+Engine registration and the Arduino ground sensor node.
+
+The trained model and a risk snapshot are committed, so the dashboard runs
+immediately after `pip install` — Earth Engine is only needed to score new
+locations or dates.
 
 ---
 

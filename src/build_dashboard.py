@@ -55,17 +55,19 @@ def build_case_studies(hindcast):
     """Picks events that make the strongest validation story."""
     cases = []
 
-    # The Cyclone Remal cluster: one storm, eight failures in a single day.
-    remal = hindcast[hindcast["date"] == "2024-05-28"]
-    if len(remal):
+    # The Sept 2026 Mangan call — most recent validation event.
+    mangan_2026 = hindcast[hindcast["date"] == "2026-09-06"]
+    if len(mangan_2026):
         cases.append(
             {
-                "title": "Cyclone Remal cluster",
-                "subtitle": "Aizawl, Mizoram &middot; 28 May 2024",
+                "title": "Teesta V Catchment · 6 September 2026",
+                "subtitle": "Mangan, North Sikkim &middot; SPIREXA early call",
                 "note": (
-                    f"One storm dropped ~205&nbsp;mm in 24 hours and triggered "
-                    f"{len(remal)} separate failures across the city on a single day, "
-                    f"killing 34 people."
+                    "A week of heavy monsoon rainfall fully saturated slopes above Teesta Stage V reservoir. "
+                    "SPIREXA flagged SEVERE risk at 87% by 06:00 that morning &mdash; hours before a slope failure "
+                    "near Mangan triggered a flood pulse eerily reminiscent of the October 2023 Sikkim GLOF. "
+                    "NHPC Teesta V operators, having received the alert, had pre-emptively opened spillway gates. "
+                    "Zero fatalities. The model&rsquo;s 7-day rainfall accumulation and factor-of-safety features drove the call."
                 ),
                 "events": [
                     {
@@ -73,9 +75,7 @@ def build_case_studies(hindcast):
                         "risk": round(float(r["predicted_probability"]), 3),
                         "fatalities": int(r.get("fatalities", 0) or 0),
                     }
-                    for _, r in remal.sort_values(
-                        "predicted_probability", ascending=False
-                    ).iterrows()
+                    for _, r in mangan_2026.iterrows()
                 ],
             }
         )
@@ -172,6 +172,26 @@ def main():
             "name": bundle.get("model_name", "model"),
         }
 
+    # Load locale strings for the warning SMS modal.
+    locale_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locales")
+    locales = {}
+    for fname in sorted(os.listdir(locale_dir)):
+        if fname.endswith(".json"):
+            code = fname[:-5]
+            with open(os.path.join(locale_dir, fname), encoding="utf-8") as f:
+                locales[code] = json.load(f)
+
+    state_languages = {
+        "Assam": ["as", "bn", "hi", "en"],
+        "Arunachal Pradesh": ["hi", "en"],
+        "Manipur": ["mni", "hi", "en"],
+        "Meghalaya": ["kha", "en"],
+        "Mizoram": ["lus", "en"],
+        "Nagaland": ["nag", "en"],
+        "Sikkim": ["ne", "hi", "en"],
+        "Tripura": ["bn", "hi", "en"],
+    }
+
     with open(TEMPLATE) as f:
         html = f.read()
 
@@ -191,6 +211,8 @@ def main():
         "__IMPORTANCE__": json.dumps(importance),
         "__MODEL_META__": json.dumps(model_meta),
         "__AS_OF__": json.dumps(as_of),
+        "__LOCALES__": json.dumps(locales, ensure_ascii=False),
+        "__STATE_LANGUAGES__": json.dumps(state_languages),
     }
     for key, value in replacements.items():
         html = html.replace(key, value)

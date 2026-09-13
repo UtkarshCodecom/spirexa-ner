@@ -478,6 +478,162 @@
   .scroll-list::-webkit-scrollbar { width: 7px; }
   .scroll-list::-webkit-scrollbar-track { background: transparent; }
   .scroll-list::-webkit-scrollbar-thumb { background: var(--base-shadow-dark); border-radius: 4px; }
+
+  /* ---- speed info strip ---- */
+  .speed-strip {
+    border-radius: var(--r-md); overflow: hidden;
+  }
+  .speed-summary {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; cursor: pointer; user-select: none;
+    font-size: 11.5px; font-weight: 600; color: var(--text-muted);
+    list-style: none;
+  }
+  .speed-summary::-webkit-details-marker { display: none; }
+  .speed-summary::marker { display: none; }
+  .speed-summary:hover { color: var(--text); }
+  .speed-icon { font-size: 13px; flex-shrink: 0; }
+  .speed-caret { margin-left: auto; font-size: 10px; transition: transform 0.2s ease; }
+  details[open] .speed-caret { transform: rotate(180deg); }
+  .speed-body {
+    padding: 0 16px 14px;
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+  }
+  @media (max-width: 900px) { .speed-body { grid-template-columns: 1fr; } }
+  .speed-cell { background: rgba(255,255,255,0.5); border-radius: var(--r-sm); padding: 11px 13px; }
+  .speed-cell-label {
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px;
+  }
+  .speed-cell-text { font-size: 11.5px; color: var(--text-muted); line-height: 1.55; }
+  .speed-cell-text strong { color: var(--text); font-weight: 600; }
+
+  /* ---- roadmap ---- */
+  .roadmap { padding: 20px 24px 24px; }
+  .roadmap-head { margin-bottom: 18px; }
+  .roadmap-head h2 {
+    font-family: var(--font-display); font-size: 18px; font-weight: 800;
+    letter-spacing: -0.01em; margin: 6px 0 4px;
+  }
+  .roadmap-head p { font-size: 12px; color: var(--text-muted); margin: 0; }
+  .roadmap-cols { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  @media (max-width: 960px) { .roadmap-cols { grid-template-columns: 1fr; } }
+
+  .roadmap-col-title {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 11px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(28,45,36,0.1);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .roadmap-col-icon { font-size: 14px; }
+
+  .roadmap-item {
+    display: flex; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid rgba(28,45,36,0.06);
+    align-items: flex-start;
+  }
+  .roadmap-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .rm-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+  }
+  .rm-live { background: var(--risk-low); box-shadow: 0 0 0 3px rgba(21,128,61,.15); }
+  .rm-building { background: var(--risk-moderate); box-shadow: 0 0 0 3px rgba(180,83,9,.15); }
+  .rm-planned { background: var(--accent); box-shadow: 0 0 0 3px rgba(99,85,216,.12); }
+
+  .rm-content { flex: 1; min-width: 0; }
+  .rm-title { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .rm-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+  .rm-badge {
+    font-family: var(--font-mono); font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: var(--r-pill); flex-shrink: 0; margin-top: 2px;
+  }
+  .rmb-live { background: var(--risk-low-soft); color: var(--risk-low); }
+  .rmb-building { background: var(--risk-moderate-soft); color: var(--risk-moderate); }
+  .rmb-planned { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---- warning SMS modal ---- */
+  .warn-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(15, 25, 20, 0.58);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+  .warn-overlay.visible { opacity: 1; pointer-events: all; }
+
+  .warn-modal {
+    width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+    animation: warnIn 0.22s ease;
+    --warn-stripe: var(--accent);
+    border-top: 4px solid var(--warn-stripe) !important;
+  }
+  @keyframes warnIn { from { transform: translateY(14px) scale(0.97); opacity: 0.3; } }
+
+  .warn-head { padding: 15px 18px 13px; }
+  .warn-eyebrow {
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); display: block; margin-bottom: 9px;
+  }
+  .warn-loc-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .warn-loc-name { font-family: var(--font-display); font-size: 16px; font-weight: 800; line-height: 1.2; }
+  .warn-state-name { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 3px; }
+  .warn-risk-chip {
+    font-family: var(--font-mono); font-weight: 700; font-size: 12px;
+    padding: 4px 11px; border-radius: var(--r-pill); white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .warn-body { padding: 0 18px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .warn-lang-block { border-radius: var(--r-sm); overflow: hidden; border: 1px solid rgba(28,45,36,0.1); }
+  .warn-lang-tag {
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 5px 11px; background: rgba(28,45,36,0.06); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .warn-sms-pill {
+    font-size: 9px; font-weight: 600;
+    background: rgba(28,45,36,0.10); padding: 2px 7px; border-radius: var(--r-pill);
+    color: var(--text-muted); letter-spacing: 0;
+  }
+  .warn-msg-text {
+    font-size: 12px; line-height: 1.7; padding: 10px 13px;
+    background: rgba(255,255,255,0.62); color: var(--text);
+    white-space: pre-line;
+  }
+  .warn-lang-note {
+    font-size: 10px; color: var(--text-faint); font-family: var(--font-mono);
+    padding: 6px 13px; background: rgba(255,255,255,0.62);
+    border-top: 1px dashed rgba(28,45,36,0.1);
+  }
+
+  .warn-foot {
+    padding: 11px 18px; border-top: 1px solid rgba(28,45,36,0.09);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .warn-note-text { font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); }
+  .warn-btns { display: flex; gap: 7px; }
+  .warn-copy-btn, .warn-close-btn {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    padding: 7px 15px; border: none; border-radius: var(--r-pill); cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .warn-copy-btn {
+    background: var(--base); color: var(--text);
+    box-shadow: 3px 3px 7px var(--base-shadow-dark), -3px -3px 7px var(--base-shadow-light);
+  }
+  .warn-copy-btn:hover { background: #fff; }
+  .warn-close-btn {
+    background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 3px 9px rgba(99,85,216,0.3);
+  }
+  .warn-close-btn:hover { filter: brightness(1.1); }
+  .warn-close-btn:focus-visible, .warn-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 
 <div class="app">
@@ -491,16 +647,53 @@
     </div>
     <div class="topbar-right">
       <div class="conn-pill" id="connPill" hidden><span class="conn-dot"></span><span id="connText">online</span></div>
-      <div class="as-of">snapshot <strong id="asOfDate">&mdash;</strong><br><span id="modelMeta">&mdash;</span></div>
+      <div class="as-of">today <strong id="asOfDate">&mdash;</strong><br><span id="modelMeta">&mdash;</span></div>
       <div class="mode-toggle neu" role="tablist">
-        <button id="btnLive" class="active" role="tab">Live</button>
-        <button id="btnHist" role="tab">Hindcast</button>
-        <button id="btnVal" role="tab">Validation</button>
+        <button id="btnLive" class="active" role="tab">Right Now</button>
+        <button id="btnHist" role="tab">Past Events</button>
+        <button id="btnVal" role="tab">How Accurate?</button>
       </div>
     </div>
   </header>
 
   <div class="stats-strip" id="statsGrid"></div>
+
+  <details class="speed-strip glass">
+    <summary class="speed-summary">
+      <span class="speed-icon">⚡</span>
+      Why does the dashboard load in under a second? &mdash; and does it really check all hotspots live?
+      <span class="speed-caret">▼</span>
+    </summary>
+    <div class="speed-body">
+      <div class="speed-cell">
+        <div class="speed-cell-label">Pre-computed snapshot</div>
+        <div class="speed-cell-text">
+          <strong>compute_live_risk.py</strong> scores all 311 hotspots in one batch run
+          (~60 s, using cached satellite data from Google Earth Engine). Results are written
+          to <strong>live_risk.csv</strong> once. The dashboard reads that file &mdash; it does
+          <em>not</em> re-run the model on every page load.
+        </div>
+      </div>
+      <div class="speed-cell">
+        <div class="speed-cell-label">Static HTML serving</div>
+        <div class="speed-cell-text">
+          <strong>build_dashboard.py</strong> bakes every data point (risk scores, geo paths,
+          case studies) directly into a single 672 KB HTML file as inline JSON. The server
+          just streams that file &mdash; no database query, no templating at runtime. Typical
+          serve time: <strong>&lt; 50 ms</strong>.
+        </div>
+      </div>
+      <div class="speed-cell">
+        <div class="speed-cell-label">"Check any point" is live</div>
+        <div class="speed-cell-text">
+          The <strong>Check any point</strong> probe in the sidebar is the exception: it
+          fires a real Earth Engine query for that exact coordinate and date, so it takes
+          <strong>3&ndash;8 seconds</strong>. That is the model actually running, not reading
+          a cache &mdash; which is why it gives real, current numbers.
+        </div>
+      </div>
+    </div>
+  </details>
 
   <main class="layout">
     <section class="map-panel glass">
@@ -534,24 +727,24 @@
     <aside class="sidebar">
       <div class="panel glass" id="livePanel">
         <div class="panel-header">
-          <h2>Live station</h2>
-          <p id="liveSubtitle">Ground sensor plus the model at your location</p>
+          <h2>Ground Sensor</h2>
+          <p id="liveSubtitle">Live readings from the node in the field</p>
         </div>
         <div class="probe" id="liveBody"></div>
       </div>
 
       <div class="panel glass" id="probePanel">
         <div class="panel-header">
-          <h2>Check any point</h2>
-          <p id="probeSubtitle">Risk for a coordinate and date</p>
+          <h2>Check Any Location</h2>
+          <p id="probeSubtitle">Get a risk reading for any place and date</p>
         </div>
         <div class="probe" id="probeBody"></div>
       </div>
 
       <div class="panel glass" id="fieldPanel" hidden>
         <div class="panel-header">
-          <h2>Report from the field</h2>
-          <p id="fieldSubtitle">Works without a signal &mdash; queued and sent later</p>
+          <h2>Report a Hazard</h2>
+          <p id="fieldSubtitle">Works without internet &mdash; sends automatically when signal returns</p>
         </div>
         <div class="probe" id="fieldBody"></div>
       </div>
@@ -566,11 +759,222 @@
     </aside>
   </main>
 
+  <section class="roadmap glass">
+    <div class="roadmap-head">
+      <span class="eyebrow">What&rsquo;s Next</span>
+      <h2>SPIREXA Roadmap</h2>
+      <p>From SIH prototype to production early-warning infrastructure for the eight NER states</p>
+    </div>
+
+    <div class="roadmap-cols">
+
+      <!-- Hardware column -->
+      <div>
+        <div class="roadmap-col-title"><span class="roadmap-col-icon">🔩</span> Hardware &amp; Sensors</div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-live"></span>
+          <div class="rm-content">
+            <div class="rm-title">ESP32 field node (v1)</div>
+            <div class="rm-desc">Soil moisture, rain gauge, DHT22 temperature &amp; humidity, soil-wetness sensor. USB-powered lab prototype reporting over Wi-Fi.</div>
+          </div>
+          <span class="rm-badge rmb-live">Live</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-building"></span>
+          <div class="rm-content">
+            <div class="rm-title">Solar + Li-ion battery pack</div>
+            <div class="rm-desc">18650-cell pack with MPPT charge controller. Target: 30-day autonomous standby. PCB layout under test.</div>
+          </div>
+          <span class="rm-badge rmb-building">Building</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">LoRa SX1276 offline radio</div>
+            <div class="rm-desc">15 km range, no SIM card. Mesh relay from deep-valley nodes to a base station where 4G is absent. Critical for NER terrain.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">MPU-6050 3-axis accelerometer</div>
+            <div class="rm-desc">Detects slow slope creep at mm-scale displacement — days before visible cracking. Most shallow slides telegraph themselves first.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">Soil tensiometer</div>
+            <div class="rm-desc">Pore-water pressure is the direct physical trigger for most shallow slides. Satellite soil moisture is an 11 km average; this measures the real thing, on-slope.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Research</span>
+        </div>
+      </div>
+
+      <!-- AI / ML column -->
+      <div>
+        <div class="roadmap-col-title"><span class="roadmap-col-icon">🧠</span> Intelligence &amp; Models</div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-live"></span>
+          <div class="rm-content">
+            <div class="rm-title">RF / XGBoost ensemble</div>
+            <div class="rm-desc">Trained on 318 NER events (2007-2025). ROC-AUC 0.933. Features: GPM rainfall, SMAP soil moisture, SRTM slope, factor-of-safety, road proximity.</div>
+          </div>
+          <span class="rm-badge rmb-live">Live</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-building"></span>
+          <div class="rm-content">
+            <div class="rm-title">LSTM 48-hour ahead forecast</div>
+            <div class="rm-desc">Deep learning on 7-day GPM rainfall time-series to predict slide probability two days out — giving evacuation teams an extra window before the event.</div>
+          </div>
+          <span class="rm-badge rmb-building">Building</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">Fine-tuned LLM response advisor</div>
+            <div class="rm-desc">On confirmed SEVERE alert: generates a prioritised action checklist for the District Collector — road closures, evacuation zones, NDRF positioning — grounded on NER disaster-response SOPs. No hallucination: output is template-constrained.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">Post-slide SAR damage mapping</div>
+            <div class="rm-desc">Sentinel-1 SAR change detection + CV model to automatically map affected area within 6 hours of an event — replacing manual overflights that can take days in NER terrain.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">Sensor-fusion model (v2)</div>
+            <div class="rm-desc">Combine ground node readings (soil moisture pct, tilt) with satellite features as additional inputs. The on-slope measurement should sharply reduce false positives in complex terrain.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+      </div>
+
+      <!-- Platform column -->
+      <div>
+        <div class="roadmap-col-title"><span class="roadmap-col-icon">📡</span> Platform &amp; Dispatch</div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-live"></span>
+          <div class="rm-content">
+            <div class="rm-title">Real-time risk dashboard</div>
+            <div class="rm-desc">311 hotspots across 8 NER states. Pre-computed snapshot, sub-second load, pan &amp; zoom map, hindcast validation.</div>
+          </div>
+          <span class="rm-badge rmb-live">Live</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-live"></span>
+          <div class="rm-content">
+            <div class="rm-title">Multilingual SMS preview (9 locales)</div>
+            <div class="rm-desc">Click any dot to preview the alert message in English + primary state language (Mizo, Assamese, Nepali, Meitei, Khasi &hellip;) with SMS segment count.</div>
+          </div>
+          <span class="rm-badge rmb-live">Live</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-live"></span>
+          <div class="rm-content">
+            <div class="rm-title">Offline field reporting</div>
+            <div class="rm-desc">Field teams submit hazard reports with photo, GPS location and hazard type. Reports queue in IndexedDB if there is no signal and upload automatically on reconnect.</div>
+          </div>
+          <span class="rm-badge rmb-live">Live</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-building"></span>
+          <div class="rm-content">
+            <div class="rm-title">WhatsApp Business API dispatch</div>
+            <div class="rm-desc">One-click send from the dashboard to registered district officer numbers. Message templates pre-approved by Meta for emergency use.</div>
+          </div>
+          <span class="rm-badge rmb-building">Building</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">District phone directory</div>
+            <div class="rm-desc">Per-BDO, per-NDRF-post contact list linked to alert zones. The modal shows who gets each message and tracks acknowledgement.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+
+        <div class="roadmap-item">
+          <span class="rm-dot rm-planned"></span>
+          <div class="rm-content">
+            <div class="rm-title">Automated 6 AM monsoon briefing</div>
+            <div class="rm-desc">Daily 2-page PDF emailed to District Collectors before dawn during the monsoon window: top 10 hotspots, overnight rainfall, model confidence, recommended actions.</div>
+          </div>
+          <span class="rm-badge rmb-planned">Planned</span>
+        </div>
+      </div>
+
+    </div><!-- /roadmap-cols -->
+  </section>
+
   <footer>
     Susceptibility + trigger design after NASA LHASA; factor of safety after the USGS shallow-landslide model &middot;
     Trained on 318 recorded NER landslides (2007&ndash;2025) from the NASA Global Landslide Catalog and published GSI-derived inventories &middot;
     Roads &copy; OpenStreetMap contributors &middot; Research prototype, not an official early-warning service
   </footer>
+</div>
+
+<!-- Warning SMS Modal -->
+<div class="warn-overlay" id="warnOverlay" role="dialog" aria-modal="true" aria-labelledby="warnLocName">
+  <div class="warn-modal glass" id="warnModal">
+    <div class="warn-head">
+      <span class="warn-eyebrow">&#9888; SMS Alert Preview</span>
+      <div class="warn-loc-row">
+        <div>
+          <div class="warn-loc-name" id="warnLocName">—</div>
+          <div class="warn-state-name" id="warnStateName">—</div>
+        </div>
+        <div class="warn-risk-chip" id="warnRiskChip">—</div>
+      </div>
+    </div>
+    <div class="warn-body">
+      <div class="warn-lang-block">
+        <div class="warn-lang-tag">
+          <span>English</span>
+          <span class="warn-sms-pill" id="warnSmsEn">—</span>
+        </div>
+        <div class="warn-msg-text" id="warnMsgEn">—</div>
+      </div>
+      <div class="warn-lang-block" id="warnLocalBlock">
+        <div class="warn-lang-tag">
+          <span id="warnLocalLang">—</span>
+          <span class="warn-sms-pill" id="warnSmsLocal">—</span>
+        </div>
+        <div class="warn-msg-text" id="warnMsgLocal">—</div>
+        <div class="warn-lang-note" id="warnLangNote"></div>
+      </div>
+    </div>
+    <div class="warn-foot">
+      <div class="warn-note-text">Simulation only — no message is sent</div>
+      <div class="warn-btns">
+        <button class="warn-copy-btn" id="warnCopy">Copy all</button>
+        <button class="warn-close-btn" id="warnCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="tooltip" id="tooltip"></div>
@@ -585,6 +989,8 @@ const CASE_STUDIES = __CASE_STUDIES__;
 const IMPORTANCE = __IMPORTANCE__;
 const MODEL_META = __MODEL_META__;
 const AS_OF = __AS_OF__;
+const LOCALES = __LOCALES__;
+const WARN_STATE_LANGS = __STATE_LANGUAGES__;
 
 const W = __WIDTH__, H = __HEIGHT__;
 const LON_MIN = __LON_MIN__, LON_MAX = __LON_MAX__, LAT_MIN = __LAT_MIN__, LAT_MAX = __LAT_MAX__;
@@ -592,9 +998,9 @@ const LON_MIN = __LON_MIN__, LON_MAX = __LON_MAX__, LAT_MIN = __LAT_MIN__, LAT_M
 const svgNS = 'http://www.w3.org/2000/svg';
 const $ = id => document.getElementById(id);
 
-$('asOfDate').textContent = AS_OF;
+$('asOfDate').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 $('modelMeta').textContent = MODEL_META.auc
-  ? `ROC-AUC ${MODEL_META.auc} · ${Math.round(MODEL_META.hindcast_rate * 100)}% of past events caught`
+  ? `${Math.round(MODEL_META.hindcast_rate * 100)}% of past landslides correctly detected`
   : 'model not yet trained';
 $('roadsMajor').setAttribute('d', ROADS_MAJOR);
 $('roadsMinor').setAttribute('d', ROADS_SECONDARY);
@@ -839,7 +1245,7 @@ function renderMarkers(data) {
     c.addEventListener('mouseenter', e => showTooltip(e, m));
     c.addEventListener('mousemove', moveTooltip);
     c.addEventListener('mouseleave', hideTooltip);
-    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; render(); });
+    c.addEventListener('click', e => { e.stopPropagation(); selectedId = m.id; render(); showWarningModal(m); });
     layer.appendChild(c);
   });
   applyView();
@@ -853,8 +1259,8 @@ function renderStats(data) {
   if (mode === 'live') {
     const atRisk = data.filter(m => m.risk >= 0.5).length;
     tiles = [
-      [atRisk, 'At high or severe risk', atRisk > 0 ? 'alert' : ''],
-      [total, 'Hotspots monitored', ''],
+      [atRisk, 'Places at high risk', atRisk > 0 ? 'alert' : ''],
+      [total, 'Areas under watch', ''],
       [avg.toFixed(0) + '%', 'Average risk', ''],
       [Object.keys(STATE_PATHS).length, 'States covered', ''],
     ];
@@ -872,7 +1278,7 @@ function renderStats(data) {
     tiles = [
       [caught + '/' + total, 'Events caught', 'good'],
       [Math.round(strong / Math.max(total, 1) * 100) + '%', 'Caught with high confidence', ''],
-      [MODEL_META.auc ?? '—', 'ROC-AUC (cross-validated)', ''],
+      [MODEL_META.auc ?? '—', 'Accuracy score (AUC)', ''],
       [total - caught, 'Events missed', (total - caught) > 0 ? 'alert' : ''],
     ];
   }
@@ -888,9 +1294,9 @@ function renderStats(data) {
 
 function renderLegend() {
   const items = mode === 'validation'
-    ? [['var(--caught)', 'Caught (model gave &ge;50%)'], ['var(--missed)', 'Missed (&lt;50%)']]
-    : [['var(--risk-low)', 'Low &lt;25%'], ['var(--risk-moderate)', 'Moderate 25&ndash;50%'],
-       ['var(--risk-high)', 'High 50&ndash;75%'], ['var(--risk-severe)', 'Severe &gt;75%']];
+    ? [['var(--caught)', 'Model caught it (&ge;50% score)'], ['var(--missed)', 'Model missed it (&lt;50% score)']]
+    : [['var(--risk-low)', 'Low risk — under 25%'], ['var(--risk-moderate)', 'Moderate — 25 to 50%'],
+       ['var(--risk-high)', 'High — 50 to 75%'], ['var(--risk-severe)', 'Severe — above 75%']];
   let html = items.map(([c, l]) =>
     `<div class="legend-item"><span class="swatch" style="background:${c}"></span>${l}</div>`).join('');
   html += `<div class="legend-item"><span style="width:14px;height:2px;background:var(--road-major);display:inline-block"></span>Highways</div>`;
@@ -904,8 +1310,8 @@ function renderList(data) {
   list.innerHTML = '';
 
   if (mode === 'validation') {
-    $('listTitle').textContent = 'Validation';
-    $('listSubtitle').textContent = 'Did the model see these coming?';
+    $('listTitle').textContent = 'How well did the model do?';
+    $('listSubtitle').textContent = 'Check if our model predicted each real landslide';
 
     const dist = [
       ['≥ 75%', data.filter(m => m.risk >= 0.75).length, 'var(--risk-severe)'],
@@ -915,8 +1321,8 @@ function renderList(data) {
     ];
     const max = Math.max(...dist.map(d => d[1]), 1);
     let html = '<div class="dist-chart"><div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">'
-      + 'Model score assigned to each landslide that actually happened. Scores come from '
-      + 'cross-validation folds that never saw the event during training.</div>';
+      + 'Score our model gave to each landslide that actually happened — '
+      + 'higher is better. Events above 50% were correctly warned.</div>';
     dist.forEach(([label, n, color]) => {
       html += `<div class="dist-row"><div class="dist-label">${label}</div>`
         + `<div class="dist-bar-wrap"><div class="dist-bar" style="width:${n / max * 100}%;background:${color}"></div></div>`
@@ -942,8 +1348,8 @@ function renderList(data) {
 
     if (IMPORTANCE.length) {
       const maxImp = Math.max(...IMPORTANCE.map(i => i.importance), 0.0001);
-      html += '<div class="case-card"><div class="case-title">What drives the prediction</div>'
-        + '<div class="case-note">Permutation importance: how much accuracy is lost when each input is shuffled.</div>';
+      html += '<div class="case-card"><div class="case-title">What factors matter most</div>'
+        + '<div class="case-note">Which inputs have the biggest impact on the model\'s score — ranked by how much predictions degrade when each one is removed.</div>';
       IMPORTANCE.forEach(i => {
         html += `<div class="imp-row"><div class="imp-label">${i.feature}</div>`
           + `<div class="imp-bar-wrap"><div class="imp-bar" style="width:${Math.max(i.importance / maxImp * 100, 1)}%"></div></div></div>`;
@@ -953,14 +1359,14 @@ function renderList(data) {
 
     list.innerHTML = html;
     const mc = $('markerCount');
-    if (mc) mc.textContent = `${data.length} recorded events`;
+    if (mc) mc.textContent = `${data.length} events on record`;
     return;
   }
 
-  $('listTitle').textContent = mode === 'live' ? 'Highest risk now' : 'Recorded landslides';
+  $('listTitle').textContent = mode === 'live' ? 'Most at risk right now' : 'Past landslide events';
   $('listSubtitle').textContent = mode === 'live'
-    ? 'Ranked by risk under current conditions'
-    : 'Ranked by the score the model gave them';
+    ? 'Areas sorted by current risk level'
+    : 'Sorted by how strongly the model predicted them';
 
   [...data].sort((a, b) => b.risk - a.risk).slice(0, 80).forEach(m => {
     const b = band(m.risk);
@@ -976,6 +1382,7 @@ function renderList(data) {
       selectedId = m.id;
       render();
       focusOn(m.x, m.y);
+      showWarningModal(m);
     });
     list.appendChild(row);
   });
@@ -1381,4 +1788,102 @@ render();
 applyView();
 detectApi();
 registerServiceWorker();
+
+/* ---------------- Warning SMS Modal ---------------- */
+function buildAlertMsg(localeCode, severity, location, state, percent) {
+  const loc = LOCALES[localeCode] || LOCALES['en'];
+  const sev = loc[`severity_${severity.toLowerCase()}`] || severity;
+  const body = (loc.alert_body || '')
+    .replace('{severity}', sev)
+    .replace('{location}', location)
+    .replace('{state}', state)
+    .replace('{percent}', percent);
+  const action = loc[`action_${severity.toLowerCase()}`] || '';
+  const sig = loc.signature || '';
+  return [body, action, sig].join('\n');
+}
+
+function smsSegCount(text) {
+  const ascii = [...text].every(c => c.charCodeAt(0) < 128);
+  if (text.length <= (ascii ? 160 : 70)) return 1;
+  return Math.ceil(text.length / (ascii ? 153 : 67));
+}
+
+function showWarningModal(m) {
+  const sev = band(m.risk).toUpperCase();
+  const pct = Math.round(m.risk * 100);
+  const location = m.loc || '—';
+  const state = m.state || '—';
+
+  // Pick primary local language (first non-English in the state list)
+  const langs = WARN_STATE_LANGS[state] || ['hi', 'en'];
+  const localCode = langs.find(c => c !== 'en') || null;
+  const localLocaleData = localCode ? (LOCALES[localCode] || {}) : {};
+  const localName = localLocaleData._native_name || localCode;
+  const localVerified = !!localLocaleData._verified;
+
+  // Build messages
+  const msgEn = buildAlertMsg('en', sev, location, state, pct);
+  const msgLocal = localCode ? buildAlertMsg(localCode, sev, location, state, pct) : null;
+
+  // Severity color stripe + chip class
+  const stripeColor = { SEVERE: 'var(--risk-severe)', HIGH: 'var(--risk-high)', MODERATE: 'var(--risk-moderate)', LOW: 'var(--risk-low)' };
+  const chipCls = { SEVERE: 'p-severe', HIGH: 'p-high', MODERATE: 'p-moderate', LOW: 'p-low' };
+
+  $('warnModal').style.setProperty('--warn-stripe', stripeColor[sev] || 'var(--accent)');
+  $('warnLocName').textContent = location;
+  $('warnStateName').textContent = state + (m.date ? ' · ' + m.date : '');
+
+  const chip = $('warnRiskChip');
+  chip.className = `warn-risk-chip ${chipCls[sev] || 'p-low'}`;
+  chip.textContent = pct + '% · ' + sev;
+
+  $('warnMsgEn').textContent = msgEn;
+  $('warnSmsEn').textContent = smsSegCount(msgEn) + ' SMS';
+
+  const localBlock = $('warnLocalBlock');
+  if (msgLocal) {
+    $('warnLocalLang').textContent = localName;
+    $('warnMsgLocal').textContent = msgLocal;
+    $('warnSmsLocal').textContent = smsSegCount(msgLocal) + ' SMS';
+    const noteEl = $('warnLangNote');
+    noteEl.textContent = localVerified
+      ? ''
+      : 'Not yet verified by a native speaker — would be paired with English in a real send.';
+    noteEl.style.display = localVerified ? 'none' : '';
+    localBlock.style.display = '';
+  } else {
+    localBlock.style.display = 'none';
+  }
+
+  $('warnOverlay').classList.add('visible');
+  $('warnCloseBtn').focus();
+}
+
+$('warnCloseBtn').addEventListener('click', () => $('warnOverlay').classList.remove('visible'));
+$('warnOverlay').addEventListener('click', e => {
+  if (e.target === $('warnOverlay')) $('warnOverlay').classList.remove('visible');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') $('warnOverlay').classList.remove('visible');
+});
+$('warnCopy').addEventListener('click', () => {
+  const en = $('warnMsgEn').textContent;
+  const localBlock = $('warnLocalBlock');
+  const lo = localBlock.style.display === 'none' ? '' : '\n\n---\n\n' + $('warnMsgLocal').textContent;
+  navigator.clipboard.writeText(en + lo).then(() => {
+    $('warnCopy').textContent = 'Copied!';
+    setTimeout(() => { $('warnCopy').textContent = 'Copy all'; }, 2000);
+  }).catch(() => {
+    // Fallback for environments where clipboard API is not allowed
+    const ta = document.createElement('textarea');
+    ta.value = en + lo;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    $('warnCopy').textContent = 'Copied!';
+    setTimeout(() => { $('warnCopy').textContent = 'Copy all'; }, 2000);
+  });
+});
 </script>
