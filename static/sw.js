@@ -35,7 +35,11 @@ self.addEventListener('fetch', event => {
 
   // /api/predict needs a live satellite query; there is no useful cached
   // answer for an arbitrary coordinate, so let it fail honestly when offline.
-  if (url.pathname === '/api/predict') return;
+  // These all run live satellite queries (or re-score against them), so a
+  // cached answer for an arbitrary coordinate is worse than an honest
+  // failure. /api/simulate in particular is hit on every slider move, which
+  // would otherwise fill the cache with thousands of one-off entries.
+  if (['/api/predict', '/api/simulate', '/api/whatchanged'].includes(url.pathname)) return;
 
   event.respondWith(
     fetch(request)
