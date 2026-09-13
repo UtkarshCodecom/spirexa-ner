@@ -217,6 +217,9 @@ def main():
         "__IMPORTANCE__": json.dumps(importance),
         "__MODEL_META__": json.dumps(model_meta),
         "__AS_OF__": json.dumps(as_of),
+        "__BUILD_ID__": json.dumps(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ),
         "__LOCALES__": json.dumps(locales, ensure_ascii=False),
         "__STATE_LANGUAGES__": json.dumps(state_languages),
     }

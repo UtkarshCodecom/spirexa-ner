@@ -2101,6 +2101,22 @@ applyView();
 detectApi();
 registerServiceWorker();
 
+/* Printed so a stale page can be identified at a glance. If this timestamp
+   is older than your last rebuild, the browser or service worker is serving
+   a cached copy and nothing you change will appear until it is reloaded. */
+const BUILD_ID = __BUILD_ID__;
+console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
+            'color:#1d3a5c;font-weight:600');
+{
+  const stamp = document.createElement('div');
+  stamp.textContent = 'build ' + BUILD_ID;
+  stamp.style.cssText =
+    'position:fixed;bottom:4px;left:6px;font-size:9px;opacity:.35;' +
+    'font-family:var(--font-mono);color:var(--text-muted);z-index:200;' +
+    'pointer-events:none';
+  document.body.appendChild(stamp);
+}
+
 /* ---------------- Warning SMS Modal ---------------- */
 function buildAlertMsg(localeCode, severity, location, state, percent) {
   const loc = LOCALES[localeCode] || LOCALES['en'];
