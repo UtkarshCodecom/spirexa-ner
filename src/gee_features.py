@@ -82,8 +82,13 @@ def _feature_image(date, col, geom):
 
     for days in RAIN_WINDOWS:
         window = col["gpm"].filterDate(date.advance(-days, "day"), date)
-        # IMERG is mm/hr on 30-minute snapshots, so each image contributes v*0.5
-        rain = _or_missing(window, ee.Reducer.sum(), ["r"]).multiply(0.5)
+        # IMERG is mm/hr on 30-minute snapshots, so each image contributes v*0.5.
+        # Scale each image BEFORE reducing, never the reduced result: scaling
+        # afterwards also scales the MISSING sentinel, turning -9999 into
+        # -4999.5, which then slips past the `<= MISSING + 1` test in _clean()
+        # and reaches the model as thousands of millimetres of negative rain.
+        half = window.map(lambda img: img.multiply(0.5))
+        rain = _or_missing(half, ee.Reducer.sum(), ["r"])
         bands.append(rain.rename(f"rain_{days}d"))
 
     ndvi = _or_missing(
