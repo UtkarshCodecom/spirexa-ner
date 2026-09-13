@@ -415,6 +415,44 @@
   .file-row input { font-size: 11px; padding: 6px; }
 
 
+  /* ---- analysis panel: what-changed, simulator, decision ---- */
+  .an-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .an-tab {
+    flex: 1; padding: 6px 8px; font-size: 11px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: rgba(255,255,255,.5); color: var(--text-muted);
+    font-family: inherit; letter-spacing: .02em;
+  }
+  .an-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .an-delta { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .an-arrow { font-size: 13px; color: var(--text-muted); padding: 0 5px; }
+  .an-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px; font-size: 11.5px; padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .an-row:last-child { border-bottom: none; }
+  .an-row .lbl { color: var(--text-muted); }
+  .an-eff { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .an-eff.up { color: var(--risk-severe); }
+  .an-eff.down { color: var(--risk-low); }
+  .an-derived { opacity: .55; }
+  .an-slider { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  .an-slabel {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; color: var(--text-muted); margin-top: 7px;
+  }
+  .an-actions { margin: 0; padding-left: 16px; font-size: 11.5px; line-height: 1.55; }
+  .an-actions li { margin-bottom: 3px; }
+  .an-posture {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    font-weight: 600; padding: 5px 8px; border-radius: 6px; display: inline-block;
+  }
+  .an-note {
+    font-size: 10.5px; color: var(--text-muted); margin-top: 8px;
+    font-style: italic; line-height: 1.45;
+  }
+
   /* ---- live station ---- */
   .station-dot {
     width: 8px; height: 8px; border-radius: 50%; display: inline-block;
@@ -739,6 +777,14 @@
           <p id="probeSubtitle">Get a risk reading for any place and date</p>
         </div>
         <div class="probe" id="probeBody"></div>
+      </div>
+
+      <div class="panel glass" id="analysisPanel" hidden>
+        <div class="panel-header">
+          <h2>Analysis</h2>
+          <p id="analysisSubtitle">Why risk moved, and what-if simulation</p>
+        </div>
+        <div class="probe" id="analysisBody"></div>
       </div>
 
       <div class="panel glass" id="fieldPanel" hidden>
@@ -1456,13 +1502,207 @@ function renderProbeOnline() {
   });
 }
 
+/* ---------------- analysis panel ----------------
+   Three things the raw risk number cannot answer on its own: why it moved,
+   what it would be under different conditions, and what to do about it.
+   Self-contained - nothing here touches the probe or live panels.        */
+
+let anMode = 'changed';
+let anSliderState = null;
+let anTimer = null;
+
+function anPct(v) { return (v > 0 ? '+' : '') + v + 'pp'; }
+
+function anDecisionHtml(d) {
+  if (!d) return '';
+  const b = d.severity.toLowerCase();
+  return `
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+      <div class="an-posture p-${b}">${d.posture}</div>
+      <ul class="an-actions" style="margin-top:8px">
+        ${d.actions.map(a => `<li>${a}</li>`).join('')}
+      </ul>
+      <div class="an-note">${d.note}</div>
+    </div>`;
+}
+
+async function anRunChanged() {
+  const lat = $('aLat').value.trim(), lon = $('aLon').value.trim();
+  const days = $('aDays') ? $('aDays').value : '7';
+  const out = $('aResult');
+  out.innerHTML = '<div style="font-size:11.5px;color:var(--text-muted)">Querying satellites for both dates…</div>';
+  try {
+    const res = await fetch(`/api/whatchanged?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&days=${encodeURIComponent(days)}`);
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+
+    const rose = d.delta_percent > 0;
+    const measured = d.contributions.filter(c => !c.derived).slice(0, 5);
+    const derived = d.contributions.filter(c => c.derived);
+
+    out.innerHTML = `
+      <div style="display:flex;align-items:baseline;gap:4px">
+        <span class="an-delta">${d.risk_then.risk_percent}%</span>
+        <span class="an-arrow">&rarr;</span>
+        <span class="an-delta p-${d.risk_now.severity.toLowerCase()}">${d.risk_now.risk_percent}%</span>
+        <span class="an-eff ${rose ? 'up' : 'down'}" style="margin-left:auto">${anPct(d.delta_percent)}</span>
+      </div>
+      <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px">
+        ${d.compared_with} &rarr; ${d.date} &middot; risk ${d.direction}
+      </div>
+      ${d.primary_driver ? `<div style="font-size:11.5px;margin-top:9px">
+         <strong>Primary trigger:</strong> ${d.primary_driver.label}</div>` : ''}
+      <div style="margin-top:8px">
+        ${measured.map(c => `
+          <div class="an-row">
+            <span class="lbl">${c.label}</span>
+            <span>${c.before} &rarr; ${c.after} ${c.unit}
+              <span class="an-eff ${c.effect_on_risk >= 0 ? 'up' : 'down'}">${anPct(c.effect_on_risk)}</span>
+            </span>
+          </div>`).join('')}
+        ${derived.map(c => `
+          <div class="an-row an-derived">
+            <span class="lbl">${c.label} <em>(derived)</em></span>
+            <span>${c.before} &rarr; ${c.after}</span>
+          </div>`).join('')}
+      </div>
+      <div class="an-note">
+        Contributions measured by ablation: each value is put back to where it
+        was and the model re-scored, so the figure is that feature's real share
+        of this movement rather than its average importance.
+      </div>`;
+  } catch (err) {
+    out.innerHTML = `<div style="font-size:11.5px;color:var(--risk-severe)">${err.message}</div>`;
+  }
+}
+
+function anSimulateUrl() {
+  const lat = $('aLat').value.trim(), lon = $('aLon').value.trim();
+  let url = `/api/simulate?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+  if (anSliderState) {
+    for (const [k, v] of Object.entries(anSliderState)) {
+      url += `&${k}=${encodeURIComponent(v)}`;
+    }
+  }
+  return url;
+}
+
+async function anRunSimulate(rebuild) {
+  const out = $('aResult');
+  if (rebuild) {
+    anSliderState = null;
+    out.innerHTML = '<div style="font-size:11.5px;color:var(--text-muted)">Fetching current conditions…</div>';
+  }
+  try {
+    const res = await fetch(anSimulateUrl());
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+
+    const up = d.delta_percent > 0;
+    const scoreHtml = `
+      <div style="display:flex;align-items:baseline;gap:4px">
+        <span class="an-delta">${d.baseline.risk_percent}%</span>
+        <span class="an-arrow">&rarr;</span>
+        <span class="an-delta p-${d.simulated.severity.toLowerCase()}">${d.simulated.risk_percent}%</span>
+        <span class="an-eff ${up ? 'up' : 'down'}" style="margin-left:auto">${anPct(d.delta_percent)}</span>
+      </div>
+      <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px">
+        ${d.baseline.severity} &rarr; ${d.simulated.severity}${d.crosses_threshold ? ' &middot; <strong>crosses the band threshold</strong>' : ''}
+      </div>
+      ${d.derived ? `<div class="an-note" style="font-style:normal">
+        ${d.derived.label} ${d.derived.before} &rarr; ${d.derived.after} &mdash; ${d.derived.note}</div>` : ''}`;
+
+    if (rebuild) {
+      const usable = d.sliders.filter(sl => sl.current !== null);
+      anSliderState = {};
+      usable.forEach(sl => { anSliderState[sl.key] = sl.current; });
+
+      out.innerHTML = `<div id="aScore">${scoreHtml}</div>
+        <div id="aSliders" style="margin-top:10px">
+          ${usable.map(sl => `
+            <div class="an-slabel">
+              <span>${sl.label}</span>
+              <span id="v_${sl.key}">${sl.current}${sl.unit ? ' ' + sl.unit : ''}</span>
+            </div>
+            <input class="an-slider" type="range" data-key="${sl.key}" data-unit="${sl.unit}"
+                   min="${sl.min}" max="${sl.max}" step="${sl.step}" value="${sl.current}">`).join('')}
+        </div>
+        <div id="aDecision">${anDecisionHtml(d.decision)}</div>
+        ${usable.length === 0 ? '<div class="an-note">No live conditions available for this point today, so there is nothing to vary.</div>' : ''}`;
+
+      out.querySelectorAll('.an-slider').forEach(el => {
+        el.addEventListener('input', () => {
+          const k = el.dataset.key;
+          anSliderState[k] = parseFloat(el.value);
+          $('v_' + k).textContent = el.value + (el.dataset.unit ? ' ' + el.dataset.unit : '');
+          clearTimeout(anTimer);
+          anTimer = setTimeout(() => anRunSimulate(false), 180);
+        });
+      });
+    } else {
+      $('aScore').innerHTML = scoreHtml;
+      $('aDecision').innerHTML = anDecisionHtml(d.decision);
+    }
+  } catch (err) {
+    out.innerHTML = `<div style="font-size:11.5px;color:var(--risk-severe)">${err.message}</div>`;
+  }
+}
+
+function anRender() {
+  const isChanged = anMode === 'changed';
+  $('analysisSubtitle').textContent = isChanged
+    ? 'What moved the risk, and by how much'
+    : 'Change the conditions and re-score instantly';
+
+  $('aControls').innerHTML = isChanged
+    ? `<div class="an-slabel"><span>Compare against</span><span></span></div>
+       <select id="aDays" class="probe-full" style="width:100%">
+         <option value="1">yesterday</option>
+         <option value="3">3 days ago</option>
+         <option value="7" selected>7 days ago</option>
+         <option value="14">14 days ago</option>
+       </select>
+       <button class="probe-btn" id="aRun" style="margin-top:8px">Explain the change</button>`
+    : `<button class="probe-btn" id="aRun">Load current conditions</button>`;
+
+  $('aResult').innerHTML = '';
+  $('aRun').addEventListener('click', () =>
+    isChanged ? anRunChanged() : anRunSimulate(true));
+}
+
+function renderAnalysisPanel() {
+  $('analysisPanel').hidden = false;
+  $('analysisBody').innerHTML = `
+    <div class="probe-fields">
+      <input id="aLat" placeholder="latitude" value="23.73" inputmode="decimal">
+      <input id="aLon" placeholder="longitude" value="92.72" inputmode="decimal">
+    </div>
+    <div class="an-tabs">
+      <button class="an-tab active" data-mode="changed">What changed</button>
+      <button class="an-tab" data-mode="simulate">Simulate</button>
+    </div>
+    <div id="aControls"></div>
+    <div class="probe-result" id="aResult"></div>`;
+
+  $('analysisBody').querySelectorAll('.an-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $('analysisBody').querySelectorAll('.an-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      anMode = tab.dataset.mode;
+      anRender();
+    });
+  });
+
+  anRender();
+}
+
 async function detectApi() {
   try {
     const res = await fetch('/api/health', { signal: AbortSignal.timeout(1500) });
     const data = await res.json();
     apiAvailable = data.status === 'ok';
   } catch { apiAvailable = false; }
-  if (apiAvailable) { renderProbeOnline(); startLive(); }
+  if (apiAvailable) { renderProbeOnline(); startLive(); renderAnalysisPanel(); }
   else { renderProbeOffline(); renderLiveOffline(); }
   if (apiAvailable) enableFieldMode();
 }

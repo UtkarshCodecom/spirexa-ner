@@ -42,6 +42,7 @@ REPORTS_INDEX = "data/reports/reports.jsonl"
 SENSOR_INDEX = "data/reports/sensors.jsonl"
 STATION_FRESH_SECONDS = 30   # a node is "connected" if heard from this recently
 _predict_cache = {}          # (lat, lon, date) -> result, so the panel stays responsive
+_feature_cache = {}          # (lat, lon, date) -> raw feature dict, for simulate/whatchanged
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 
 
@@ -140,6 +141,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._list_sensors())
             elif route == "/api/live":
                 self._json(self._live(params))
+            elif route == "/api/simulate":
+                self._json(self._simulate(params))
+            elif route == "/api/whatchanged":
+                self._json(self._whatchanged(params))
+            elif route == "/api/decision":
+                self._json(self._decision(params))
             else:
                 self._json({"error": "not found", "path": route}, status=404)
         except Exception as exc:  # surface the real problem to the caller
@@ -357,6 +364,92 @@ class Handler(BaseHTTPRequestHandler):
                     reports.append(json.loads(line))
         reports.reverse()
         return {"count": len(reports), "reports": reports[:200]}
+
+    def _features_for(self, lat, lon, date):
+        """Feature vector for a point/date, cached - each miss is a live
+        Earth Engine query and costs several seconds."""
+        key = (round(lat, 4), round(lon, 4), date)
+        if key not in _feature_cache:
+            import predict as predict_mod
+
+            _, feats = predict_mod.predict(lat, lon, date, with_features=True)
+            _feature_cache[key] = feats
+        return dict(_feature_cache[key])
+
+    def _simulate(self, params):
+        """Counterfactual: score the same place under altered conditions.
+
+        With no overrides supplied this returns the baseline plus the slider
+        definitions, which is what the panel uses to build itself.
+        """
+        import datetime
+
+        import scenarios
+
+        if "lat" not in params or "lon" not in params:
+            return {"error": "lat and lon are required"}
+        lat = float(params["lat"][0])
+        lon = float(params["lon"][0])
+        date = params.get("date", [datetime.date.today().isoformat()])[0]
+
+        feats = self._features_for(lat, lon, date)
+
+        overrides = {}
+        for slider in scenarios.SIMULATABLE:
+            k = slider["key"]
+            if k in params:
+                try:
+                    overrides[k] = float(params[k][0])
+                except (TypeError, ValueError):
+                    return {"error": f"{k} must be a number"}
+
+        result = scenarios.simulate(feats, overrides)
+        result["lat"], result["lon"], result["date"] = lat, lon, date
+        result["sliders"] = [
+            dict(s, label=scenarios.LABELS.get(s["key"], (s["key"], ""))[0],
+                 unit=scenarios.LABELS.get(s["key"], ("", ""))[1],
+                 current=(round(float(feats[s["key"]]), 3)
+                          if feats.get(s["key"]) is not None else None))
+            for s in scenarios.SIMULATABLE
+        ]
+        result["decision"] = scenarios.decision_for(result["simulated"]["risk"])
+        return result
+
+    def _whatchanged(self, params):
+        """Why risk moved between two dates, attributed by ablation."""
+        import datetime
+
+        import scenarios
+
+        if "lat" not in params or "lon" not in params:
+            return {"error": "lat and lon are required"}
+        lat = float(params["lat"][0])
+        lon = float(params["lon"][0])
+        date = params.get("date", [datetime.date.today().isoformat()])[0]
+        try:
+            days = max(1, min(30, int(params.get("days", ["1"])[0])))
+        except (TypeError, ValueError):
+            return {"error": "days must be a whole number"}
+
+        earlier = scenarios.days_ago(date, days)
+        feats_now = self._features_for(lat, lon, date)
+        feats_then = self._features_for(lat, lon, earlier)
+
+        result = scenarios.attribute(feats_then, feats_now)
+        result.update({"lat": lat, "lon": lon, "date": date,
+                       "compared_with": earlier, "days": days})
+        return result
+
+    def _decision(self, params):
+        import scenarios
+
+        if "risk" in params:
+            risk = float(params["risk"][0])
+        elif "risk_percent" in params:
+            risk = float(params["risk_percent"][0]) / 100.0
+        else:
+            return {"error": "risk or risk_percent is required"}
+        return scenarios.decision_for(max(0.0, min(1.0, risk)))
 
     def _predict(self, params):
         import datetime
