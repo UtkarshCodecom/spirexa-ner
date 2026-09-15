@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPIREXA — Reservoir &amp; Flood Simulator</title>
+<style>
+  :root{
+    --ink:#0e1420; --muted:#7d8798; --accent:#5b8cff;
+    --low:#22c55e; --mod:#f59e0b; --high:#f97316; --sev:#ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#05070c;
+    font-family:"Avenir Next","Helvetica Neue",system-ui,sans-serif;color:#eaf0fb}
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block;
+    touch-action:none;cursor:grab}
+  #scene:active{cursor:grabbing}
+
+  .panel{
+    backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.16);border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+  h2{font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin-bottom:11px}
+
+  /* ---- left stack ---- */
+  #left{position:fixed;top:18px;left:18px;width:310px;
+    display:flex;flex-direction:column;gap:11px;max-height:calc(100vh - 36px)}
+  #state{padding:15px 17px}
+  .kv{display:flex;justify-content:space-between;align-items:baseline;
+    font-size:12px;padding:4px 0}
+  .kv span:first-child{color:var(--muted)}
+  .kv b{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px}
+  #levelbar{height:9px;border-radius:9px;background:rgba(255,255,255,.12);
+    margin:9px 0 4px;overflow:hidden;position:relative}
+  #levelfill{height:100%;border-radius:9px;transition:width .25s,background .25s}
+  #frlmark{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.65}
+  .barnote{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted)}
+
+  #decision{padding:15px 17px}
+  #posture{font-size:15px;font-weight:600;margin-bottom:4px}
+  #why{font-size:11px;color:#c9d3e4;line-height:1.55;margin-bottom:10px}
+  #acts{font-size:11.5px;line-height:1.6;color:#c9d3e4;padding-left:15px}
+  #acts li{margin-bottom:3px}
+
+  /* ---- right controls ---- */
+  #controls{position:fixed;top:18px;right:18px;width:302px;padding:15px 17px;
+    max-height:calc(100vh - 36px);overflow:auto}
+  .ctl{margin-bottom:13px}
+  .ctl label{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px}
+  .ctl label span:last-child{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:4px;
+    background:rgba(255,255,255,.18);outline:none;touch-action:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 9px rgba(0,0,0,.5)}
+  .hint{font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px}
+  .src{display:flex;gap:6px;margin-bottom:13px}
+  .src button{flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.07);color:#cfd9ea;font-size:10.5px;font-weight:600;
+    cursor:pointer;font-family:inherit}
+  .src button.on{background:linear-gradient(135deg,#3d6fd8,#5b8cff);color:#fff;border-color:transparent}
+  #actions{display:flex;gap:7px;margin-top:6px}
+  #actions button{flex:1;padding:10px;border:none;border-radius:11px;cursor:pointer;
+    font-family:inherit;font-size:11.5px;font-weight:600}
+  #storm{background:var(--sev);color:#fff}
+  #reset{background:rgba(255,255,255,.14);color:#eaf0fb}
+
+  /* ---- downstream impact ---- */
+  #impact{position:fixed;bottom:18px;left:18px;width:340px;padding:14px 17px}
+  .imp{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:5px 0}
+  .imp .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .imp .nm{flex:1;color:#c9d3e4}
+  .imp .st{font-weight:600;font-size:11px}
+
+  #title{position:fixed;bottom:18px;right:18px;text-align:right;
+    text-shadow:0 2px 14px rgba(0,0,0,.85)}
+  #title b{font-size:14px}
+  #title div{font-size:10px;color:var(--muted);margin-top:3px}
+  #hintbar{position:fixed;bottom:78px;right:18px;font-size:10px;color:var(--muted);
+    text-align:right;line-height:1.55;text-shadow:0 2px 12px rgba(0,0,0,.9)}
+  #nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);
+    display:flex;gap:7px;padding:5px;border-radius:14px}
+  #nav a{padding:7px 14px;border-radius:10px;font-size:11.5px;font-weight:600;
+    color:#cfd9ea;text-decoration:none}
+  #nav a.on{background:linear-gradient(135deg,#3d6fd8,#5b8cff);color:#fff}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div class="panel" id="nav">
+  <a href="/">Dashboard</a>
+  <a href="/simulator">Slope</a>
+  <a href="/flood" class="on">Reservoir</a>
+</div>
+
+<div id="left">
+  <div class="panel" id="state">
+    <h2>Reservoir</h2>
+    <div id="levelbar"><div id="levelfill"></div><div id="frlmark"></div></div>
+    <div class="barnote"><span>MDDL</span><span id="frlLabel">FRL</span></div>
+    <div class="kv"><span>Level</span><b id="vLevel">—</b></div>
+    <div class="kv"><span>Live storage</span><b id="vStore">—</b></div>
+    <div class="kv"><span>Inflow</span><b id="vIn">—</b></div>
+    <div class="kv"><span>Total release</span><b id="vOut">—</b></div>
+    <div class="kv"><span>Generating</span><b id="vGen">—</b></div>
+  </div>
+
+  <div class="panel" id="decision">
+    <h2>Recommended action</h2>
+    <div id="posture">—</div>
+    <div id="why">—</div>
+    <ul id="acts"></ul>
+  </div>
+</div>
+
+<div class="panel" id="controls">
+  <h2>Operator console</h2>
+
+  <div class="src">
+    <button id="srcManual" class="on">Manual</button>
+    <button id="srcNode">Ground node</button>
+    <button id="srcLive">Live rain</button>
+  </div>
+
+  <div class="ctl">
+    <label><span>Catchment rainfall</span><span id="vRain">120 mm/d</span></label>
+    <input type="range" id="sRain" min="0" max="400" step="5" value="120">
+    <div class="hint" id="rainSrc">Manual — drag to set the storm.</div>
+  </div>
+  <div class="ctl">
+    <label><span>Reservoir level</span><span id="vLevelIn">78%</span></label>
+    <input type="range" id="sLevel" min="20" max="100" step="1" value="78">
+  </div>
+  <div class="ctl">
+    <label><span>Spillway gates</span><span id="vGate">0%</span></label>
+    <input type="range" id="sGate" min="0" max="100" step="1" value="0">
+  </div>
+  <div class="ctl">
+    <label><span>Generation</span><span id="vTurb">70%</span></label>
+    <input type="range" id="sTurb" min="0" max="100" step="1" value="70">
+  </div>
+  <div class="ctl">
+    <label><span>Decision horizon</span><span id="vHrz">12 h</span></label>
+    <input type="range" id="sHrz" min="3" max="48" step="1" value="12">
+  </div>
+
+  <div id="actions">
+    <button id="storm">Cloudburst</button>
+    <button id="reset">Reset</button>
+  </div>
+</div>
+
+<div class="panel" id="impact">
+  <h2>Downstream</h2>
+  <div class="kv"><span>Stage at town (25 km)</span><b id="vStage">—</b></div>
+  <div class="kv"><span>Flood wave arrives in</span><b id="vEta">—</b></div>
+  <div id="impList"></div>
+</div>
+
+<div id="hintbar">drag to orbit &middot; scroll to zoom</div>
+<div id="title">
+  <b>SPIREXA</b>
+  <div>Reservoir operation &middot; decision support only</div>
+</div>
+
+<script type="module">
+import * as THREE from '/static/vendor/three.module.min.js';
+
+/* ======================================================================
+   THE HYDROLOGY
+
+   Everything below is textbook, and deliberately so: a reservoir operator
+   can check every line of it against a manual. Nothing here is learned
+   from data and nothing here is a neural network.
+
+     inflow      rational method            Q = C i A
+     storage     area-capacity curve        V = Vmax (h/H)^k
+     turbines    power equation             Q = P / (rho g H eta)
+     spillway    ogee weir                  Q = Cd L H^1.5
+     balance     continuity                 dS/dt = Qin - Qout
+     downstream  stage-discharge rating     h = a Q^b
+     travel      kinematic wave             t = L / celerity
+   ====================================================================== */
+const DAM = {
+  catchmentKm2: 2000,
+  runoffCoeff: 0.55,        // steep, forested, thin soils
+  liveStorageMm3: 100,      // million m3 between MDDL and FRL
+  headM: 200,               // gross head on the turbines
+  installedMW: 1200,
+  turbineEff: 0.90,
+  spillCrestLenM: 60,
+  spillMaxHeadM: 12,
+  spillCd: 2.2,             // SI ogee coefficient
+  townKm: 25,
+  celerityMs: 2.5,          // flood wave speed down a mountain river
+  bankFullCumec: 1500,      // downstream channel capacity
+  ratingA: 0.322,           // h = a Q^b, calibrated so bank-full ~ 6 m
+  ratingB: 0.40,
+};
+
+const RHO_G = 1000 * 9.81;
+
+function inflowCumec(rainMmPerDay) {
+  const i = (rainMmPerDay / 1000) / 86400;              // m/s
+  return DAM.runoffCoeff * i * DAM.catchmentKm2 * 1e6;  // m3/s
+}
+function turbineCumec(genPct) {
+  const p = DAM.installedMW * 1e6 * (genPct / 100);
+  return p / (RHO_G * DAM.headM * DAM.turbineEff);
+}
+function spillCumec(gatePct, levelPct) {
+  // head over the crest only exists once the pool is near the top
+  const avail = Math.max(0, (levelPct - 70) / 30) * DAM.spillMaxHeadM;
+  const h = avail * (gatePct / 100);
+  if (h <= 0) return 0;
+  return DAM.spillCd * DAM.spillCrestLenM * Math.pow(h, 1.5);
+}
+function stageAt(q) { return DAM.ratingA * Math.pow(Math.max(q, 1), DAM.ratingB); }
+function travelHours() { return DAM.townKm * 1000 / DAM.celerityMs / 3600; }
+
+/** Marches the reservoir forward and reports where it ends up. */
+function project(rain, levelPct, gatePct, genPct, hours) {
+  const qIn = inflowCumec(rain);
+  const stepH = 0.25;
+  let lvl = levelPct;
+  let overtopAt = null, emptyAt = null;
+  const track = [];
+  for (let t = 0; t <= hours; t += stepH) {
+    const qOut = turbineCumec(genPct) + spillCumec(gatePct, lvl);
+    const dV = (qIn - qOut) * stepH * 3600;               // m3 this step
+    lvl += dV / (DAM.liveStorageMm3 * 1e6) * 100;         // as % of live storage
+    lvl = Math.max(0, Math.min(115, lvl));
+    if (lvl >= 100 && overtopAt === null) overtopAt = t;
+    if (lvl <= 20 && emptyAt === null) emptyAt = t;
+    track.push({ t, lvl });
+  }
+  const qOutNow = turbineCumec(genPct) + spillCumec(gatePct, levelPct);
+  return { qIn, qOutNow, endLevel: lvl, overtopAt, emptyAt, track };
+}
+
+/** What an operator should actually do about it. */
+function advise(p, levelPct, gatePct, rain) {
+  const safe = p.qOutNow <= DAM.bankFullCumec;
+  const acts = [];
+  let posture, colour, why;
+
+  if (p.overtopAt !== null && p.overtopAt <= 6) {
+    posture = 'CRITICAL — release now';
+    colour = 'var(--sev)';
+    why = `At this inflow the pool reaches FRL in about ${p.overtopAt.toFixed(1)} h. `
+        + `Waiting removes the choice: an uncontrolled spill is the same water with no warning time.`;
+    acts.push('Open gates progressively now, while the release is still controlled');
+    acts.push(`Warn downstream before releasing — the wave needs ${travelHours().toFixed(1)} h to reach the town`);
+    acts.push('Confirm the powerhouse is passing its full rated flow');
+  } else if (p.overtopAt !== null) {
+    posture = 'PRE-RELEASE — make cushion';
+    colour = 'var(--high)';
+    why = `Pool reaches FRL in about ${p.overtopAt.toFixed(1)} h on the current balance. `
+        + `Releasing early and slowly costs less downstream than releasing late and fast.`;
+    acts.push('Begin a measured drawdown to open flood cushion');
+    acts.push('Hold release under the downstream bank-full figure while you can');
+    acts.push('Put the downstream district on notice');
+  } else if (levelPct > 92 && rain > 150) {
+    posture = 'ELEVATED — watch closely';
+    colour = 'var(--mod)';
+    why = 'Pool is high and the catchment is wet. The balance holds for now, but there is '
+        + 'little cushion left if the storm intensifies.';
+    acts.push('Re-run the projection every hour while rainfall stays above 150 mm/day');
+    acts.push('Have gate operators on station');
+  } else if (p.emptyAt !== null) {
+    posture = 'DRAWDOWN — generation at risk';
+    colour = 'var(--accent)';
+    why = `Release exceeds inflow; the pool hits minimum drawdown level in about `
+        + `${p.emptyAt.toFixed(1)} h and generation stops.`;
+    acts.push('Reduce release or generation to protect the pool');
+  } else {
+    posture = 'NORMAL — no action';
+    colour = 'var(--low)';
+    why = 'Inflow and release are in balance over the horizon, and release is inside the '
+        + 'downstream channel capacity.';
+    acts.push('Continue scheduled generation');
+  }
+
+  if (!safe) {
+    acts.push(`Release is ${Math.round(p.qOutNow)} m³/s against a bank-full channel of `
+            + `${DAM.bankFullCumec} m³/s — downstream flooding is a consequence of this release, not of the storm`);
+  }
+  return { posture, colour, why, acts };
+}
+
+/* ============================ scene ============================ */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x121f38);
+scene.fog = new THREE.Fog(0x121f38, 150, 420);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
+// High enough to clear the near ridge (bed + 40) and far enough back that
+// dam, powerhouse, bridge and town are all in one frame.
+// Looking upstream from above the town: town in front, then the bridge,
+// the powerhouse, the dam, and the pool behind it -- the whole cascade in
+// the order the water meets it.
+// pitch is set to clear the dam crest: from downstream at a low angle the
+// dam correctly hides its own reservoir, which is realistic and useless
+let camYaw = 0.88, camPitch = 0.62, camDist = 250;
+const target = new THREE.Vector3(35, 0, 0);
+function placeCamera(){
+  camera.position.set(
+    target.x + camDist*Math.cos(camPitch)*Math.sin(camYaw),
+    target.y + camDist*Math.sin(camPitch),
+    target.z + camDist*Math.cos(camPitch)*Math.cos(camYaw));
+  camera.lookAt(target);
+}
+let idleSince = performance.now(), driftDir = 1;
+const touched = () => { idleSince = performance.now(); };
+const pointers = new Map();
+let pinchPrev = 0;
+const gap = () => { const [a,b]=[...pointers.values()]; return Math.hypot(a.x-b.x,a.y-b.y); };
+canvas.addEventListener('pointerdown', e=>{
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if (pointers.size===2) pinchPrev = gap();
+  touched();
+});
+canvas.addEventListener('pointermove', e=>{
+  const p = pointers.get(e.pointerId); if(!p) return;
+  const dx=e.clientX-p.x, dy=e.clientY-p.y; p.x=e.clientX; p.y=e.clientY;
+  if (pointers.size>=2){ const g=gap();
+    if(pinchPrev>0&&g>0) camDist=Math.max(70,Math.min(420,camDist*pinchPrev/g));
+    pinchPrev=g; placeCamera(); return; }
+  camYaw -= dx*0.006;
+  camPitch = Math.max(0.08, Math.min(1.15, camPitch + dy*0.005));
+  placeCamera(); touched();
+});
+const drop = e => { pointers.delete(e.pointerId); if(pointers.size<2) pinchPrev=0; };
+canvas.addEventListener('pointerup', drop);
+canvas.addEventListener('pointercancel', drop);
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  camDist = Math.max(70, Math.min(420, camDist + e.deltaY*0.12));
+  placeCamera(); touched();
+}, {passive:false});
+
+scene.add(new THREE.HemisphereLight(0x9ec5ff, 0x2a2418, 0.75));
+const sun = new THREE.DirectionalLight(0xfff1d8, 1.6);
+sun.position.set(-70, 110, 60); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-140; sun.shadow.camera.right=140;
+sun.shadow.camera.top=140; sun.shadow.camera.bottom=-140;
+sun.shadow.camera.far=340;
+scene.add(sun);
+
+/* ---- the valley ---- */
+// x runs downstream, z across the valley. The dam sits at x = 0.
+const VX = 300, VZ = 170, SEGX = 220, SEGZ = 130;
+const DAM_X = 0, GORGE_HALF = 13, DAM_TOP = 26, DAM_BASE = -6;
+
+function bedY(x){ return -x * 0.055; }                  // river falls downstream
+function valleyY(x, z){
+  const d = Math.abs(z);
+  const bed = bedY(x);
+  // a gorge at the dam, opening out downstream into a floodplain
+  const openness = 1 + Math.max(0, x) * 0.006;   // opens out, but not into a lake
+  const half = GORGE_HALF * openness;
+  if (d <= half) return bed;
+  const up = d - half;
+  // Walls have to out-climb the pool: full supply sits ~29 m above the dam
+  // base, so a wall that only gains 8 m in 20 puts the whole valley under
+  // water and the scene reads as a lake with a dam floating in it.
+  const steep = 0.95 / Math.sqrt(openness);
+  // ...and then stop climbing. Unbounded, the wall reaches 300 units at the
+  // edge of the tile and the scene becomes a slot canyon.
+  const rise = Math.min(Math.pow(up, 1.32) * steep, 40 + Math.sin(x*0.031)*7);
+  return bed + rise + Math.sin(x*0.05)*Math.cos(z*0.04)*1.6;
+}
+
+const vgeo = new THREE.PlaneGeometry(VX, VZ, SEGX, SEGZ);
+vgeo.rotateX(-Math.PI/2);
+{
+  const pos = vgeo.attributes.position;
+  for (let i=0;i<pos.count;i++){
+    const x = pos.getX(i) + VX/2 - 120, z = pos.getZ(i);
+    pos.setX(i, x); pos.setY(i, valleyY(x, z));
+  }
+  pos.needsUpdate = true; vgeo.computeVertexNormals();
+}
+const valley = new THREE.Mesh(vgeo, new THREE.MeshStandardMaterial({
+  color:0x4a6b43, roughness:0.96 }));
+valley.receiveShadow = true; valley.castShadow = true;
+scene.add(valley);
+
+/* ---- the dam ---- */
+const concrete = new THREE.MeshStandardMaterial({color:0xb9bec6, roughness:0.85});
+const dam = new THREE.Mesh(
+  new THREE.BoxGeometry(7, DAM_TOP - DAM_BASE, GORGE_HALF*2 + 14), concrete);
+dam.position.set(DAM_X, (DAM_TOP + DAM_BASE)/2, 0);
+dam.castShadow = dam.receiveShadow = true;
+scene.add(dam);
+// gate piers on the crest
+for (let i=-2;i<=2;i++){
+  const pier = new THREE.Mesh(new THREE.BoxGeometry(7.6, 6, 1.6), concrete);
+  pier.position.set(DAM_X, DAM_TOP + 2, i * 4.6);
+  pier.castShadow = true; scene.add(pier);
+}
+const gateMat = new THREE.MeshStandardMaterial({color:0x2f3b4d, roughness:.5, metalness:.6});
+const gates = [];
+for (let i=-1.5;i<=1.5;i++){
+  const g = new THREE.Mesh(new THREE.BoxGeometry(0.8, 7, 3.6), gateMat);
+  g.position.set(DAM_X + 3.6, DAM_TOP - 2.5, i * 4.6);
+  g.castShadow = true; scene.add(g); gates.push(g);
+}
+
+/* ---- powerhouse and town ---- */
+function block(w,h,d,c,x,z){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color:c, roughness:.75}));
+  m.position.set(x, valleyY(x,z) + h/2, z);
+  m.castShadow = m.receiveShadow = true; scene.add(m); return m;
+}
+const powerhouse = block(16, 9, 12, 0xd8dde4, 26, 15);
+block(5, 5, 5, 0xc3c9d2, 26, 25);                       // switchyard shed
+
+const town = [];
+for (let i=0;i<34;i++){
+  const x = 96 + (Math.random()-0.5)*46;
+  // clear of the channel: at x~96 the floodplain half-width is already 28
+  const z = (Math.random() > .5 ? 1 : -1) * (38 + Math.random()*26);
+  const h = 3 + Math.random()*4;
+  town.push(block(4+Math.random()*3, h, 4+Math.random()*3,
+                  [0xe3d9c8,0xd9cfbc,0xcfc4ae][i%3], x, z));
+}
+
+/* ---- road along the right bank, and a bridge ---- */
+const roadMat = new THREE.MeshStandardMaterial({color:0x545a63, roughness:.85});
+const roadPts = [];
+for (let x=-90; x<=170; x+=4) roadPts.push(new THREE.Vector3(x, valleyY(x, 32)+0.5, 32));
+const road = new THREE.Mesh(
+  new THREE.TubeGeometry(new THREE.CatmullRomCurve3(roadPts), 80, 3.2, 4, false), roadMat);
+road.receiveShadow = true; scene.add(road);
+const bridge = new THREE.Mesh(new THREE.BoxGeometry(9, 1.4, 80), roadMat);
+bridge.position.set(70, bedY(70) + 11, 0);
+bridge.castShadow = true; scene.add(bridge);
+for (const bz of [-22, 22]){
+  const pr = new THREE.Mesh(new THREE.BoxGeometry(4, 18, 4), concrete);
+  pr.position.set(70, bedY(70) + 4, bz); pr.castShadow = true; scene.add(pr);
+}
+
+/* ---- water ---- */
+const waterMat = new THREE.MeshStandardMaterial({
+  color:0x2f6fb5, roughness:0.18, metalness:0.25, transparent:true, opacity:0.88 });
+
+// Reservoir: one flat plane. Where the valley rises above it the terrain
+// simply hides it, which draws the correct shoreline for free.
+// only as far back as the terrain goes, or the pool hangs in mid air
+const pool = new THREE.Mesh(new THREE.PlaneGeometry(120, VZ), waterMat);
+pool.rotation.x = -Math.PI/2;
+pool.position.set(DAM_X - 60, 0, 0);
+scene.add(pool);
+
+// Downstream: a ribbon whose surface follows the falling bed.
+const dsGeo = new THREE.PlaneGeometry(200, VZ, 100, 60);
+dsGeo.rotateX(-Math.PI/2);
+const dsBase = Float32Array.from(dsGeo.attributes.position.array);
+const downstream = new THREE.Mesh(dsGeo, waterMat);
+downstream.position.set(0, 0, 0);
+scene.add(downstream);
+function setDownstream(stage){
+  const pos = dsGeo.attributes.position;
+  for (let i=0;i<pos.count;i++){
+    const x = dsBase[i*3] + 100 + DAM_X + 4;
+    pos.setX(i, x);
+    pos.setY(i, bedY(x) + stage);
+  }
+  pos.needsUpdate = true;
+}
+
+// spill jet
+const jet = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshStandardMaterial({color:0xcfe6ff, roughness:.3, transparent:true, opacity:.85}));
+jet.visible = false; scene.add(jet);
+
+/* ---- forest on the valley sides ---- */
+const TREES = 700;
+const trunkM = new THREE.MeshStandardMaterial({color:0x4a3826, roughness:1});
+const leafM  = new THREE.MeshStandardMaterial({color:0x2c6130, roughness:.92});
+const trunks = new THREE.InstancedMesh(
+  new THREE.CylinderGeometry(0.22,0.34,2.6,5), trunkM, TREES);
+const leaves = new THREE.InstancedMesh(
+  new THREE.ConeGeometry(1.7,5.2,7), leafM, TREES);
+trunks.castShadow = leaves.castShadow = true;
+scene.add(trunks, leaves);
+{
+  const d = new THREE.Object3D();
+  let n = 0, guard = 0;
+  while (n < TREES && guard++ < TREES * 40) {
+    const x = -115 + Math.random()*290;
+    const z = (Math.random() > .5 ? 1 : -1) * (14 + Math.random()*68);
+    const y = valleyY(x, z);
+    // keep them off the pool, off the river, and off the town's shelf
+    if (y < 20) continue;
+    if (Math.abs(x - 96) < 34 && Math.abs(z) < 70) continue;
+    const sc = 0.7 + Math.random()*0.7;
+    d.position.set(x, y + 1.3*sc, z);
+    d.rotation.set(0, Math.random()*Math.PI, 0);
+    d.scale.setScalar(sc); d.updateMatrix();
+    trunks.setMatrixAt(n, d.matrix);
+    d.position.y = y + 4.4*sc; d.updateMatrix();
+    leaves.setMatrixAt(n, d.matrix);
+    n++;
+  }
+  for (let i = n; i < TREES; i++) {
+    d.position.set(0,-999,0); d.scale.setScalar(0.0001); d.updateMatrix();
+    trunks.setMatrixAt(i, d.matrix); leaves.setMatrixAt(i, d.matrix);
+  }
+  trunks.instanceMatrix.needsUpdate = leaves.instanceMatrix.needsUpdate = true;
+}
+
+/* ---- rain ---- */
+const RAIN_N = 4200, DROP = 2.0;
+const rp = new Float32Array(RAIN_N*6);
+for (let i=0;i<RAIN_N;i++){
+  const x=(Math.random()-0.5)*VX, z=(Math.random()-0.5)*VZ, y=Math.random()*110;
+  rp[i*6]=x; rp[i*6+1]=y;      rp[i*6+2]=z;
+  rp[i*6+3]=x; rp[i*6+4]=y-DROP; rp[i*6+5]=z;
+}
+const rgeo = new THREE.BufferGeometry();
+rgeo.setAttribute('position', new THREE.BufferAttribute(rp,3));
+const rain = new THREE.LineSegments(rgeo,
+  new THREE.LineBasicMaterial({color:0xbcd9ff, transparent:true, opacity:0}));
+scene.add(rain);
+
+/* ============================ wiring ============================ */
+const $ = id => document.getElementById(id);
+const F = id => +$(id).value;
+let source = 'manual';
+
+function fmt(q){ return q >= 1000 ? (q/1000).toFixed(2)+'k' : Math.round(q); }
+
+function update(){
+  const rain_ = F('sRain'), lvl = F('sLevel'), gate = F('sGate'),
+        gen = F('sTurb'), hrz = F('sHrz');
+
+  $('vRain').textContent  = rain_ + ' mm/d';
+  $('vLevelIn').textContent = lvl + '%';
+  $('vGate').textContent  = gate + '%';
+  $('vTurb').textContent  = gen + '%';
+  $('vHrz').textContent   = hrz + ' h';
+
+  const p = project(rain_, lvl, gate, gen, hrz);
+  const a = advise(p, lvl, gate, rain_);
+  const stage = stageAt(p.qOutNow);
+
+  // --- reservoir panel ---
+  $('levelfill').style.width = Math.min(100, lvl) + '%';
+  $('levelfill').style.background = lvl >= 98 ? 'var(--sev)'
+    : lvl >= 90 ? 'var(--high)' : lvl >= 40 ? 'var(--low)' : 'var(--accent)';
+  $('vLevel').textContent = lvl + '%  →  ' + Math.round(p.endLevel) + '% in ' + hrz + ' h';
+  $('vStore').textContent = (DAM.liveStorageMm3 * lvl/100).toFixed(1) + ' Mm³';
+  $('vIn').textContent  = fmt(p.qIn) + ' m³/s';
+  $('vOut').textContent = fmt(p.qOutNow) + ' m³/s';
+  $('vGen').textContent = Math.round(DAM.installedMW * gen/100) + ' MW';
+
+  // --- decision ---
+  $('posture').textContent = a.posture;
+  $('posture').style.color = a.colour;
+  $('why').textContent = a.why;
+  $('acts').innerHTML = a.acts.map(t => `<li>${t}</li>`).join('');
+
+  // --- downstream ---
+  $('vStage').textContent = stage.toFixed(1) + ' m';
+  $('vEta').textContent = travelHours().toFixed(1) + ' h';
+  const items = [
+    ['Riverside road', stage > 7.5],
+    ['Bridge deck', stage > 9.5],
+    ['Powerhouse yard', p.qOutNow > 4000],
+    ['Town, low bank', stage > 6.0],
+  ];
+  $('impList').innerHTML = items.map(([n, hit]) =>
+    `<div class="imp"><span class="dot" style="background:${hit?'var(--sev)':'var(--low)'}"></span>
+     <span class="nm">${n}</span>
+     <span class="st" style="color:${hit?'var(--sev)':'var(--low)'}">${hit?'AT RISK':'clear'}</span></div>`
+  ).join('');
+
+  // --- scene ---
+  pool.position.y = DAM_BASE + (DAM_TOP - DAM_BASE - 3) * (lvl/100);
+  setDownstream(Math.max(0.6, stage * 0.85));
+  const spill = spillCumec(gate, lvl);
+  jet.visible = spill > 5;
+  if (jet.visible){
+    const w = Math.min(9, 1 + spill/700);
+    jet.scale.set(9, w, GORGE_HALF*1.5);
+    jet.position.set(DAM_X + 8, pool.position.y - w/2 - 1, 0);
+  }
+  gates.forEach((g,i)=>{ g.position.y = DAM_TOP - 2.5 + (gate/100) * 5.5; });
+
+  rain.material.opacity = Math.min(1, rain_/320) * 0.7;
+}
+
+['sRain','sLevel','sGate','sTurb','sHrz'].forEach(id =>
+  $(id).addEventListener('input', () => { touched(); update(); }));
+
+$('storm').addEventListener('click', ()=>{
+  touched();
+  $('sRain').value = 340; $('sLevel').value = 94; $('sGate').value = 0; $('sTurb').value = 70;
+  update();
+});
+$('reset').addEventListener('click', ()=>{
+  touched();
+  $('sRain').value = 120; $('sLevel').value = 78; $('sGate').value = 0;
+  $('sTurb').value = 70; $('sHrz').value = 12;
+  setSource('manual'); update();
+});
+
+/* ---- where the rainfall number comes from ---- */
+function setSource(s){
+  source = s;
+  for (const [id, key] of [['srcManual','manual'],['srcNode','node'],['srcLive','live']]){
+    $(id).classList.toggle('on', key === s);
+  }
+  $('sRain').disabled = s !== 'manual';
+  if (s === 'manual') $('rainSrc').textContent = 'Manual — drag to set the storm.';
+}
+$('srcManual').addEventListener('click', ()=>{ setSource('manual'); update(); });
+$('srcNode').addEventListener('click', async ()=>{
+  setSource('node');
+  $('rainSrc').textContent = 'Reading the ground node…';
+  try {
+    const d = await (await fetch('/api/live')).json();
+    const st = d.station || {};
+    if (!st.connected){
+      $('rainSrc').textContent = 'No ground node connected. Nothing is invented when the hardware is absent.';
+      return;
+    }
+    // The node reports a rain percentage, not a depth. Treated as an
+    // intensity index and labelled as such rather than dressed up as mm.
+    const pct = st.readings?.rain_pct ?? 0;
+    $('sRain').value = Math.round(pct * 4);
+    $('rainSrc').textContent = `Ground node ${st.node_id || ''}: rain sensor at ${pct}%, `
+      + `read as an intensity index — the node measures wetness, not depth.`;
+    update();
+  } catch (e) {
+    $('rainSrc').textContent = 'Ground node unreachable.';
+  }
+});
+$('srcLive').addEventListener('click', async ()=>{
+  setSource('live');
+  $('rainSrc').textContent = 'Fetching satellite rainfall…';
+  try {
+    const d = await (await fetch('/api/predict?lat=27.35&lon=88.62&date=' +
+      new Date().toISOString().slice(0,10))).json();
+    const r7 = d?.features?.rain_7d;
+    if (r7 == null || r7 < 0) throw new Error('no value');
+    $('sRain').value = Math.min(400, Math.round(r7 / 7));
+    $('rainSrc').textContent = `NASA IMERG over the Teesta headwaters: ${Math.round(r7)} mm in 7 days, `
+      + `averaged to ${Math.round(r7/7)} mm/day.`;
+    update();
+  } catch (e) {
+    $('rainSrc').textContent = 'Satellite rainfall unavailable — needs the server and Earth Engine.';
+  }
+});
+
+/* ============================ loop ============================ */
+function resize(){
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+let last = performance.now();
+function tick(now){
+  const dt = Math.min((now-last)/1000, 0.05); last = now;
+  const inten = F('sRain')/400;
+  const p = rgeo.attributes.position, fall = (34 + inten*120)*dt;
+  for (let i=0;i<RAIN_N;i++){
+    let y = p.array[i*6+1] - fall;
+    if (y < -20) y = 100 + Math.random()*20;
+    p.array[i*6+1] = y; p.array[i*6+4] = y - DROP;
+  }
+  p.needsUpdate = true;
+  scene.background.lerpColors(new THREE.Color(0x1a2b4a), new THREE.Color(0x0a0f1c), inten);
+  scene.fog.color.copy(scene.background);
+
+  if (!pointers.size && now - idleSince > 9000){
+    camYaw += driftDir*dt*0.03;
+    if (camYaw > -0.15) driftDir = -1;
+    if (camYaw < -0.95) driftDir = 1;
+    placeCamera();
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+window.__dbg = {THREE, camera, scene, project, advise, DAM,
+  state:()=>({rain:F('sRain'),level:F('sLevel'),gate:F('sGate'),gen:F('sTurb')})};
+
+resize(); placeCamera(); setSource('manual'); update();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

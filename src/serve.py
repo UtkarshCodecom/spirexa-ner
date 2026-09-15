@@ -138,6 +138,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._html(DASHBOARD_PATH)
             elif route == "/simulator":
                 self._static("/static/simulator.html")
+            elif route == "/flood":
+                self._static("/static/flood.html")
             elif route == "/sw.js":
                 # Served from root so its scope covers the whole app.
                 self._static("/static/sw.js")

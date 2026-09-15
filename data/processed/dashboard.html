@@ -853,6 +853,7 @@
         <div class="layer-switches">
           <label class="switch-label" id="tglMajor"><span class="switch on"></span> Highways</label>
           <label class="switch-label" id="tglMinor"><span class="switch on"></span> Local roads</label>
+          <label class="switch-label" id="tglRivers"><span class="switch on"></span> Rivers</label>
           <label class="switch-label" id="tglFlood"><span class="switch"></span> Flood</label>
         </div>
       </div>
@@ -867,6 +868,8 @@
       <div class="map-wrap" id="mapWrap">
         <svg class="map" id="mapSvg" viewBox="0 0 900 805" preserveAspectRatio="xMidYMid meet">
           <g id="statesLayer"></g>
+          <image id="riversLayer" x="0" y="0"
+                 width="900" height="805" preserveAspectRatio="none"></image>
           <image id="floodLayer" class="hidden-layer" x="0" y="0"
                  width="900" height="805" preserveAspectRatio="none"></image>
           <path id="roadsMinor" class="roads-minor"></path>
@@ -1497,6 +1500,30 @@ async function loadHand() {
   }
 }
 
+/* The river grid ships as a greyscale PNG whose value is log-catchment, so
+   the Brahmaputra reads heavier than a hill stream. Colourise it once. */
+async function loadRivers() {
+  try {
+    const img = new Image();
+    img.src = '/static/rivers_ner.png';
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height);
+    const px = d.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const v = px[i];
+      if (!v) { px[i + 3] = 0; continue; }
+      px[i] = 21; px[i + 1] = 94; px[i + 2] = 186;
+      px[i + 3] = Math.min(255, 90 + v * 1.3); // bigger catchment, stronger line
+    }
+    ctx.putImageData(d, 0, 0);
+    c.toBlob(b => b && $('riversLayer').setAttribute('href', URL.createObjectURL(b)));
+  } catch (e) { /* grid not built yet; the map just has no rivers */ }
+}
+
 function renderFlood() {
   if (!handPixels || !floodCanvas) return;
   const stage = +$('floodStage').value;
@@ -1564,8 +1591,10 @@ function setupSwitches() {
   };
   wire('tglMajor', 'roadsMajor');
   wire('tglMinor', 'roadsMinor');
+  wire('tglRivers', 'riversLayer');
   wire('tglFlood', 'floodLayer');
   setupFlood();
+  loadRivers();
 }
 
 /* ---------------- data ---------------- */
@@ -2567,7 +2596,7 @@ registerServiceWorker();
 /* Printed so a stale page can be identified at a glance. If this timestamp
    is older than your last rebuild, the browser or service worker is serving
    a cached copy and nothing you change will appear until it is reloaded. */
-const BUILD_ID = "2026-09-15 18:34:18";
+const BUILD_ID = "2026-09-15 18:42:27";
 console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
             'color:#1d3a5c;font-weight:600');
 {
