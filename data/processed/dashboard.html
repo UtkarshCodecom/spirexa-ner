@@ -219,6 +219,18 @@
   .fm-head { font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
   .fm-head b { font-weight: 600; }
 
+  /* ---- sensor deployment plan ---- */
+  .sp-row { display: flex; gap: 11px; padding: 10px 11px; border-radius: var(--r-sm);
+    background: rgba(255,255,255,0.55); margin-bottom: 7px; align-items: flex-start; }
+  .sp-n { font-family: var(--font-mono); font-size: 15px; font-weight: 600;
+    color: var(--accent); width: 24px; flex-shrink: 0; line-height: 1.2; }
+  .sp-body { flex: 1; min-width: 0; }
+  .sp-loc { font-size: 12.5px; font-weight: 600; }
+  .sp-meta { font-size: 10.5px; color: var(--text-muted); margin-top: 2px;
+    font-family: var(--font-mono); }
+  .sp-why { font-size: 11px; color: #3a4048; margin-top: 5px; line-height: 1.5; }
+  .sp-why li { margin-bottom: 2px; }
+
   .rep-row {
     display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px;
     border-radius: var(--r-sm); background: rgba(255,255,255,0.55); margin-bottom: 6px;
@@ -915,6 +927,12 @@
       <div class="sp-chart" id="spChart"></div>
       <div class="sp-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
       <div class="sp-note" id="spNote"></div>
+    </section>
+
+    <section class="under glass" id="sensingCard">
+      <h2>Where the next sensor should go</h2>
+      <p class="sub" id="spSub">&mdash;</p>
+      <div id="spRows"></div>
     </section>
 
     <section class="under glass" id="autopsyCard" hidden>
@@ -1953,6 +1971,35 @@ async function renderAutopsy() {
   }
 }
 
+/* ---------------- sensor siting ----------------
+   The model tells you where risk is high. The autopsy tells you where the
+   model is weakest. Hardware budgets are spent on the second map. */
+let sensingLoaded = false;
+async function renderSensing() {
+  try {
+    const d = await (await fetch('/api/sensing')).json();
+    sensingLoaded = true;
+    $('spSub').textContent =
+      `Ranked from ${d.candidates} monitored slopes by live risk, by how many nearby `
+      + `landslides were missed for reasons a ground node fixes, by how often the `
+      + `satellite feeds were absent, and by what is already deployed. `
+      + `Nodes are kept at least 25 km apart.`;
+    $('spRows').innerHTML = d.plan.map(r => `
+      <div class="sp-row">
+        <div class="sp-n">${r.order}</div>
+        <div class="sp-body">
+          <div class="sp-loc">${r.location}</div>
+          <div class="sp-meta">${r.lat}, ${r.lon} &middot; ${r.state}
+            &middot; risk ${Math.round(r.risk*100)}%
+            &middot; ${Math.round(r.km_to_nearest_placed)} km from the nearest placed node</div>
+          <ul class="sp-why">${r.reasons.map(w => `<li>${w}</li>`).join('')}</ul>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    $('sensingCard').hidden = true;
+  }
+}
+
 let reportsLoaded = false;
 const HAZARD_LABEL = {
   crack: 'New cracks in ground or wall',
@@ -2011,6 +2058,8 @@ function render() {
   renderSpread(data);
   // the autopsy is about the hindcast, so it belongs with "How accurate?"
   $('autopsyCard').hidden = mode !== 'validation';
+  $('sensingCard').hidden = mode !== 'live';
+  if (mode === 'live' && !sensingLoaded) renderSensing();
   if (mode === 'validation' && !autopsyLoaded) renderAutopsy();
   if (!reportsLoaded) renderReports();
 }
@@ -2660,7 +2709,7 @@ registerServiceWorker();
 /* Printed so a stale page can be identified at a glance. If this timestamp
    is older than your last rebuild, the browser or service worker is serving
    a cached copy and nothing you change will appear until it is reloaded. */
-const BUILD_ID = "2026-09-15 21:18:15";
+const BUILD_ID = "2026-09-15 21:30:25";
 console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
             'color:#1d3a5c;font-weight:600');
 {
