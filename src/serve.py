@@ -175,6 +175,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/score":
                 self._json(self._score(params))
+            elif route == "/api/cascade":
+                self._json(self._cascade(params))
             elif route == "/api/geo":
                 # map geometry for the Android client, thinned for a phone
                 import mobile_geo
@@ -533,6 +535,33 @@ class Handler(BaseHTTPRequestHandler):
             ),
             "decision": scenarios.decision_for(risk),
         }
+
+    def _cascade(self, params):
+        """One storm through soil, slope and channel together.
+
+        Answers the question two independent hazard models cannot: not how
+        bad each gets, but what breaks first and how long there is between
+        the slope warning and the river warning.
+        """
+        import cascade
+
+        def num(key, default):
+            try:
+                return float(params[key][0])
+            except (KeyError, TypeError, ValueError, IndexError):
+                return default
+
+        out = cascade.simulate(
+            rain_mm_per_day=num("rain", 160.0),
+            hours=num("hours", 48.0),
+            slope_deg=num("slope", 38.0),
+            catchment_km2=num("catchment", 180.0),
+            start_soil=num("soil", 0.22),
+        )
+        # The full timeline is 97 rows; callers that only want the chain say so.
+        if params.get("events_only"):
+            out.pop("timeline", None)
+        return out
 
     def _decision(self, params):
         import scenarios
