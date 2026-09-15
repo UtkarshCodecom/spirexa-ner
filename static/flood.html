@@ -27,7 +27,9 @@
 
   /* ---- left stack ---- */
   #left{position:fixed;top:18px;left:18px;width:310px;
-    display:flex;flex-direction:column;gap:11px;max-height:calc(100vh - 36px)}
+    display:flex;flex-direction:column;gap:11px;
+    max-height:calc(100vh - 118px);overflow:auto;scrollbar-width:none}
+  #left::-webkit-scrollbar{display:none}
   #state{padding:15px 17px}
   .kv{display:flex;justify-content:space-between;align-items:baseline;
     font-size:12px;padding:4px 0}
@@ -68,11 +70,32 @@
   #reset{background:rgba(255,255,255,.14);color:#eaf0fb}
 
   /* ---- downstream impact ---- */
-  #impact{position:fixed;bottom:18px;left:18px;width:340px;padding:14px 17px}
+  #impact{padding:14px 17px}
   .imp{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:5px 0}
   .imp .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
   .imp .nm{flex:1;color:#c9d3e4}
   .imp .st{font-weight:600;font-size:11px}
+
+  /* ---- cascade mimic ---- */
+  /* full width along the bottom: three cards plus their travel-time arrows
+     need real room, and at 174px they wrap into confetti */
+  #cascade{position:fixed;bottom:18px;left:18px;right:210px;padding:12px 14px;
+    display:flex;align-items:stretch;gap:0}
+  .dam{flex:1;min-width:0;padding:8px 10px;border-radius:12px;cursor:pointer;
+    border:1px solid transparent;transition:background .15s,border-color .15s}
+  .dam:hover{background:rgba(255,255,255,.06)}
+  .dam.sel{background:rgba(91,140,255,.16);border-color:rgba(110,155,255,.45)}
+  .dam .nm{font-size:11.5px;font-weight:600;color:#eaf0fb;display:flex;
+    justify-content:space-between;align-items:baseline;gap:8px;white-space:nowrap}
+  .dam .nm em{font-style:normal;font-size:9.5px;color:var(--muted)}
+  .dam .bar{height:7px;border-radius:7px;background:rgba(255,255,255,.13);
+    margin:6px 0 5px;overflow:hidden}
+  .dam .fill{height:100%;border-radius:7px;transition:width .25s,background .25s}
+  .dam .q{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;
+    line-height:1.45}
+  .lag{flex:0 0 54px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;color:var(--muted);font-size:9.5px;gap:2px}
+  .lag .arrow{font-size:14px;line-height:1;color:#5b8cff}
 
   #title{position:fixed;bottom:18px;right:18px;text-align:right;
     text-shadow:0 2px 14px rgba(0,0,0,.85)}
@@ -114,10 +137,17 @@
     <div id="why">—</div>
     <ul id="acts"></ul>
   </div>
+
+  <div class="panel" id="impact">
+    <h2>Below the last dam</h2>
+    <div class="kv"><span>Stage at town</span><b id="vStage">—</b></div>
+    <div class="kv"><span>Wave arrives in</span><b id="vEta">—</b></div>
+    <div id="impList"></div>
+  </div>
 </div>
 
 <div class="panel" id="controls">
-  <h2>Operator console</h2>
+  <h2>Operator console — <span id="selName" style="color:var(--accent)">Upper</span></h2>
 
   <div class="src">
     <button id="srcManual" class="on">Manual</button>
@@ -153,12 +183,7 @@
   </div>
 </div>
 
-<div class="panel" id="impact">
-  <h2>Downstream</h2>
-  <div class="kv"><span>Stage at town (25 km)</span><b id="vStage">—</b></div>
-  <div class="kv"><span>Flood wave arrives in</span><b id="vEta">—</b></div>
-  <div id="impList"></div>
-</div>
+<div class="panel" id="cascade"></div>
 
 <div id="hintbar">drag to orbit &middot; scroll to zoom</div>
 <div id="title">
@@ -184,109 +209,157 @@ import * as THREE from '/static/vendor/three.module.min.js';
      downstream  stage-discharge rating     h = a Q^b
      travel      kinematic wave             t = L / celerity
    ====================================================================== */
-const DAM = {
-  catchmentKm2: 2000,
-  runoffCoeff: 0.55,        // steep, forested, thin soils
-  liveStorageMm3: 100,      // million m3 between MDDL and FRL
-  headM: 200,               // gross head on the turbines
-  installedMW: 1200,
-  turbineEff: 0.90,
-  spillCrestLenM: 60,
-  spillMaxHeadM: 12,
-  spillCd: 2.2,             // SI ogee coefficient
-  townKm: 25,
-  celerityMs: 2.5,          // flood wave speed down a mountain river
-  bankFullCumec: 1500,      // downstream channel capacity
-  ratingA: 0.322,           // h = a Q^b, calibrated so bank-full ~ 6 m
-  ratingB: 0.40,
-};
-
 const RHO_G = 1000 * 9.81;
+const RUNOFF_C  = 0.55;      // steep, forested, thin soils
+const CELERITY  = 2.5;       // flood wave speed down a mountain river, m/s
+const SPILL_CD  = 2.2;       // SI ogee coefficient
+const BANKFULL  = 1500;      // downstream channel capacity, m3/s
+const RATING_A  = 0.322;     // h = a Q^b, calibrated so bank-full ~ 6 m
+const RATING_B  = 0.40;
 
-function inflowCumec(rainMmPerDay) {
-  const i = (rainMmPerDay / 1000) / 86400;              // m/s
-  return DAM.runoffCoeff * i * DAM.catchmentKm2 * 1e6;  // m3/s
+/* Three dams on one river, which is how the Teesta is actually built. Each
+   sees only the catchment between it and the dam above -- the rest of its
+   water is the dam above releasing, delayed by the travel time. That delay
+   is the whole problem: by the time you can see the release coming, you have
+   already spent the hours you needed to make room for it. */
+const CASCADE = [
+  { id:'A', name:'Upper',  catchmentKm2: 1150, liveStorageMm3: 42,
+    headM: 210, installedMW: 1200, spillCrestLenM: 52, spillMaxHeadM: 12,
+    toNextKm: 32, level: 78, gate: 0, gen: 70 },
+  { id:'B', name:'Middle', catchmentKm2: 620,  liveStorageMm3: 58,
+    headM: 185, installedMW: 510,  spillCrestLenM: 60, spillMaxHeadM: 11,
+    toNextKm: 27, level: 74, gate: 0, gen: 70 },
+  { id:'C', name:'Lower',  catchmentKm2: 430,  liveStorageMm3: 88,
+    headM: 95,  installedMW: 160,  spillCrestLenM: 72, spillMaxHeadM: 9,
+    toNextKm: 25, level: 69, gate: 0, gen: 70 },
+];
+
+function inflowCumec(rainMmPerDay, catchmentKm2) {
+  const i = (rainMmPerDay / 1000) / 86400;               // m/s
+  return RUNOFF_C * i * catchmentKm2 * 1e6;              // m3/s
 }
-function turbineCumec(genPct) {
-  const p = DAM.installedMW * 1e6 * (genPct / 100);
-  return p / (RHO_G * DAM.headM * DAM.turbineEff);
+function turbineCumec(genPct, d) {
+  return (d.installedMW * 1e6 * genPct / 100) / (RHO_G * d.headM * 0.90);
 }
-function spillCumec(gatePct, levelPct) {
+function spillCumec(gatePct, levelPct, d) {
   // head over the crest only exists once the pool is near the top
-  const avail = Math.max(0, (levelPct - 70) / 30) * DAM.spillMaxHeadM;
+  const avail = Math.max(0, (levelPct - 70) / 30) * d.spillMaxHeadM;
   const h = avail * (gatePct / 100);
-  if (h <= 0) return 0;
-  return DAM.spillCd * DAM.spillCrestLenM * Math.pow(h, 1.5);
+  return h <= 0 ? 0 : SPILL_CD * d.spillCrestLenM * Math.pow(h, 1.5);
 }
-function stageAt(q) { return DAM.ratingA * Math.pow(Math.max(q, 1), DAM.ratingB); }
-function travelHours() { return DAM.townKm * 1000 / DAM.celerityMs / 3600; }
+function stageAt(q) { return RATING_A * Math.pow(Math.max(q, 1), RATING_B); }
+function lagHours(km) { return km * 1000 / CELERITY / 3600; }
 
-/** Marches the reservoir forward and reports where it ends up. */
-function project(rain, levelPct, gatePct, genPct, hours) {
-  const qIn = inflowCumec(rain);
+/**
+ * Marches the whole chain forward together.
+ *
+ * Each link carries a queue: what a dam releases now reaches the next dam
+ * lagHours later, so the queue is simply that delay made explicit.
+ */
+function simulateCascade(rain, hours) {
   const stepH = 0.25;
-  let lvl = levelPct;
-  let overtopAt = null, emptyAt = null;
-  const track = [];
+  const st = CASCADE.map(d => ({
+    d, lvl: d.level, overtopAt: null, emptyAt: null,
+    qIn: 0, qOut: turbineCumec(d.gen, d) + spillCumec(d.gate, d.level, d),
+    peakOut: 0, track: [],
+  }));
+
+  // prime each delay line with the release that is already in transit
+  const queues = st.map(s => {
+    const n = Math.max(1, Math.round(lagHours(s.d.toNextKm) / stepH));
+    return new Array(n).fill(s.qOut);
+  });
+
+  let townQ = st[st.length - 1].qOut;
   for (let t = 0; t <= hours; t += stepH) {
-    const qOut = turbineCumec(genPct) + spillCumec(gatePct, lvl);
-    const dV = (qIn - qOut) * stepH * 3600;               // m3 this step
-    lvl += dV / (DAM.liveStorageMm3 * 1e6) * 100;         // as % of live storage
-    lvl = Math.max(0, Math.min(115, lvl));
-    if (lvl >= 100 && overtopAt === null) overtopAt = t;
-    if (lvl <= 20 && emptyAt === null) emptyAt = t;
-    track.push({ t, lvl });
+    let fromUpstream = 0;
+    for (let i = 0; i < st.length; i++) {
+      const s = st[i];
+      s.qIn  = inflowCumec(rain, s.d.catchmentKm2) + fromUpstream;
+      s.qOut = turbineCumec(s.d.gen, s.d) + spillCumec(s.d.gate, s.lvl, s.d);
+      s.peakOut = Math.max(s.peakOut, s.qOut);
+      s.lvl += (s.qIn - s.qOut) * stepH * 3600 / (s.d.liveStorageMm3 * 1e6) * 100;
+      s.lvl = Math.max(0, Math.min(115, s.lvl));
+      if (s.lvl >= 100 && s.overtopAt === null) s.overtopAt = t;
+      if (s.lvl <= 20 && s.emptyAt === null) s.emptyAt = t;
+      s.track.push({ t, lvl: s.lvl });
+      queues[i].push(s.qOut);
+      fromUpstream = queues[i].shift();
+    }
+    townQ = fromUpstream;
   }
-  const qOutNow = turbineCumec(genPct) + spillCumec(gatePct, levelPct);
-  return { qIn, qOutNow, endLevel: lvl, overtopAt, emptyAt, track };
+  return { st, townQ };
 }
 
-/** What an operator should actually do about it. */
-function advise(p, levelPct, gatePct, rain) {
-  const safe = p.qOutNow <= DAM.bankFullCumec;
+/** What the operator of one dam should do, given the whole chain. */
+function advise(sim, idx, rain) {
+  const s = sim.st[idx];
+  const d = s.d;
+  const below = sim.st[idx + 1] || null;
   const acts = [];
   let posture, colour, why;
 
-  if (p.overtopAt !== null && p.overtopAt <= 6) {
+  if (s.overtopAt !== null && s.overtopAt <= 6) {
     posture = 'CRITICAL — release now';
     colour = 'var(--sev)';
-    why = `At this inflow the pool reaches FRL in about ${p.overtopAt.toFixed(1)} h. `
+    why = `At this inflow the pool reaches FRL in about ${s.overtopAt.toFixed(1)} h. `
         + `Waiting removes the choice: an uncontrolled spill is the same water with no warning time.`;
     acts.push('Open gates progressively now, while the release is still controlled');
-    acts.push(`Warn downstream before releasing — the wave needs ${travelHours().toFixed(1)} h to reach the town`);
     acts.push('Confirm the powerhouse is passing its full rated flow');
-  } else if (p.overtopAt !== null) {
+  } else if (s.overtopAt !== null) {
     posture = 'PRE-RELEASE — make cushion';
     colour = 'var(--high)';
-    why = `Pool reaches FRL in about ${p.overtopAt.toFixed(1)} h on the current balance. `
+    why = `Pool reaches FRL in about ${s.overtopAt.toFixed(1)} h on the current balance. `
         + `Releasing early and slowly costs less downstream than releasing late and fast.`;
     acts.push('Begin a measured drawdown to open flood cushion');
-    acts.push('Hold release under the downstream bank-full figure while you can');
-    acts.push('Put the downstream district on notice');
-  } else if (levelPct > 92 && rain > 150) {
+    acts.push('Hold release under the channel capacity while you still can');
+  } else if (s.lvl > 92 && rain > 150) {
     posture = 'ELEVATED — watch closely';
     colour = 'var(--mod)';
-    why = 'Pool is high and the catchment is wet. The balance holds for now, but there is '
-        + 'little cushion left if the storm intensifies.';
-    acts.push('Re-run the projection every hour while rainfall stays above 150 mm/day');
+    why = 'Pool is high and the catchment is wet. The balance holds, but there is little '
+        + 'cushion left if the storm intensifies.';
+    acts.push('Re-run the projection hourly while rainfall stays above 150 mm/day');
     acts.push('Have gate operators on station');
-  } else if (p.emptyAt !== null) {
+  } else if (s.emptyAt !== null) {
     posture = 'DRAWDOWN — generation at risk';
     colour = 'var(--accent)';
-    why = `Release exceeds inflow; the pool hits minimum drawdown level in about `
-        + `${p.emptyAt.toFixed(1)} h and generation stops.`;
+    why = `Release exceeds inflow; the pool reaches minimum drawdown level in about `
+        + `${s.emptyAt.toFixed(1)} h and generation stops.`;
     acts.push('Reduce release or generation to protect the pool');
   } else {
     posture = 'NORMAL — no action';
     colour = 'var(--low)';
-    why = 'Inflow and release are in balance over the horizon, and release is inside the '
-        + 'downstream channel capacity.';
+    why = 'Inflow and release are in balance over the horizon.';
     acts.push('Continue scheduled generation');
   }
 
-  if (!safe) {
-    acts.push(`Release is ${Math.round(p.qOutNow)} m³/s against a bank-full channel of `
-            + `${DAM.bankFullCumec} m³/s — downstream flooding is a consequence of this release, not of the storm`);
+  // The cascade line. This is the thing a single-dam model cannot tell you:
+  // your release is somebody else's inflow, and it is already on its way.
+  if (below) {
+    const lag = lagHours(d.toNextKm);
+    // the level an operator is actually looking at is the one on the gauge
+    // now, not the end of a projection that has been clamped at 115%
+    const nowPct = below.d.level;
+    const headroom = Math.max(0, 100 - nowPct) / 100 * below.d.liveStorageMm3 * 1e6;
+    const surplus = s.qOut - below.qOut;
+
+    if (below.overtopAt !== null) {
+      acts.push(`${Math.round(s.qOut)} m³/s reaches ${below.d.name} in ${lag.toFixed(1)} h — `
+              + `and ${below.d.name} is at ${Math.round(nowPct)}% with its own FRL about `
+              + `${below.overtopAt.toFixed(1)} h away. Opening further here without `
+              + `coordinating moves the problem downstream rather than solving it.`);
+    } else if (surplus > 0 && headroom > 0) {
+      acts.push(`${Math.round(s.qOut)} m³/s reaches ${below.d.name} in ${lag.toFixed(1)} h. `
+              + `At ${Math.round(nowPct)}% it can absorb the surplus for about `
+              + `${(headroom / surplus / 3600).toFixed(1)} h — coordinate before opening further.`);
+    } else {
+      acts.push(`Release reaches ${below.d.name} in ${lag.toFixed(1)} h; `
+              + `it is at ${Math.round(nowPct)}% and has room.`);
+    }
+  } else if (s.qOut > BANKFULL) {
+    acts.push(`Release is ${Math.round(s.qOut)} m³/s against a bank-full channel of `
+            + `${BANKFULL} m³/s — downstream flooding is a consequence of this release, `
+            + `not of the storm.`);
   }
   return { posture, colour, why, acts };
 }
@@ -540,33 +613,47 @@ scene.add(rain);
 /* ============================ wiring ============================ */
 const $ = id => document.getElementById(id);
 const F = id => +$(id).value;
-let source = 'manual';
+let source = 'manual', sel = 0;
 
-function fmt(q){ return q >= 1000 ? (q/1000).toFixed(2)+'k' : Math.round(q); }
+function fmt(q){ return q >= 1000 ? (q/1000).toFixed(2)+'k' : String(Math.round(q)); }
+function lvlColour(l){
+  return l >= 98 ? 'var(--sev)' : l >= 90 ? 'var(--high)'
+       : l >= 40 ? 'var(--low)' : 'var(--accent)';
+}
+
+/** Console sliders edit whichever dam is selected. */
+function pullControls(){
+  const d = CASCADE[sel];
+  d.level = F('sLevel'); d.gate = F('sGate'); d.gen = F('sTurb');
+}
+function pushControls(){
+  const d = CASCADE[sel];
+  $('sLevel').value = d.level; $('sGate').value = d.gate; $('sTurb').value = d.gen;
+  $('selName').textContent = d.name;
+}
 
 function update(){
-  const rain_ = F('sRain'), lvl = F('sLevel'), gate = F('sGate'),
-        gen = F('sTurb'), hrz = F('sHrz');
+  pullControls();
+  const rain_ = F('sRain'), hrz = F('sHrz');
+  $('vRain').textContent = rain_ + ' mm/d';
+  $('vLevelIn').textContent = F('sLevel') + '%';
+  $('vGate').textContent = F('sGate') + '%';
+  $('vTurb').textContent = F('sTurb') + '%';
+  $('vHrz').textContent  = hrz + ' h';
 
-  $('vRain').textContent  = rain_ + ' mm/d';
-  $('vLevelIn').textContent = lvl + '%';
-  $('vGate').textContent  = gate + '%';
-  $('vTurb').textContent  = gen + '%';
-  $('vHrz').textContent   = hrz + ' h';
+  const sim = simulateCascade(rain_, hrz);
+  const s = sim.st[sel], d = s.d;
+  const a = advise(sim, sel, rain_);
+  const stage = stageAt(sim.townQ);
 
-  const p = project(rain_, lvl, gate, gen, hrz);
-  const a = advise(p, lvl, gate, rain_);
-  const stage = stageAt(p.qOutNow);
-
-  // --- reservoir panel ---
-  $('levelfill').style.width = Math.min(100, lvl) + '%';
-  $('levelfill').style.background = lvl >= 98 ? 'var(--sev)'
-    : lvl >= 90 ? 'var(--high)' : lvl >= 40 ? 'var(--low)' : 'var(--accent)';
-  $('vLevel').textContent = lvl + '%  →  ' + Math.round(p.endLevel) + '% in ' + hrz + ' h';
-  $('vStore').textContent = (DAM.liveStorageMm3 * lvl/100).toFixed(1) + ' Mm³';
-  $('vIn').textContent  = fmt(p.qIn) + ' m³/s';
-  $('vOut').textContent = fmt(p.qOutNow) + ' m³/s';
-  $('vGen').textContent = Math.round(DAM.installedMW * gen/100) + ' MW';
+  // --- selected reservoir ---
+  $('levelfill').style.width = Math.min(100, d.level) + '%';
+  $('levelfill').style.background = lvlColour(d.level);
+  $('vLevel').textContent = d.level + '%  →  ' + Math.round(s.lvl) + '% in ' + hrz + ' h';
+  $('vStore').textContent = (d.liveStorageMm3 * d.level/100).toFixed(1) + ' Mm³';
+  $('vIn').textContent  = fmt(s.qIn) + ' m³/s';
+  $('vOut').textContent = fmt(s.qOut) + ' m³/s';
+  $('vGen').textContent = Math.round(d.installedMW * d.gen/100) + ' MW';
 
   // --- decision ---
   $('posture').textContent = a.posture;
@@ -574,13 +661,33 @@ function update(){
   $('why').textContent = a.why;
   $('acts').innerHTML = a.acts.map(t => `<li>${t}</li>`).join('');
 
-  // --- downstream ---
+  // --- cascade mimic ---
+  const totalLag = CASCADE.reduce((t, c, i) =>
+    i >= sel ? t + lagHours(c.toNextKm) : t, 0);
+  let html = '';
+  sim.st.forEach((x, i) => {
+    if (i) html += `<div class="lag"><span class="arrow">&rarr;</span>`
+                +  `<span>${lagHours(CASCADE[i-1].toNextKm).toFixed(1)} h</span></div>`;
+    html += `<div class="dam ${i===sel?'sel':''}" data-i="${i}">
+      <div class="nm">${x.d.name}<em>${x.d.installedMW} MW</em></div>
+      <div class="bar"><div class="fill" style="width:${Math.min(100,x.d.level)}%;
+           background:${lvlColour(x.d.level)}"></div></div>
+      <div class="q">${Math.round(x.d.level)}% &middot; out ${fmt(x.qOut)} m³/s
+        ${x.overtopAt !== null ? `&middot; <span style="color:var(--sev)">FRL in ${x.overtopAt.toFixed(1)} h</span>` : ''}</div>
+    </div>`;
+  });
+  html += `<div class="lag"><span class="arrow">&rarr;</span><span>town</span></div>`;
+  $('cascade').innerHTML = html;
+  $('cascade').querySelectorAll('.dam').forEach(el =>
+    el.addEventListener('click', () => { sel = +el.dataset.i; pushControls(); update(); }));
+
+  // --- downstream of the last dam ---
   $('vStage').textContent = stage.toFixed(1) + ' m';
-  $('vEta').textContent = travelHours().toFixed(1) + ' h';
+  $('vEta').textContent = lagHours(CASCADE[CASCADE.length-1].toNextKm).toFixed(1) + ' h';
   const items = [
     ['Riverside road', stage > 7.5],
     ['Bridge deck', stage > 9.5],
-    ['Powerhouse yard', p.qOutNow > 4000],
+    ['Powerhouse yard', sim.townQ > 4000],
     ['Town, low bank', stage > 6.0],
   ];
   $('impList').innerHTML = items.map(([n, hit]) =>
@@ -589,18 +696,17 @@ function update(){
      <span class="st" style="color:${hit?'var(--sev)':'var(--low)'}">${hit?'AT RISK':'clear'}</span></div>`
   ).join('');
 
-  // --- scene ---
-  pool.position.y = DAM_BASE + (DAM_TOP - DAM_BASE - 3) * (lvl/100);
-  setDownstream(Math.max(0.6, stage * 0.85));
-  const spill = spillCumec(gate, lvl);
+  // --- scene: the valley stands in for whichever dam is selected ---
+  pool.position.y = DAM_BASE + (DAM_TOP - DAM_BASE - 3) * (d.level/100);
+  setDownstream(Math.max(0.6, stageAt(s.qOut) * 0.85));
+  const spill = spillCumec(d.gate, d.level, d);
   jet.visible = spill > 5;
   if (jet.visible){
     const w = Math.min(9, 1 + spill/700);
     jet.scale.set(9, w, GORGE_HALF*1.5);
     jet.position.set(DAM_X + 8, pool.position.y - w/2 - 1, 0);
   }
-  gates.forEach((g,i)=>{ g.position.y = DAM_TOP - 2.5 + (gate/100) * 5.5; });
-
+  gates.forEach(g => { g.position.y = DAM_TOP - 2.5 + (d.gate/100) * 5.5; });
   rain.material.opacity = Math.min(1, rain_/320) * 0.7;
 }
 
@@ -609,14 +715,16 @@ function update(){
 
 $('storm').addEventListener('click', ()=>{
   touched();
-  $('sRain').value = 340; $('sLevel').value = 94; $('sGate').value = 0; $('sTurb').value = 70;
-  update();
+  $('sRain').value = 340;
+  CASCADE[0].level = 94; CASCADE[1].level = 88; CASCADE[2].level = 81;
+  CASCADE.forEach(d => { d.gate = 0; d.gen = 70; });
+  pushControls(); update();
 });
 $('reset').addEventListener('click', ()=>{
   touched();
-  $('sRain').value = 120; $('sLevel').value = 78; $('sGate').value = 0;
-  $('sTurb').value = 70; $('sHrz').value = 12;
-  setSource('manual'); update();
+  $('sRain').value = 120; $('sHrz').value = 12;
+  [78, 74, 69].forEach((l, i) => { CASCADE[i].level = l; CASCADE[i].gate = 0; CASCADE[i].gen = 70; });
+  sel = 0; pushControls(); setSource('manual'); update();
 });
 
 /* ---- where the rainfall number comes from ---- */
@@ -698,10 +806,10 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-window.__dbg = {THREE, camera, scene, project, advise, DAM,
-  state:()=>({rain:F('sRain'),level:F('sLevel'),gate:F('sGate'),gen:F('sTurb')})};
+window.__dbg = {THREE, camera, scene, simulateCascade, advise, CASCADE,
+  sel:()=>sel, state:()=>({rain:F('sRain'), dams:CASCADE.map(d=>({...d}))})};
 
-resize(); placeCamera(); setSource('manual'); update();
+resize(); placeCamera(); setSource('manual'); pushControls(); update();
 requestAnimationFrame(tick);
 </script>
 </body>
