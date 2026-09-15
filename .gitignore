@@ -22,3 +22,8 @@ Thumbs.db
 
 # Local secrets, if any ever get added
 .env
+
+# Overnight Overpass re-fetch of the road network with topology; regenerate
+# with scripts/fetch_roads_topo.py rather than committing 100+ MB of it
+data/geo/roads_topo.json
+data/geo/roads_topo.json.tmp
