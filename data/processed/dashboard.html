@@ -216,6 +216,29 @@
 
   /* takes up whatever height the sidebar has over the map column, so the
      column ends level instead of trailing off into blank page */
+  /* ---- flood controls ---- */
+  .flood-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 13px; border-radius: var(--r-sm); margin-top: 2px;
+    background: rgba(37, 99, 235, 0.07);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+  }
+  .flood-bar.off { display: none; }
+  .flood-bar label { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+  .flood-bar input[type=range] {
+    flex: 1; min-width: 120px; -webkit-appearance: none; height: 4px;
+    border-radius: 4px; background: rgba(37, 99, 235, 0.25); outline: none;
+  }
+  .flood-bar input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #2563eb; cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,.3);
+  }
+  .flood-val {
+    font-family: var(--font-mono); font-size: 12.5px; font-weight: 600;
+    color: #1d4ed8; min-width: 54px; text-align: right;
+  }
+  .flood-note { font-size: 10.5px; color: var(--text-muted); flex-basis: 100%; line-height: 1.5; }
+
   .sim-panel { flex: 1 0 auto; display: flex; flex-direction: column; }
   .sim-panel .sub { margin-bottom: 12px; }
   .sim-figure { flex: 1 1 auto; display: flex; align-items: center;
@@ -830,12 +853,22 @@
         <div class="layer-switches">
           <label class="switch-label" id="tglMajor"><span class="switch on"></span> Highways</label>
           <label class="switch-label" id="tglMinor"><span class="switch on"></span> Local roads</label>
+          <label class="switch-label" id="tglFlood"><span class="switch"></span> Flood</label>
         </div>
+      </div>
+
+      <div class="flood-bar off" id="floodBar">
+        <label>Flood stage above local channel</label>
+        <input type="range" id="floodStage" min="0" max="15" step="0.5" value="3">
+        <span class="flood-val" id="floodVal">3.0 m</span>
+        <div class="flood-note" id="floodNote">&mdash;</div>
       </div>
 
       <div class="map-wrap" id="mapWrap">
         <svg class="map" id="mapSvg" viewBox="0 0 900 805" preserveAspectRatio="xMidYMid meet">
           <g id="statesLayer"></g>
+          <image id="floodLayer" class="hidden-layer" x="0" y="0"
+                 width="900" height="805" preserveAspectRatio="none"></image>
           <path id="roadsMinor" class="roads-minor"></path>
           <path id="roadsMajor" class="roads-major"></path>
           <g id="labelsLayer"></g>
@@ -1424,6 +1457,103 @@ function buildChips() {
   });
 }
 
+/* ---------------- flood layer ----------------
+   HAND -- height above nearest drainage -- is the terrain index NOAA's
+   National Water Model uses to turn a river stage into a flood map: for every
+   pixel, how far above the channel it drains into. Flooding to a stage of h
+   metres is then just "every pixel whose HAND is below h".
+
+   The grid is a single PNG exported once from MERIT Hydro, so the slider
+   re-floods the region in the browser with no server call and no internet.
+       pixel 0..250 -> HAND 0..50 m      pixel 255 -> no data              */
+const HAND_SCALE = 5;            // pixel value = HAND metres x 5
+// Re-flooding 2.9M source pixels on every slider tick is too slow to feel
+// live, and the layer is a soft translucent wash where sub-kilometre edge
+// precision buys nothing. Resample once to the map's own frame width.
+const FLOOD_W = 1200;
+let handPixels = null, floodCanvas = null, floodTimer = null, floodUrl = null;
+let handLoading = false;
+
+async function loadHand() {
+  if (handLoading || handPixels) return;
+  handLoading = true;
+  try {
+    const img = new Image();
+    img.src = '/static/hand_ner.png';
+    await img.decode();
+    const w = FLOOD_W;
+    const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+    floodCanvas = document.createElement('canvas');
+    floodCanvas.width = w; floodCanvas.height = h;
+    const ctx = floodCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    handPixels = ctx.getImageData(0, 0, w, h);
+    renderFlood();
+  } catch (e) {
+    $('floodNote').textContent =
+      'Flood terrain unavailable — run scripts/export_hand.py to build it.';
+  } finally {
+    handLoading = false;
+  }
+}
+
+function renderFlood() {
+  if (!handPixels || !floodCanvas) return;
+  const stage = +$('floodStage').value;
+  const cut = stage * HAND_SCALE;
+  const src = handPixels.data;
+  const out = new ImageData(handPixels.width, handPixels.height);
+  const dst = out.data;
+  let wet = 0, total = 0;
+
+  for (let i = 0; i < src.length; i += 4) {
+    const v = src[i];
+    if (src[i + 3] === 0 || v >= 255) continue;      // outside the frame / no data
+    total++;
+    if (v > cut) continue;
+    wet++;
+    // deeper water reads darker, so the map shows depth and not just extent
+    const depth = (cut - v) / HAND_SCALE;
+    const a = Math.min(0.82, 0.32 + depth * 0.1);
+    dst[i] = 37; dst[i + 1] = 99; dst[i + 2] = 235;
+    dst[i + 3] = (a * 255) | 0;
+  }
+
+  floodCanvas.getContext('2d').putImageData(out, 0, 0);
+  // toBlob + object URL rather than toDataURL: no base64 encode of a
+  // megapixel image on every drag
+  floodCanvas.toBlob(blob => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    $('floodLayer').setAttribute('href', url);
+    if (floodUrl) URL.revokeObjectURL(floodUrl);
+    floodUrl = url;
+  });
+  $('floodVal').textContent = stage.toFixed(1) + ' m';
+  $('floodNote').innerHTML = total
+    ? `<b>${(wet / total * 100).toFixed(1)}%</b> of the land in frame sits within
+       ${stage.toFixed(1)} m of its nearest river channel. Terrain only &mdash; this is
+       the area a flood of that stage could reach, not a forecast that it will.`
+    : '&mdash;';
+}
+
+// Deliberately a timer and not requestAnimationFrame: rAF is paused while
+// the tab is in the background, and re-flooding is a data update, not an
+// animation frame.
+function scheduleFlood() {
+  clearTimeout(floodTimer);
+  floodTimer = setTimeout(renderFlood, 60);
+}
+
+function setupFlood() {
+  $('floodStage').addEventListener('input', scheduleFlood);
+  $('tglFlood').addEventListener('click', () => {
+    const on = $('tglFlood').querySelector('.switch').classList.contains('on');
+    $('floodBar').classList.toggle('off', !on);
+    if (on && !handPixels) loadHand();
+  });
+}
+
 function setupSwitches() {
   const wire = (id, target) => {
     $(id).addEventListener('click', () => {
@@ -1434,6 +1564,8 @@ function setupSwitches() {
   };
   wire('tglMajor', 'roadsMajor');
   wire('tglMinor', 'roadsMinor');
+  wire('tglFlood', 'floodLayer');
+  setupFlood();
 }
 
 /* ---------------- data ---------------- */
@@ -2435,7 +2567,7 @@ registerServiceWorker();
 /* Printed so a stale page can be identified at a glance. If this timestamp
    is older than your last rebuild, the browser or service worker is serving
    a cached copy and nothing you change will appear until it is reloaded. */
-const BUILD_ID = "2026-09-14 01:20:33";
+const BUILD_ID = "2026-09-15 18:34:18";
 console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
             'color:#1d3a5c;font-weight:600');
 {
