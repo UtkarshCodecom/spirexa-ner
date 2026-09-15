@@ -175,6 +175,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/score":
                 self._json(self._score(params))
+            elif route == "/api/sensing":
+                import sensing
+
+                self._json(sensing.summary())
             elif route == "/api/autopsy":
                 import autopsy
 
