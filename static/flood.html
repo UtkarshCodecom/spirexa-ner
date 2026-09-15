@@ -93,9 +93,19 @@
   .dam .fill{height:100%;border-radius:7px;transition:width .25s,background .25s}
   .dam .q{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;
     line-height:1.45}
-  .lag{flex:0 0 54px;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;color:var(--muted);font-size:9.5px;gap:2px}
+  .lag{flex:0 0 96px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;color:var(--muted);font-size:9px;gap:1px;text-align:center}
   .lag .arrow{font-size:14px;line-height:1;color:#5b8cff}
+  .lag b{color:#c9d3e4;font-weight:600;font-size:10px}
+  /* per-dam controls, so all three are adjustable without switching console */
+  .mini{display:flex;align-items:center;gap:7px;margin-top:5px}
+  .mini span{font-size:9px;color:var(--muted);width:30px;flex-shrink:0}
+  .mini input[type=range]{flex:1;height:3px;-webkit-appearance:none;border-radius:3px;
+    background:rgba(255,255,255,.18);outline:none;touch-action:none}
+  .mini input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;
+    height:11px;border-radius:50%;background:#fff;cursor:pointer}
+  .mini em{font-style:normal;font-size:9px;color:var(--accent);width:30px;
+    text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0}
 
   #title{position:fixed;bottom:18px;right:18px;text-align:right;
     text-shadow:0 2px 14px rgba(0,0,0,.85)}
@@ -212,7 +222,15 @@ import * as THREE from '/static/vendor/three.module.min.js';
 const RHO_G = 1000 * 9.81;
 const fmtQ = q => q >= 1000 ? (q/1000).toFixed(2) + 'k' : String(Math.round(q));
 const RUNOFF_C  = 0.55;      // steep, forested, thin soils
-const CELERITY  = 2.5;       // flood wave speed down a mountain river, m/s
+// Wave speed is not a constant -- it comes out of the reach. Manning for a
+// mountain channel, then the kinematic factor of 5/3, clamped to the range
+// a flood wave actually travels at.
+const MANNING_N = 0.045;
+const HYD_RADIUS = 2.5;
+function celerity(slope){
+  const v = (1 / MANNING_N) * Math.pow(HYD_RADIUS, 2/3) * Math.sqrt(Math.max(slope, 1e-5));
+  return Math.min(6.0, Math.max(1.2, 1.667 * v));
+}
 const SPILL_CD  = 2.2;       // SI ogee coefficient
 const BANKFULL  = 1500;      // downstream channel capacity, m3/s
 const RATING_A  = 0.322;     // h = a Q^b, calibrated so bank-full ~ 6 m
@@ -223,20 +241,29 @@ const RATING_B  = 0.40;
    water is the dam above releasing, delayed by the travel time. That delay
    is the whole problem: by the time you can see the release coming, you have
    already spent the hours you needed to make room for it. */
+/* Approximate but real: siting, drops and river distances along the Teesta.
+   River distance, not straight line -- the Teesta is sinuous and a flood
+   wave travels the channel, not the crow's path. */
 const CASCADE = [
   { id:'T5',  name:'Teesta-V', full:'Teesta-V, Sikkim',
+    lat: 27.42, lon: 88.53, elevM: 580,
     catchmentKm2: 4200, liveStorageMm3: 2.0,          // run-of-river pondage
     headM: 197, installedMW: 510, spillCrestLenM: 176, spillMaxHeadM: 9,
-    damHeightM: 88.6, toNextKm: 35, level: 82, gate: 0, gen: 72 },
+    damHeightM: 88.6, toNextKm: 55, dropToNextM: 330, level: 82, gate: 0, gen: 72 },
   { id:'TL3', name:'TLD-III', full:'Teesta Low Dam-III, Rambi Bazar',
+    lat: 27.05, lon: 88.47, elevM: 250,
     catchmentKm2: 1100, liveStorageMm3: 1.2,
     headM: 30, installedMW: 132, spillCrestLenM: 210, spillMaxHeadM: 6,
-    damHeightM: 32, toNextKm: 15, level: 76, gate: 0, gen: 72 },
+    damHeightM: 32, toNextKm: 15, dropToNextM: 50, level: 76, gate: 0, gen: 72 },
   { id:'TL4', name:'TLD-IV', full:'Teesta Low Dam-IV, Kalijhora',
+    lat: 26.96, lon: 88.48, elevM: 200,
     catchmentKm2: 700, liveStorageMm3: 2.5,
     headM: 45, installedMW: 160, spillCrestLenM: 530, spillMaxHeadM: 7,
-    damHeightM: 54, toNextKm: 22, level: 71, gate: 0, gen: 72 },
+    damHeightM: 54, toNextKm: 20, dropToNextM: 50, level: 71, gate: 0, gen: 72 },
 ];
+
+/** Bed gradient of the reach below a dam, m/m. */
+function reachSlope(d){ return d.dropToNextM / (d.toNextKm * 1000); }
 
 /* Run-of-river, all three. Their combined live storage is 5.7 Mm3 against a
    monsoon inflow that reaches thousands of cubic metres a second -- minutes
@@ -267,7 +294,10 @@ function cushionHours(d, qIn, qOut) {
   if (surplus <= 0) return Infinity;
   return (d.liveStorageMm3 * 1e6) * Math.max(0, 100 - d.level) / 100 / surplus / 3600;
 }
-function lagHours(km) { return km * 1000 / CELERITY / 3600; }
+/** Travel time of the wave down one reach, from its own gradient. */
+function lagHours(d) {
+  return d.toNextKm * 1000 / celerity(reachSlope(d)) / 3600;
+}
 
 /**
  * Marches the whole chain forward together.
@@ -285,7 +315,7 @@ function simulateCascade(rain, hours) {
 
   // prime each delay line with the release that is already in transit
   const queues = st.map(s => {
-    const n = Math.max(1, Math.round(lagHours(s.d.toNextKm) / stepH));
+    const n = Math.max(1, Math.round(lagHours(s.d) / stepH));
     return new Array(n).fill(s.qOut);
   });
 
@@ -374,7 +404,7 @@ function advise(sim, idx, rain) {
   // The cascade line. This is the thing a single-dam model cannot tell you:
   // your release is somebody else's inflow, and it is already on its way.
   if (below) {
-    const lag = lagHours(d.toNextKm);
+    const lag = lagHours(d);
     // the level an operator is actually looking at is the one on the gauge
     // now, not the end of a projection that has been clamped at 115%
     const nowPct = below.d.level;
@@ -708,6 +738,72 @@ function lvlColour(l){
        : l >= 40 ? 'var(--low)' : 'var(--accent)';
 }
 
+/* The strip is built once and then updated in place. Re-rendering it from
+   innerHTML on every tick would destroy the slider you are dragging. */
+function buildStrip(){
+  let html = '';
+  CASCADE.forEach((d, i) => {
+    if (i){
+      const u = CASCADE[i-1];
+      html += `<div class="lag">
+        <b>${u.toNextKm} km</b>
+        <span>&minus;${u.dropToNextM} m</span>
+        <span class="arrow">&rarr;</span>
+        <span id="lag${i}">&mdash;</span></div>`;
+    }
+    html += `<div class="dam" data-i="${i}" id="dam${i}">
+      <div class="nm">${d.name}<em>${d.installedMW} MW</em></div>
+      <div class="bar"><div class="fill" id="fill${i}"></div></div>
+      <div class="q" id="q${i}">&mdash;</div>
+      <div class="mini"><span>gates</span>
+        <input type="range" id="g${i}" min="0" max="100" step="1" value="${d.gate}">
+        <em id="gv${i}">${d.gate}%</em></div>
+      <div class="mini"><span>gen</span>
+        <input type="range" id="t${i}" min="0" max="100" step="1" value="${d.gen}">
+        <em id="tv${i}">${d.gen}%</em></div>
+    </div>`;
+  });
+  const last = CASCADE[CASCADE.length-1];
+  html += `<div class="lag"><b>${last.toNextKm} km</b><span class="arrow">&rarr;</span>
+           <span>town</span></div>`;
+  $('cascade').innerHTML = html;
+
+  CASCADE.forEach((d, i) => {
+    $(`dam${i}`).addEventListener('click', e => {
+      if (e.target.tagName === 'INPUT') return;     // dragging, not selecting
+      sel = i; pushControls(); update();
+    });
+    $(`g${i}`).addEventListener('input', () => {
+      CASCADE[i].gate = +$(`g${i}`).value; if (i === sel) pushControls(); touched(); update();
+    });
+    $(`t${i}`).addEventListener('input', () => {
+      CASCADE[i].gen = +$(`t${i}`).value; if (i === sel) pushControls(); touched(); update();
+    });
+  });
+}
+
+function updateStrip(sim){
+  sim.st.forEach((x, i) => {
+    const d = x.d;
+    $(`dam${i}`).classList.toggle('sel', i === sel);
+    $(`fill${i}`).style.width = Math.min(100, d.level) + '%';
+    $(`fill${i}`).style.background = lvlColour(d.level);
+    const c = cushionHours(d, x.qIn, x.qOut);
+    let tail = '';
+    if (c !== Infinity){
+      tail = c < 0.6
+        ? ` &middot; <span style="color:var(--high)">pondage ${Math.max(1, Math.round(c*60))} min</span>`
+        : ` &middot; <span style="color:var(--sev)">FRL in ${c.toFixed(1)} h</span>`;
+    }
+    $(`q${i}`).innerHTML = `${Math.round(d.level)}% &middot; out ${fmt(x.qOut)} m³/s${tail}`;
+    if ($(`g${i}`).value != d.gate) $(`g${i}`).value = d.gate;
+    if ($(`t${i}`).value != d.gen)  $(`t${i}`).value = d.gen;
+    $(`gv${i}`).textContent = d.gate + '%';
+    $(`tv${i}`).textContent = d.gen + '%';
+    if (i) $(`lag${i}`).textContent = lagHours(CASCADE[i-1]).toFixed(1) + ' h';
+  });
+}
+
 /** Console sliders edit whichever dam is selected. */
 function pullControls(){
   const d = CASCADE[sel];
@@ -748,35 +844,11 @@ function update(){
   $('why').textContent = a.why;
   $('acts').innerHTML = a.acts.map(t => `<li>${t}</li>`).join('');
 
-  // --- cascade mimic ---
-  const totalLag = CASCADE.reduce((t, c, i) =>
-    i >= sel ? t + lagHours(c.toNextKm) : t, 0);
-  let html = '';
-  sim.st.forEach((x, i) => {
-    if (i) html += `<div class="lag"><span class="arrow">&rarr;</span>`
-                +  `<span>${lagHours(CASCADE[i-1].toNextKm).toFixed(1)} h</span></div>`;
-    html += `<div class="dam ${i===sel?'sel':''}" data-i="${i}">
-      <div class="nm">${x.d.name}<em>${x.d.installedMW} MW</em></div>
-      <div class="bar"><div class="fill" style="width:${Math.min(100,x.d.level)}%;
-           background:${lvlColour(x.d.level)}"></div></div>
-      <div class="q">${Math.round(x.d.level)}% &middot; out ${fmt(x.qOut)} m³/s
-        ${(() => {
-          const c = cushionHours(x.d, x.qIn, x.qOut);
-          if (c === Infinity) return '';
-          if (c < 0.6) return `&middot; <span style="color:var(--high)">pondage `
-            + `${Math.max(1, Math.round(c*60))} min</span>`;
-          return `&middot; <span style="color:var(--sev)">FRL in ${c.toFixed(1)} h</span>`;
-        })()}</div>
-    </div>`;
-  });
-  html += `<div class="lag"><span class="arrow">&rarr;</span><span>town</span></div>`;
-  $('cascade').innerHTML = html;
-  $('cascade').querySelectorAll('.dam').forEach(el =>
-    el.addEventListener('click', () => { sel = +el.dataset.i; pushControls(); update(); }));
+  updateStrip(sim);
 
   // --- downstream of the last dam ---
   $('vStage').textContent = stage.toFixed(1) + ' m';
-  $('vEta').textContent = lagHours(CASCADE[CASCADE.length-1].toNextKm).toFixed(1) + ' h';
+  $('vEta').textContent = lagHours(CASCADE[CASCADE.length-1]).toFixed(1) + ' h';
   const items = [
     ['Riverside road', stage > 7.5],
     ['Bridge deck', stage > 9.5],
@@ -916,7 +988,7 @@ function tick(now){
 window.__dbg = {THREE, camera, scene, simulateCascade, advise, CASCADE,
   sel:()=>sel, state:()=>({rain:F('sRain'), dams:CASCADE.map(d=>({...d}))})};
 
-resize(); placeCamera(); setSource('manual'); pushControls(); update();
+resize(); placeCamera(); setSource('manual'); buildStrip(); pushControls(); update();
 requestAnimationFrame(tick);
 </script>
 </body>
