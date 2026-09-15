@@ -175,6 +175,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/score":
                 self._json(self._score(params))
+            elif route == "/api/autopsy":
+                import autopsy
+
+                self._json(autopsy.report())
             elif route == "/api/cascade":
                 self._json(self._cascade(params))
             elif route == "/api/geo":

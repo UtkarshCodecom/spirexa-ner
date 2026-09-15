@@ -204,6 +204,21 @@
   .sp-note { font-size: 11.5px; color: var(--text-muted); margin-top: 11px; line-height: 1.55; }
   .sp-note b { color: var(--text); font-weight: 600; }
 
+  /* ---- failure autopsy ---- */
+  .fm-row { display: grid; grid-template-columns: 200px minmax(0,1fr) 78px;
+    align-items: center; gap: 11px; margin-bottom: 7px; }
+  .fm-name { font-size: 11.5px; font-weight: 600; }
+  .fm-bar { height: 15px; border-radius: var(--r-pill); background: var(--base);
+    box-shadow: inset 2px 2px 5px var(--base-shadow-dark),
+                inset -2px -2px 5px var(--base-shadow-light); overflow: hidden; }
+  .fm-fill { height: 100%; border-radius: var(--r-pill); }
+  .fm-n { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+    text-align: right; }
+  .fm-detail { font-size: 11px; color: var(--text-muted); line-height: 1.5;
+    margin: 2px 0 12px 211px; }
+  .fm-head { font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
+  .fm-head b { font-weight: 600; }
+
   .rep-row {
     display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px;
     border-radius: var(--r-sm); background: rgba(255,255,255,0.55); margin-bottom: 6px;
@@ -900,6 +915,13 @@
       <div class="sp-chart" id="spChart"></div>
       <div class="sp-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
       <div class="sp-note" id="spNote"></div>
+    </section>
+
+    <section class="under glass" id="autopsyCard" hidden>
+      <h2>Why the misses were missed</h2>
+      <p class="sub">Every recorded landslide the model scored below the alert line, with a cause</p>
+      <div class="fm-head" id="fmHead">&mdash;</div>
+      <div id="fmRows"></div>
     </section>
 
     <section class="under glass">
@@ -1892,6 +1914,45 @@ function renderSpread(data) {
     : `<b>${above}</b> of ${data.length} recorded slides scored 50% or more, which is what the model would have flagged in advance.`;
 }
 
+/* ---------------- failure autopsy ----------------
+   Accuracy says how often the model is right. It says nothing about the
+   shape of the failures, and the shape decides whether the next thing to
+   buy is a better model, more sensors, or a better inventory. */
+let autopsyLoaded = false;
+const FM_COLOUR = {
+  rain_unseen: 'var(--risk-severe)',
+  location: 'var(--risk-high)',
+  coverage: 'var(--risk-moderate)',
+  out_of_scope: 'var(--text-muted)',
+  genuine: 'var(--accent)',
+};
+async function renderAutopsy() {
+  const card = $('autopsyCard');
+  try {
+    const d = await (await fetch('/api/autopsy')).json();
+    autopsyLoaded = true;
+    const genuine = d.modes.find(m => m.key === 'genuine') || { count: 0 };
+    $('fmHead').innerHTML =
+      `<b>${d.missed_total}</b> of ${d.events_total} recorded landslides scored below the
+       ${Math.round(d.alert_line * 100)}% alert line. The median missed event had
+       <b>${d.median_rain_missed} mm</b> of satellite rainfall that week; the median caught
+       event had <b>${d.median_rain_caught} mm</b>. Most of these are not the model
+       reasoning badly about rain it can see &mdash; they are events where the rain was
+       never in the data. A better model would fix <b>${genuine.count}</b> of the
+       ${d.missed_total}.`;
+    $('fmRows').innerHTML = d.modes.filter(m => m.count).map(m => `
+      <div class="fm-row">
+        <div class="fm-name">${m.label}</div>
+        <div class="fm-bar"><div class="fm-fill"
+             style="width:${Math.max(m.share * 100, 2)}%;background:${FM_COLOUR[m.key]}"></div></div>
+        <div class="fm-n">${m.count} &middot; ${Math.round(m.share * 100)}%</div>
+      </div>
+      <div class="fm-detail">${m.detail}</div>`).join('');
+  } catch (e) {
+    card.hidden = true;
+  }
+}
+
 let reportsLoaded = false;
 const HAZARD_LABEL = {
   crack: 'New cracks in ground or wall',
@@ -1948,6 +2009,9 @@ function render() {
   renderList(data);
   renderBreakdown(data);
   renderSpread(data);
+  // the autopsy is about the hindcast, so it belongs with "How accurate?"
+  $('autopsyCard').hidden = mode !== 'validation';
+  if (mode === 'validation' && !autopsyLoaded) renderAutopsy();
   if (!reportsLoaded) renderReports();
 }
 
@@ -2596,7 +2660,7 @@ registerServiceWorker();
 /* Printed so a stale page can be identified at a glance. If this timestamp
    is older than your last rebuild, the browser or service worker is serving
    a cached copy and nothing you change will appear until it is reloaded. */
-const BUILD_ID = "2026-09-15 19:48:23";
+const BUILD_ID = "2026-09-15 21:18:15";
 console.log('%cSPIREXA dashboard build: ' + BUILD_ID,
             'color:#1d3a5c;font-weight:600');
 {
