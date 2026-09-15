@@ -210,6 +210,7 @@ import * as THREE from '/static/vendor/three.module.min.js';
      travel      kinematic wave             t = L / celerity
    ====================================================================== */
 const RHO_G = 1000 * 9.81;
+const fmtQ = q => q >= 1000 ? (q/1000).toFixed(2) + 'k' : String(Math.round(q));
 const RUNOFF_C  = 0.55;      // steep, forested, thin soils
 const CELERITY  = 2.5;       // flood wave speed down a mountain river, m/s
 const SPILL_CD  = 2.2;       // SI ogee coefficient
@@ -223,16 +224,26 @@ const RATING_B  = 0.40;
    is the whole problem: by the time you can see the release coming, you have
    already spent the hours you needed to make room for it. */
 const CASCADE = [
-  { id:'A', name:'Upper',  catchmentKm2: 1150, liveStorageMm3: 42,
-    headM: 210, installedMW: 1200, spillCrestLenM: 52, spillMaxHeadM: 12,
-    toNextKm: 32, level: 78, gate: 0, gen: 70 },
-  { id:'B', name:'Middle', catchmentKm2: 620,  liveStorageMm3: 58,
-    headM: 185, installedMW: 510,  spillCrestLenM: 60, spillMaxHeadM: 11,
-    toNextKm: 27, level: 74, gate: 0, gen: 70 },
-  { id:'C', name:'Lower',  catchmentKm2: 430,  liveStorageMm3: 88,
-    headM: 95,  installedMW: 160,  spillCrestLenM: 72, spillMaxHeadM: 9,
-    toNextKm: 25, level: 69, gate: 0, gen: 70 },
+  { id:'T5',  name:'Teesta-V', full:'Teesta-V, Sikkim',
+    catchmentKm2: 4200, liveStorageMm3: 2.0,          // run-of-river pondage
+    headM: 197, installedMW: 510, spillCrestLenM: 176, spillMaxHeadM: 9,
+    damHeightM: 88.6, toNextKm: 35, level: 82, gate: 0, gen: 72 },
+  { id:'TL3', name:'TLD-III', full:'Teesta Low Dam-III, Rambi Bazar',
+    catchmentKm2: 1100, liveStorageMm3: 1.2,
+    headM: 30, installedMW: 132, spillCrestLenM: 210, spillMaxHeadM: 6,
+    damHeightM: 32, toNextKm: 15, level: 76, gate: 0, gen: 72 },
+  { id:'TL4', name:'TLD-IV', full:'Teesta Low Dam-IV, Kalijhora',
+    catchmentKm2: 700, liveStorageMm3: 2.5,
+    headM: 45, installedMW: 160, spillCrestLenM: 530, spillMaxHeadM: 7,
+    damHeightM: 54, toNextKm: 22, level: 71, gate: 0, gen: 72 },
 ];
+
+/* Run-of-river, all three. Their combined live storage is 5.7 Mm3 against a
+   monsoon inflow that reaches thousands of cubic metres a second -- minutes
+   of cushion, not hours. That is not a modelling simplification, it is the
+   defining property of this cascade, and it is why the warning has to come
+   from upstream rather than from a plant's own gauge. */
+const CUSHION_NOTE = true;
 
 function inflowCumec(rainMmPerDay, catchmentKm2) {
   const i = (rainMmPerDay / 1000) / 86400;               // m/s
@@ -248,6 +259,14 @@ function spillCumec(gatePct, levelPct, d) {
   return h <= 0 ? 0 : SPILL_CD * d.spillCrestLenM * Math.pow(h, 1.5);
 }
 function stageAt(q) { return RATING_A * Math.pow(Math.max(q, 1), RATING_B); }
+/** Everything the gates can pass, wide open, with the pool at FRL. */
+function spillCapacity(d) { return spillCumec(100, 100, d); }
+/** How long the pondage can absorb a surplus, in hours. */
+function cushionHours(d, qIn, qOut) {
+  const surplus = qIn - qOut;
+  if (surplus <= 0) return Infinity;
+  return (d.liveStorageMm3 * 1e6) * Math.max(0, 100 - d.level) / 100 / surplus / 3600;
+}
 function lagHours(km) { return km * 1000 / CELERITY / 3600; }
 
 /**
@@ -299,7 +318,26 @@ function advise(sim, idx, rain) {
   const acts = [];
   let posture, colour, why;
 
-  if (s.overtopAt !== null && s.overtopAt <= 6) {
+  const cushion = cushionHours(d, s.qIn, s.qOut);
+  const cap = spillCapacity(d);
+
+  // A run-of-river plant has pondage, not storage. Against a monsoon surge
+  // that is minutes, and pretending otherwise turns every run into
+  // "CRITICAL, release now" at T+0.0, which tells an operator nothing. The
+  // real question on this cascade is not whether to release. It is how much
+  // warning the people downstream get before the water arrives anyway.
+  if (cushion < 0.6 && s.qIn > s.qOut) {
+    const mins = Math.max(1, Math.round(cushion * 60));
+    posture = 'PASS-THROUGH — warn downstream';
+    colour = 'var(--high)';
+    why = `${d.full} holds ${d.liveStorageMm3} Mm³ of live pondage against `
+        + `${Math.round(s.qIn)} m³/s of inflow — about ${mins} minute${mins === 1 ? '' : 's'} `
+        + `of cushion. It cannot store this surge, only pass it.`;
+    acts.push('Pass the inflow rather than holding it — storing it briefly only steepens the wave');
+    acts.push(cap > s.qIn
+      ? `Spillway capacity is ${fmtQ(cap)} m³/s against ${fmtQ(s.qIn)} m³/s inflow — the structure can pass this`
+      : `Spillway capacity is ${fmtQ(cap)} m³/s against ${fmtQ(s.qIn)} m³/s inflow — INFLOW EXCEEDS CAPACITY, overtopping is structural`);
+  } else if (s.overtopAt !== null && s.overtopAt <= 6) {
     posture = 'CRITICAL — release now';
     colour = 'var(--sev)';
     why = `At this inflow the pool reaches FRL in about ${s.overtopAt.toFixed(1)} h. `
@@ -343,8 +381,15 @@ function advise(sim, idx, rain) {
     const headroom = Math.max(0, 100 - nowPct) / 100 * below.d.liveStorageMm3 * 1e6;
     const surplus = s.qOut - below.qOut;
 
-    if (below.overtopAt !== null) {
-      acts.push(`${Math.round(s.qOut)} m³/s reaches ${below.d.name} in ${lag.toFixed(1)} h — `
+    const belowCushion = cushionHours(below.d, below.qIn, below.qOut);
+    if (belowCushion < 0.6) {
+      const m = Math.max(1, Math.round(belowCushion * 60));
+      acts.push(`${fmtQ(s.qOut)} m³/s reaches ${below.d.name} in ${lag.toFixed(1)} h. `
+              + `${below.d.name} has ${m} minute${m === 1 ? '' : 's'} of pondage, so it will `
+              + `pass the surge on rather than absorb it — the warning has to go the whole `
+              + `way down the chain now, not dam by dam.`);
+    } else if (below.overtopAt !== null) {
+      acts.push(`${fmtQ(s.qOut)} m³/s reaches ${below.d.name} in ${lag.toFixed(1)} h — `
               + `and ${below.d.name} is at ${Math.round(nowPct)}% with its own FRL about `
               + `${below.overtopAt.toFixed(1)} h away. Opening further here without `
               + `coordinating moves the problem downstream rather than solving it.`);
@@ -383,8 +428,10 @@ const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
 // the order the water meets it.
 // pitch is set to clear the dam crest: from downstream at a low angle the
 // dam correctly hides its own reservoir, which is realistic and useless
-let camYaw = 0.88, camPitch = 0.62, camDist = 250;
-const target = new THREE.Vector3(35, 0, 0);
+// three dams in a line means each one hides the next from a low angle, so
+// the eye has to sit well above the crests to see the whole chain
+let camYaw = 0.95, camPitch = 0.66, camDist = 355;
+const target = new THREE.Vector3(45, -4, 0);
 function placeCamera(){
   camera.position.set(
     target.x + camDist*Math.cos(camPitch)*Math.sin(camYaw),
@@ -407,7 +454,7 @@ canvas.addEventListener('pointermove', e=>{
   const p = pointers.get(e.pointerId); if(!p) return;
   const dx=e.clientX-p.x, dy=e.clientY-p.y; p.x=e.clientX; p.y=e.clientY;
   if (pointers.size>=2){ const g=gap();
-    if(pinchPrev>0&&g>0) camDist=Math.max(70,Math.min(420,camDist*pinchPrev/g));
+    if(pinchPrev>0&&g>0) camDist=Math.max(80,Math.min(620,camDist*pinchPrev/g));
     pinchPrev=g; placeCamera(); return; }
   camYaw -= dx*0.006;
   camPitch = Math.max(0.08, Math.min(1.15, camPitch + dy*0.005));
@@ -418,7 +465,7 @@ canvas.addEventListener('pointerup', drop);
 canvas.addEventListener('pointercancel', drop);
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
-  camDist = Math.max(70, Math.min(420, camDist + e.deltaY*0.12));
+  camDist = Math.max(80, Math.min(620, camDist + e.deltaY*0.12));
   placeCamera(); touched();
 }, {passive:false});
 
@@ -433,16 +480,17 @@ scene.add(sun);
 
 /* ---- the valley ---- */
 // x runs downstream, z across the valley. The dam sits at x = 0.
-const VX = 300, VZ = 170, SEGX = 220, SEGZ = 130;
-const DAM_X = 0, GORGE_HALF = 13, DAM_TOP = 26, DAM_BASE = -6;
+const VX = 460, VZ = 150, SEGX = 300, SEGZ = 125;
+const GORGE_HALF = 13;
 
-function bedY(x){ return -x * 0.055; }                  // river falls downstream
+function bedY(x){ return -x * 0.042; }                  // river falls downstream
 function valleyY(x, z){
   const d = Math.abs(z);
   const bed = bedY(x);
-  // a gorge at the dam, opening out downstream into a floodplain
-  const openness = 1 + Math.max(0, x) * 0.006;   // opens out, but not into a lake
-  const half = GORGE_HALF * openness;
+  // one definition of the channel width, shared with the dam builder, so a
+  // dam is never narrower or wider than the gorge it is supposed to close
+  const half = gorgeHalfAt(x);
+  const openness = half / GORGE_HALF;
   if (d <= half) return bed;
   const up = d - half;
   // Walls have to out-climb the pool: full supply sits ~29 m above the dam
@@ -460,7 +508,7 @@ vgeo.rotateX(-Math.PI/2);
 {
   const pos = vgeo.attributes.position;
   for (let i=0;i<pos.count;i++){
-    const x = pos.getX(i) + VX/2 - 120, z = pos.getZ(i);
+    const x = pos.getX(i) + VX/2 - 145, z = pos.getZ(i);
     pos.setX(i, x); pos.setY(i, valleyY(x, z));
   }
   pos.needsUpdate = true; vgeo.computeVertexNormals();
@@ -470,95 +518,134 @@ const valley = new THREE.Mesh(vgeo, new THREE.MeshStandardMaterial({
 valley.receiveShadow = true; valley.castShadow = true;
 scene.add(valley);
 
-/* ---- the dam ---- */
+/* ---- three dams, three powerhouses, one river ---- */
+// x runs downstream. Each project gets a dam across the gorge, gate piers,
+// and a powerhouse set below it with its own tailrace -- because on a
+// run-of-river plant most of the water leaves through the machines, not
+// over the spillway, and an operator watching only the spillway is watching
+// the smaller number.
+const SITES = [
+  { i:0, x: -55, poolLen: 70, phX: -26 },
+  { i:1, x:  45, poolLen: 76, phX:  72 },
+  { i:2, x: 140, poolLen: 80, phX: 166 },
+];
+const TOWN_X = 214;
+
 const concrete = new THREE.MeshStandardMaterial({color:0xb9bec6, roughness:0.85});
-const dam = new THREE.Mesh(
-  new THREE.BoxGeometry(7, DAM_TOP - DAM_BASE, GORGE_HALF*2 + 14), concrete);
-dam.position.set(DAM_X, (DAM_TOP + DAM_BASE)/2, 0);
-dam.castShadow = dam.receiveShadow = true;
-scene.add(dam);
-// gate piers on the crest
-for (let i=-2;i<=2;i++){
-  const pier = new THREE.Mesh(new THREE.BoxGeometry(7.6, 6, 1.6), concrete);
-  pier.position.set(DAM_X, DAM_TOP + 2, i * 4.6);
-  pier.castShadow = true; scene.add(pier);
-}
-const gateMat = new THREE.MeshStandardMaterial({color:0x2f3b4d, roughness:.5, metalness:.6});
-const gates = [];
-for (let i=-1.5;i<=1.5;i++){
-  const g = new THREE.Mesh(new THREE.BoxGeometry(0.8, 7, 3.6), gateMat);
-  g.position.set(DAM_X + 3.6, DAM_TOP - 2.5, i * 4.6);
-  g.castShadow = true; scene.add(g); gates.push(g);
-}
+const gateMat  = new THREE.MeshStandardMaterial({color:0x2f3b4d, roughness:.5, metalness:.6});
+const houseMat = new THREE.MeshStandardMaterial({color:0xd8dde4, roughness:.72});
 
-/* ---- powerhouse and town ---- */
-function block(w,h,d,c,x,z){
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
-    new THREE.MeshStandardMaterial({color:c, roughness:.75}));
-  m.position.set(x, valleyY(x,z) + h/2, z);
-  m.castShadow = m.receiveShadow = true; scene.add(m); return m;
-}
-const powerhouse = block(16, 9, 12, 0xd8dde4, 26, 15);
-block(5, 5, 5, 0xc3c9d2, 26, 25);                       // switchyard shed
+function gorgeHalfAt(x){ return GORGE_HALF * (1 + Math.max(0, x + 120) * 0.0035); }
 
-const town = [];
-for (let i=0;i<34;i++){
-  const x = 96 + (Math.random()-0.5)*46;
-  // clear of the channel: at x~96 the floodplain half-width is already 28
-  const z = (Math.random() > .5 ? 1 : -1) * (38 + Math.random()*26);
-  const h = 3 + Math.random()*4;
-  town.push(block(4+Math.random()*3, h, 4+Math.random()*3,
-                  [0xe3d9c8,0xd9cfbc,0xcfc4ae][i%3], x, z));
-}
+const dams = [];        // per site: {crestY, baseY, gates[], jet, tail, label}
+SITES.forEach(st => {
+  const cfg = CASCADE[st.i];
+  const bed = bedY(st.x);
+  const half = gorgeHalfAt(st.x);
+  // dam heights are scaled into scene units against Teesta-V's 88.6 m
+  const h = 10 + 22 * (cfg.damHeightM / 88.6);
+  const baseY = bed - 5, crestY = bed + h;
 
-/* ---- road along the right bank, and a bridge ---- */
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(7, crestY - baseY, half*2 + 14), concrete);
+  body.position.set(st.x, (crestY + baseY)/2, 0);
+  body.castShadow = body.receiveShadow = true; scene.add(body);
+
+  const gates = [];
+  const nBays = 4;
+  for (let k = 0; k < nBays; k++){
+    const z = (k - (nBays-1)/2) * (half*1.5/nBays);
+    const pier = new THREE.Mesh(new THREE.BoxGeometry(7.6, 5.5, 1.5), concrete);
+    pier.position.set(st.x, crestY + 2, z + half*0.75/nBays);
+    pier.castShadow = true; scene.add(pier);
+    const g = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6, half*1.2/nBays), gateMat);
+    g.position.set(st.x + 3.6, crestY - 2, z);
+    g.castShadow = true; scene.add(g); gates.push(g);
+  }
+
+  // powerhouse, on the bank below the dam
+  const phZ = (st.i % 2 ? -1 : 1) * (half + 11);
+  const ph = new THREE.Mesh(new THREE.BoxGeometry(17, 9, 12), houseMat);
+  ph.position.set(st.phX, valleyY(st.phX, phZ) + 4.5, phZ);
+  ph.castShadow = ph.receiveShadow = true; scene.add(ph);
+  const yard = new THREE.Mesh(new THREE.BoxGeometry(7, 4, 6), concrete);
+  yard.position.set(st.phX + 12, valleyY(st.phX + 12, phZ) + 2, phZ);
+  yard.castShadow = true; scene.add(yard);
+
+  // tailrace: what the turbines put back into the river
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 3),
+    new THREE.MeshStandardMaterial({color:0xbcdcf7, roughness:.25,
+      transparent:true, opacity:.9}));
+  tail.visible = false; scene.add(tail);
+
+  // spill jet over the crest
+  const jet = new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
+    new THREE.MeshStandardMaterial({color:0xdcefff, roughness:.3,
+      transparent:true, opacity:.88}));
+  jet.visible = false; scene.add(jet);
+
+  dams.push({ cfg, x: st.x, bed, half, crestY, baseY, h, gates, jet, tail,
+              phX: st.phX, phZ, poolLen: st.poolLen });
+});
+
+/* ---- road along the bank, and a bridge below the last dam ---- */
 const roadMat = new THREE.MeshStandardMaterial({color:0x545a63, roughness:.85});
 const roadPts = [];
-for (let x=-90; x<=170; x+=4) roadPts.push(new THREE.Vector3(x, valleyY(x, 32)+0.5, 32));
+for (let x=-135; x<=275; x+=5){
+  const z = gorgeHalfAt(x) + 9;
+  roadPts.push(new THREE.Vector3(x, valleyY(x, z) + 0.5, z));
+}
 const road = new THREE.Mesh(
-  new THREE.TubeGeometry(new THREE.CatmullRomCurve3(roadPts), 80, 3.2, 4, false), roadMat);
+  new THREE.TubeGeometry(new THREE.CatmullRomCurve3(roadPts), 120, 3.0, 4, false), roadMat);
 road.receiveShadow = true; scene.add(road);
-const bridge = new THREE.Mesh(new THREE.BoxGeometry(9, 1.4, 80), roadMat);
-bridge.position.set(70, bedY(70) + 11, 0);
+
+const bridgeX = 224;
+const bridge = new THREE.Mesh(
+  new THREE.BoxGeometry(9, 1.4, gorgeHalfAt(bridgeX)*2 + 26), roadMat);
+bridge.position.set(bridgeX, bedY(bridgeX) + 11, 0);
 bridge.castShadow = true; scene.add(bridge);
-for (const bz of [-22, 22]){
-  const pr = new THREE.Mesh(new THREE.BoxGeometry(4, 18, 4), concrete);
-  pr.position.set(70, bedY(70) + 4, bz); pr.castShadow = true; scene.add(pr);
+
+/* ---- town below the last powerhouse ---- */
+const town = [];
+for (let i=0;i<30;i++){
+  const x = TOWN_X + (Math.random()-0.5)*44;
+  const z = (Math.random() > .5 ? 1 : -1) * (gorgeHalfAt(x) + 12 + Math.random()*24);
+  const hh = 3 + Math.random()*4;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(4+Math.random()*3, hh, 4+Math.random()*3),
+    new THREE.MeshStandardMaterial({
+      color:[0xe3d9c8,0xd9cfbc,0xcfc4ae][i%3], roughness:.78}));
+  m.position.set(x, valleyY(x, z) + hh/2, z);
+  m.castShadow = m.receiveShadow = true; scene.add(m); town.push(m);
 }
 
 /* ---- water ---- */
 const waterMat = new THREE.MeshStandardMaterial({
   color:0x2f6fb5, roughness:0.18, metalness:0.25, transparent:true, opacity:0.88 });
 
-// Reservoir: one flat plane. Where the valley rises above it the terrain
-// simply hides it, which draws the correct shoreline for free.
-// only as far back as the terrain goes, or the pool hangs in mid air
-const pool = new THREE.Mesh(new THREE.PlaneGeometry(120, VZ), waterMat);
-pool.rotation.x = -Math.PI/2;
-pool.position.set(DAM_X - 60, 0, 0);
-scene.add(pool);
+// one flat pool behind each dam; where the valley rises above it the terrain
+// hides it, which draws the shoreline for free
+const pools = dams.map(d => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(d.poolLen, VZ), waterMat);
+  m.rotation.x = -Math.PI/2;
+  m.position.set(d.x - d.poolLen/2, d.bed, 0);
+  scene.add(m); return m;
+});
 
-// Downstream: a ribbon whose surface follows the falling bed.
-const dsGeo = new THREE.PlaneGeometry(200, VZ, 100, 60);
+// the free river below the last dam, following the falling bed
+const dsGeo = new THREE.PlaneGeometry(150, VZ, 90, 60);
 dsGeo.rotateX(-Math.PI/2);
 const dsBase = Float32Array.from(dsGeo.attributes.position.array);
 const downstream = new THREE.Mesh(dsGeo, waterMat);
-downstream.position.set(0, 0, 0);
 scene.add(downstream);
 function setDownstream(stage){
   const pos = dsGeo.attributes.position;
+  const x0 = dams[dams.length-1].x + 8;
   for (let i=0;i<pos.count;i++){
-    const x = dsBase[i*3] + 100 + DAM_X + 4;
-    pos.setX(i, x);
-    pos.setY(i, bedY(x) + stage);
+    const x = dsBase[i*3] + 75 + x0;
+    pos.setX(i, x); pos.setY(i, bedY(x) + stage);
   }
   pos.needsUpdate = true;
 }
-
-// spill jet
-const jet = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshStandardMaterial({color:0xcfe6ff, roughness:.3, transparent:true, opacity:.85}));
-jet.visible = false; scene.add(jet);
 
 /* ---- forest on the valley sides ---- */
 const TREES = 700;
@@ -574,12 +661,12 @@ scene.add(trunks, leaves);
   const d = new THREE.Object3D();
   let n = 0, guard = 0;
   while (n < TREES && guard++ < TREES * 40) {
-    const x = -115 + Math.random()*290;
+    const x = -140 + Math.random()*430;
     const z = (Math.random() > .5 ? 1 : -1) * (14 + Math.random()*68);
     const y = valleyY(x, z);
     // keep them off the pool, off the river, and off the town's shelf
-    if (y < 20) continue;
-    if (Math.abs(x - 96) < 34 && Math.abs(z) < 70) continue;
+    if (y < bedY(x) + 16) continue;                      // off the pools
+    if (Math.abs(x - TOWN_X) < 40 && Math.abs(z) < 74) continue;
     const sc = 0.7 + Math.random()*0.7;
     d.position.set(x, y + 1.3*sc, z);
     d.rotation.set(0, Math.random()*Math.PI, 0);
@@ -673,7 +760,13 @@ function update(){
       <div class="bar"><div class="fill" style="width:${Math.min(100,x.d.level)}%;
            background:${lvlColour(x.d.level)}"></div></div>
       <div class="q">${Math.round(x.d.level)}% &middot; out ${fmt(x.qOut)} m³/s
-        ${x.overtopAt !== null ? `&middot; <span style="color:var(--sev)">FRL in ${x.overtopAt.toFixed(1)} h</span>` : ''}</div>
+        ${(() => {
+          const c = cushionHours(x.d, x.qIn, x.qOut);
+          if (c === Infinity) return '';
+          if (c < 0.6) return `&middot; <span style="color:var(--high)">pondage `
+            + `${Math.max(1, Math.round(c*60))} min</span>`;
+          return `&middot; <span style="color:var(--sev)">FRL in ${c.toFixed(1)} h</span>`;
+        })()}</div>
     </div>`;
   });
   html += `<div class="lag"><span class="arrow">&rarr;</span><span>town</span></div>`;
@@ -696,17 +789,31 @@ function update(){
      <span class="st" style="color:${hit?'var(--sev)':'var(--low)'}">${hit?'AT RISK':'clear'}</span></div>`
   ).join('');
 
-  // --- scene: the valley stands in for whichever dam is selected ---
-  pool.position.y = DAM_BASE + (DAM_TOP - DAM_BASE - 3) * (d.level/100);
-  setDownstream(Math.max(0.6, stageAt(s.qOut) * 0.85));
-  const spill = spillCumec(d.gate, d.level, d);
-  jet.visible = spill > 5;
-  if (jet.visible){
-    const w = Math.min(9, 1 + spill/700);
-    jet.scale.set(9, w, GORGE_HALF*1.5);
-    jet.position.set(DAM_X + 8, pool.position.y - w/2 - 1, 0);
-  }
-  gates.forEach(g => { g.position.y = DAM_TOP - 2.5 + (d.gate/100) * 5.5; });
+  // --- scene: all three projects, live ---
+  sim.st.forEach((x, i) => {
+    const D = dams[i], c = x.d;
+    const poolY = D.bed + (D.h - 2) * (c.level / 100);
+    pools[i].position.y = poolY;
+
+    const spill = spillCumec(c.gate, c.level, c);
+    const turb  = turbineCumec(c.gen, c);
+
+    D.jet.visible = spill > 5;
+    if (D.jet.visible){
+      const w = Math.min(8, 1 + spill / 600);
+      D.jet.scale.set(8, w, D.half * 1.3);
+      D.jet.position.set(D.x + 7, poolY - w/2 - 1, 0);
+    }
+    // the tailrace: on a run-of-river plant this is the bigger number
+    D.tail.visible = turb > 5;
+    if (D.tail.visible){
+      const w = Math.min(5, 0.8 + turb / 260);
+      D.tail.scale.set(1.4, w, 1 + turb / 350);
+      D.tail.position.set(D.phX + 11, valleyY(D.phX + 11, D.phZ * 0.5) + 0.8, D.phZ * 0.5);
+    }
+    D.gates.forEach(g => { g.position.y = D.crestY - 2 + (c.gate / 100) * 5; });
+  });
+  setDownstream(Math.max(0.6, stageAt(sim.townQ) * 0.85));
   rain.material.opacity = Math.min(1, rain_/320) * 0.7;
 }
 
