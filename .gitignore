@@ -27,3 +27,31 @@ Thumbs.db
 # with scripts/fetch_roads_topo.py rather than committing 100+ MB of it
 data/geo/roads_topo.json
 data/geo/roads_topo.json.tmp
+
+# Large derived artifacts: rebuilt by scripts/, never worth versioning.
+# The susceptibility bundle carries two 500-tree forests (~180 MB) and the
+# road vertex cache is a flattened copy of data/geo/roads_topo.json.
+data/processed/susceptibility_model.pkl
+data/processed/road_vertices.npz
+data/susceptibility/features*.jsonl
+data/processed/road_graph.pkl
+data/raw/geonames_IN.zip
+data/processed/glof_qp_model.pkl
+data/external/glofdatabase_V3-1.ods
+
+# 20 MB of pickled boosters, rebuilt by scripts/train_discharge.py in about a
+# minute. Same policy as the other model bundles above.
+data/processed/discharge_model.pkl
+
+# Third-party inputs we downloaded rather than produced: the CDR-2 archive,
+# the Sikkim multitemporal scenes, the HydroPen extract. Fetch them again from
+# their sources rather than redistributing them here.
+data/external/
+
+# Supplied as a dated landslide inventory, found to be synthetic, and kept out
+# of training. Not committed so nobody picks it up by mistake. The finding is
+# written up in the repo; the file itself is noise.
+ner_landslides_with_dates.csv
+
+# Completion markers left by the overnight fetch scripts.
+*.done
