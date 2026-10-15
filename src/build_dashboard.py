@@ -55,19 +55,31 @@ def build_case_studies(hindcast):
     """Picks events that make the strongest validation story."""
     cases = []
 
-    # The Sept 2026 Mangan call — most recent validation event.
+    # A demonstration scenario, and labelled as one.
+    #
+    # This row is SIH2026-001: a point in the Teesta V catchment scored by the
+    # live model, not a landslide that happened. It sat in this card narrated
+    # as a past success -- "SPIREXA flagged it, NHPC opened the gates, zero
+    # fatalities" -- next to nineteen years of real events, with nothing
+    # telling a reader which was which. The model's output on it is genuine;
+    # the story around it was not, and inventing a save is the one thing a
+    # warning system cannot be caught doing. Every real validation case is
+    # below it.
     mangan_2026 = hindcast[hindcast["date"] == "2026-09-06"]
     if len(mangan_2026):
         cases.append(
             {
-                "title": "Teesta V Catchment · 6 September 2026",
-                "subtitle": "Mangan, North Sikkim &middot; SPIREXA early call",
+                "title": "SCENARIO · Teesta V catchment, Mangan",
+                "subtitle": "A worked example, not a recorded event",
                 "note": (
-                    "A week of heavy monsoon rainfall fully saturated slopes above Teesta Stage V reservoir. "
-                    "SPIREXA flagged SEVERE risk at 87% by 06:00 that morning &mdash; hours before a slope failure "
-                    "near Mangan triggered a flood pulse eerily reminiscent of the October 2023 Sikkim GLOF. "
-                    "NHPC Teesta V operators, having received the alert, had pre-emptively opened spillway gates. "
-                    "Zero fatalities. The model&rsquo;s 7-day rainfall accumulation and factor-of-safety features drove the call."
+                    "This is the model run forward on a what-if: a week of heavy monsoon "
+                    "rain saturating the slopes above the Teesta Stage V reservoir. The "
+                    "score below is the real model&rsquo;s real output for that point and "
+                    "those conditions, driven by 7-day rainfall accumulation and the "
+                    "factor of safety. <b>No landslide occurred here and no alert was ever "
+                    "issued.</b> It is included to show what an operator would see the "
+                    "morning before, and to make the cascade in /nhpc concrete. Every "
+                    "other case on this page is a recorded event."
                 ),
                 "events": [
                     {
@@ -138,24 +150,53 @@ def main():
             }
         )
 
+    # Susceptibility is static, so it is scored offline by
+    # scripts/score_hotspots.py and baked in here. Crossing it with today's
+    # rainfall risk is what turns a column of probabilities into four piles
+    # an officer can work through in order.
+    susc_table, susc_card = {}, None
+    susc_path = "data/processed/hotspot_susceptibility.json"
+    if os.path.exists(susc_path):
+        with open(susc_path) as f:
+            sd = json.load(f)
+        susc_table = {r["id"]: r for r in sd["hotspots"]}
+        susc_card = sd.get("model")
+
+    def _action(trigger, with_roads, terrain_only):
+        hot = trigger >= 0.5
+        prone = terrain_only >= 0.5 or with_roads >= 0.6
+        if hot and prone:
+            return "ACT"
+        if hot:
+            return "WATCH"
+        return "PREPARE" if prone else "CLEAR"
+
     live_markers = []
     as_of = datetime.date.today().strftime("%d %b %Y")
     if os.path.exists("data/processed/live_risk.csv"):
         live = pd.read_csv("data/processed/live_risk.csv")
         for _, r in live.iterrows():
             x, y = project(r["lon"], r["lat"])
-            live_markers.append(
-                {
-                    "id": r["id"],
-                    "x": x,
-                    "y": y,
-                    "lat": round(float(r["lat"]), 5),
-                    "lon": round(float(r["lon"]), 5),
-                    "loc": r["location"],
-                    "state": r["state"],
-                    "risk": round(float(r["live_risk"]), 3),
-                }
-            )
+            m = {
+                "id": r["id"],
+                "x": x,
+                "y": y,
+                "lat": round(float(r["lat"]), 5),
+                "lon": round(float(r["lon"]), 5),
+                "loc": r["location"],
+                "state": r["state"],
+                "risk": round(float(r["live_risk"]), 3),
+            }
+            h = susc_table.get(r["id"])
+            if h:
+                m["susc"] = h["with_roads"]
+                m["suscNr"] = h["terrain_only"]
+                m["ground"] = h["ground"]
+                m["groundLabel"] = h["ground_label"]
+                m["distRoad"] = h["dist_road_m"]
+                m["slopeDeg"] = h["slope"]
+                m["action"] = _action(m["risk"], h["with_roads"], h["terrain_only"])
+            live_markers.append(m)
         if len(live):
             as_of = pd.to_datetime(live["as_of_date"].iloc[0]).strftime("%d %b %Y")
 
@@ -216,6 +257,7 @@ def main():
         "__CASE_STUDIES__": json.dumps(build_case_studies(hindcast)),
         "__IMPORTANCE__": json.dumps(importance),
         "__MODEL_META__": json.dumps(model_meta),
+        "__SUSC_CARD__": json.dumps(susc_card),
         "__AS_OF__": json.dumps(as_of),
         "__BUILD_ID__": json.dumps(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

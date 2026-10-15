@@ -67,6 +67,26 @@
   #controls{position:fixed;top:22px;right:22px;padding:18px 20px;width:318px}
   #controls h2{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
     color:var(--muted);font-weight:600;margin-bottom:12px}
+  #modes{display:flex;gap:4px;margin-bottom:12px;background:rgba(255,255,255,.06);
+    padding:3px;border-radius:11px}
+  #modes button{flex:1;padding:7px 4px;border-radius:9px;font-size:10.5px;
+    font-weight:600;background:none;color:var(--muted);border:none;letter-spacing:.04em}
+  #modes button.on{background:rgba(91,140,255,.32);color:#fff}
+  #modebar{margin-bottom:14px}
+  #modebar:empty{display:none}
+  #modebar select{width:100%;padding:8px 9px;border-radius:9px;font-size:11.5px;
+    background:rgba(255,255,255,.1);color:#e7edf7;border:1px solid rgba(255,255,255,.14)}
+  #modebar .mnote{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+  #modebar .mrow{display:flex;align-items:center;gap:9px;margin-top:9px}
+  #modebar input[type=range]{flex:1}
+  #modebar .mday{font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--accent);
+    font-weight:600;min-width:62px;text-align:right}
+  #modebar .mlead{margin-top:9px;padding:8px 10px;border-radius:9px;font-size:11px;
+    line-height:1.5;background:rgba(91,140,255,.14);border:1px solid rgba(91,140,255,.26)}
+  #modebar button{width:100%;padding:8px;border-radius:9px;font-size:11px;font-weight:600;
+    background:rgba(91,140,255,.26);color:#fff;border:1px solid rgba(91,140,255,.3);
+    margin-top:9px}
+  .locked input[type=range]{opacity:.45;pointer-events:none}
   #presets{display:flex;gap:6px;margin-bottom:16px}
   #presets button{flex:1;padding:8px 4px;border-radius:10px;font-size:10.5px;
     font-weight:600;background:rgba(255,255,255,.10);color:#cfd9ea;
@@ -137,6 +157,16 @@
 <div class="panel" id="controls">
   <h2>Conditions</h2>
 
+  <!-- Three ways to drive the same terrain, the same model and the same
+       physics. Without them this is a toy with sliders; with them it is the
+       one engine answering "what is happening", "what if" and "what did". -->
+  <div id="modes">
+    <button data-m="sim" class="on">Simulate</button>
+    <button data-m="live">Live</button>
+    <button data-m="replay">Replay</button>
+  </div>
+  <div id="modebar"></div>
+
   <div id="presets">
     <button data-p="dry">Dry season</button>
     <button data-p="monsoon">Monsoon week</button>
@@ -163,7 +193,7 @@
       Rain drives the model; slope and moisture drive the physics.</div>
   </div>
 
-  <div id="actions">
+  <div id="actions" >
     <button id="trigger">Force failure</button>
     <button id="reset">Reset</button>
   </div>
@@ -838,7 +868,172 @@ async function refresh(){
     else cancelWarning();
   }catch(e){ /* server not reachable; the scene still runs */ }
 }
-function scheduleRefresh(){ clearTimeout(pending); pending = setTimeout(refresh, 90); }
+function scheduleRefresh(){
+  // In live and replay the numbers come from the server's own scoring of a
+  // real point or a real day; re-scoring the slider positions would quietly
+  // overwrite them with an approximation of themselves.
+  if (simMode === 'replay') return;
+  clearTimeout(pending); pending = setTimeout(refresh, 90);
+}
+
+/* ====================== live, replay, and simulate ======================
+   Same terrain, same random forest, same factor of safety. What changes is
+   where the numbers on the sliders come from:
+
+     SIMULATE  the visitor's, which is a what-if
+     LIVE      a real monitored slope's conditions this morning, fetched
+     REPLAY    a recorded failure, scored day by day over the month before it
+
+   Replay is the one worth watching: it answers how many days of notice the
+   model would have had, which is a different and much harder question than
+   whether it would have flagged the day itself.                           */
+let simMode = 'sim';
+let replayData = null;
+
+function setLocked(on){
+  $('controls').classList.toggle('locked', on);
+  $('presets').style.display = on ? 'none' : '';
+}
+
+async function setMode(m){
+  simMode = m;
+  [...$('modes').children].forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  const bar = $('modebar');
+  cancelWarning();
+  if (m === 'sim'){
+    bar.innerHTML = ''; setLocked(false); replayData = null; onInput(); return;
+  }
+  setLocked(true);
+  if (m === 'live'){
+    bar.innerHTML = `<select id="mSel"><option>loading monitored slopes…</option></select>
+      <div class="mnote">Conditions are fetched live for the selected slope:
+        rainfall from IMERG, soil moisture from SMAP, slope from the DEM.
+        Takes a few seconds — it is a real satellite query, not a cached row.</div>`;
+    try{
+      const d = await (await fetch('/api/risk')).json();
+      const opts = (d.locations || []).slice()
+        .sort((a,b) => b.live_risk - a.live_risk).slice(0, 60);
+      $('mSel').innerHTML = opts.map(o =>
+        `<option value="${o.lat},${o.lon}">${(o.live_risk*100).toFixed(0)}% · ${o.location}</option>`).join('');
+      $('mSel').onchange = loadLivePoint;
+      loadLivePoint();
+    }catch(e){ bar.innerHTML = '<div class="mnote">Needs the local server.</div>'; }
+    return;
+  }
+  // replay
+  bar.innerHTML = `<select id="mSel"><option>loading recorded failures…</option></select>
+    <div class="mnote">Loading…</div>`;
+  try{
+    const d = await (await fetch('/api/replay/events?limit=40')).json();
+    $('mSel').innerHTML = d.events.map(e =>
+      `<option value="${e.id}">${e.date} · ${e.fatalities ? e.fatalities + ' dead · ' : ''}${e.location}</option>`).join('');
+    $('mSel').onchange = loadReplay;
+    loadReplay();
+  }catch(e){ bar.innerHTML = '<div class="mnote">Needs the local server.</div>'; }
+}
+
+async function loadLivePoint(){
+  const [lat, lon] = $('mSel').value.split(',');
+  const note = $('modebar').querySelector('.mnote');
+  note.textContent = 'Querying satellites for this slope…';
+  try{
+    const d = await (await fetch(`/api/predict?lat=${lat}&lon=${lon}&ground=0`)).json();
+    const f = d.features || {};
+    if (f.rain_7d != null) $('sRain').value = Math.min(320, Math.round(f.rain_7d));
+    if (f.soil_moisture_surface != null)
+      $('sSoil').value = Math.max(0.05, Math.min(0.51, f.soil_moisture_surface));
+    if (f.slope_max_nbhd != null)
+      $('sSlope').value = Math.max(10, Math.min(70, Math.round(f.slope_max_nbhd)));
+    if (f.ndvi != null) $('sTree').value = Math.max(0, Math.min(100, Math.round(f.ndvi/90)));
+    onInput();
+    const t = d.trust || {};
+    note.innerHTML = `Live as of ${d.date}. Model says <b>${d.risk_percent}%</b>`
+      + (t.confidence ? ` · confidence ${Math.round(t.confidence.score*100)}%` : '')
+      + (t.freshness && t.freshness.absent && t.freshness.absent.length
+          ? ` · ${t.freshness.absent.join(', ')} missing, median-filled` : '')
+      + '.';
+  }catch(e){ note.textContent = 'Could not reach the model.'; }
+}
+
+async function loadReplay(){
+  const bar = $('modebar');
+  const id = $('mSel').value;
+  try{
+    const d = await (await fetch(`/api/replay?id=${encodeURIComponent(id)}`)).json();
+    if (d.error) { bar.querySelector('.mnote').textContent = d.error; return; }
+    replayData = d;
+    const lead = d.caught
+      ? `Model crosses the alert line <b>${d.lead_days} days</b> before the slope goes.`
+      : `Model never crosses the alert line. Peak ${Math.round(d.peak_risk*100)}%.`;
+    bar.insertAdjacentHTML('beforeend', '');
+    bar.innerHTML = bar.querySelector('select').outerHTML
+      + `<div class="mrow"><input type="range" id="mDay" min="0" max="${d.frames.length-1}" value="0">
+           <span class="mday" id="mDayLbl">day -29</span></div>
+         <div class="mlead">${lead}</div>
+         <button id="mPlay">&#9654; Play the month</button>
+         <div class="mnote">${d.caveat}</div>`;
+    $('mSel').onchange = loadReplay;
+    $('mDay').oninput = e => applyReplayDay(+e.target.value);
+    $('mPlay').onclick = playReplay;
+    if (d.event.slope_max_nbhd) $('sSlope').value =
+      Math.max(10, Math.min(70, d.event.slope_max_nbhd));
+    if (d.event.ndvi != null) $('sTree').value =
+      Math.max(0, Math.min(100, Math.round(d.event.ndvi/90)));
+    applyReplayDay(0);
+  }catch(e){ bar.querySelector('.mnote').textContent = 'Needs the local server.'; }
+}
+
+function applyReplayDay(i){
+  if (!replayData) return;
+  const f = replayData.frames[i];
+  $('mDayLbl').textContent = f.day === 0 ? 'failure day' : `day ${f.day}`;
+  $('sRain').value = Math.min(320, Math.round(f.rain_7d));
+  $('sSoil').value = Math.max(0.05, Math.min(0.51,
+    0.08 + 0.4 * Math.min(1, f.rain_15d / 200)));
+  syncLabels();
+  const angle = +$('sSlope').value;
+  buildTerrain(angle);
+  const wet = (+$('sSoil').value - 0.05)/0.46;
+  groundColor.lerpColors(new THREE.Color(0x629054), new THREE.Color(0x3f6038), wet);
+  layoutTrees(treeCount(), angle);
+  // The replay carries the model's own score for that morning, so the readout
+  // shows what the operator would have seen rather than a re-derivation.
+  showScore(f.risk);
+  if (f.risk >= TRIGGER_RISK) beginWarning(); else cancelWarning();
+}
+
+let replayTimer = null;
+function playReplay(){
+  if (replayTimer){ clearInterval(replayTimer); replayTimer = null;
+    $('mPlay').innerHTML = '&#9654; Play the month'; return; }
+  $('mPlay').innerHTML = '&#10073;&#10073; Pause';
+  let i = 0;
+  // setInterval rather than rAF: an exhibition screen spends most of its life
+  // with this tab in the background, where rAF simply stops.
+  replayTimer = setInterval(() => {
+    if (i >= replayData.frames.length){ clearInterval(replayTimer); replayTimer = null;
+      $('mPlay').innerHTML = '&#9654; Play the month'; return; }
+    $('mDay').value = i; applyReplayDay(i); i += 1;
+  }, 260);
+}
+
+async function showScore(p){
+  const sev = p >= .75 ? 'SEVERE' : p >= .5 ? 'HIGH' : p >= .25 ? 'MODERATE' : 'LOW';
+  $('risk').textContent = Math.round(p*100) + '%';
+  $('risk').style.color = BAND_COLOR[sev];
+  $('band').textContent = sev;
+  // The recommendation has to move with the score. Left alone it kept
+  // showing "keep under review" beside a 96% SEVERE readout, which is worse
+  // than showing nothing: it teaches a visitor that the two are unrelated.
+  try{
+    const d = await (await fetch(`/api/decision?risk=${p.toFixed(4)}`)).json();
+    if (d && d.posture){
+      $('posture').textContent = d.posture;
+      $('posture').style.color = BAND_COLOR[sev];
+      $('acts').innerHTML = (d.actions || []).map(a=>`<li>${a}</li>`).join('');
+    }
+  }catch(e){ /* server not reachable; the readout still stands */ }
+}
 
 /* ============================ interaction ============================ */
 function syncLabels(){
@@ -867,6 +1062,12 @@ const PRESETS = {
   monsoon: {sRain:185, sSoil:0.42, sSlope:48, sTree:65},
   cleared: {sRain:120, sSoil:0.34, sSlope:54, sTree:5},
 };
+$('modes').addEventListener('click', e=>{
+  if (!e.target.dataset.m) return;
+  if (replayTimer){ clearInterval(replayTimer); replayTimer = null; }
+  touched(); resetSlide();
+  setMode(e.target.dataset.m);
+});
 $('presets').addEventListener('click', e=>{
   const p = PRESETS[e.target.dataset.p];
   if (!p) return;

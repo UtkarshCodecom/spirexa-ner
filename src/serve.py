@@ -12,9 +12,17 @@ GET /api/health                        server + model status
 GET /api/risk                          current risk snapshot for all hotspots
 GET /api/alerts?threshold=0.6          locations currently above threshold
 GET /api/predict?lat=&lon=&date=       on-demand prediction for any point
+GET /api/susceptibility                where the ground is prone to failing
 
 /api/predict runs a live Earth Engine query, so it takes a few seconds and
 needs `earthengine authenticate` to have been run.
+
+Risk here is two separate questions answered by two separate models. The
+trigger model reads the last fortnight of rain and says whether today is
+dangerous; the susceptibility model reads terrain, soil and road cuts and
+says whether this slope is the kind that fails. /api/risk carries both plus
+the action that crossing them implies, so a client never has to decide what
+two probabilities mean.
 """
 
 import argparse
@@ -140,6 +148,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._static("/static/simulator.html")
             elif route == "/flood":
                 self._static("/static/flood.html")
+            elif route == "/glof":
+                self._static("/static/glof.html")
+            elif route == "/discharge":
+                self._static("/static/discharge.html")
+            elif route == "/guide":
+                self._static("/static/guide.html")
+            elif route == "/nhpc":
+                self._static("/static/nhpc.html")
+            elif route == "/monitor":
+                self._static("/static/monitor.html")
             elif route == "/sw.js":
                 # Served from root so its scope covers the whole app.
                 self._static("/static/sw.js")
@@ -163,6 +181,71 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._alerts(threshold))
             elif route == "/api/predict":
                 self._json(self._predict(params))
+            elif route == "/api/replay/events":
+                import replay as replay_mod
+
+                self._json({"events": replay_mod.events(
+                    int((params.get("limit") or ["60"])[0]))})
+            elif route == "/api/replay":
+                import replay as replay_mod
+
+                self._json(replay_mod.replay(
+                    (params.get("id") or [""])[0]))
+            elif route == "/api/eventgraph":
+                import eventgraph
+
+                self._json(eventgraph.build())
+            elif route == "/api/eventgraph/findings":
+                import eventgraph
+
+                self._json(eventgraph.findings())
+            elif route == "/api/eventgraph/chain":
+                import eventgraph
+
+                where = {k: v[0] for k, v in params.items()
+                         if k in ("trigger", "cover", "material", "mechanism",
+                                  "movement", "hydro", "activity") and v[0]}
+                self._json(eventgraph.chain(**where))
+            elif route == "/api/impact":
+                import impact as impact_mod
+
+                self._json(impact_mod.impact(
+                    float(params["lat"][0]), float(params["lon"][0]),
+                    float((params.get("radius") or ["0.5"])[0])))
+            elif route == "/api/impact/cuts":
+                import impact as impact_mod
+
+                self._json({"cuts": impact_mod.cut_geometry(
+                    float(params["lat"][0]), float(params["lon"][0]),
+                    float((params.get("radius") or ["0.5"])[0]))})
+            elif route == "/api/scada":
+                import scada
+
+                self._json(scada.snapshot(
+                    (params.get("scenario") or ["oct2023"])[0],
+                    float((params.get("hour") or ["-1"])[0]) if
+                    (params.get("hour") or ["-1"])[0] != "-1" else None,
+                    float((params.get("lead") or ["0"])[0])))
+            elif route == "/api/scada/series":
+                import scada
+
+                self._json(scada.series(
+                    (params.get("scenario") or ["oct2023"])[0],
+                    float((params.get("lead") or ["0"])[0]),
+                    (params.get("tag") or ["reservoir_level_m"])[0],
+                    int((params.get("step") or ["5"])[0])))
+            elif route == "/api/scada/tags":
+                import scada
+
+                self._json(scada.tag_dictionary())
+            elif route == "/api/scada/counterfactual":
+                import scada
+
+                self._json(scada.counterfactual(
+                    (params.get("scenario") or ["oct2023"])[0],
+                    float((params.get("lead") or ["1.5"])[0])))
+            elif route == "/api/susceptibility":
+                self._json(self._susceptibility(params))
             elif route == "/api/reports":
                 self._json(self._list_reports())
             elif route == "/api/sensor":
@@ -175,6 +258,35 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._whatchanged(params))
             elif route == "/api/score":
                 self._json(self._score(params))
+            elif route == "/api/glof/ranking":
+                import glof
+
+                self._json({
+                    "lakes_detected": len(glof.lakes(0.0)),
+                    "assumed_moraine_m": glof.ASSUMED_MORAINE_M,
+                    "drained_fraction": glof.MEASURED_DRAINED_MORAINE,
+                    "drained_fraction_basis": "median of 147 recorded outbursts",
+                    "ranking": glof.hazard_ranking(limit=12),
+                })
+            elif route == "/api/glof/model":
+                import glof_ml
+
+                self._json(glof_ml.scorecard())
+            elif route == "/api/glof/growth":
+                import glof
+
+                self._json(glof.growth(
+                    float((params.get("min_area") or ["0.25"])[0])))
+            elif route == "/api/glof/simulate":
+                import glof
+
+                lid = (params.get("lake") or ["GL05"])[0]
+                frac = float((params.get("drained") or ["0.7"])[0])
+                lk = next((l for l in glof.lakes(0.0) if l["id"] == lid), None)
+                if lk is None:
+                    self._json({"error": f"no lake {lid}"})
+                else:
+                    self._json(glof.simulate_breach(lk, drained_fraction=frac))
             elif route == "/api/sensing":
                 import sensing
 
@@ -185,6 +297,22 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(autopsy.report())
             elif route == "/api/cascade":
                 self._json(self._cascade(params))
+            elif route == "/api/glof":
+                self._json(self._glof(params))
+            elif route == "/api/glof/lakes":
+                import glof as glof_mod
+                self._json({"lakes": glof_mod.lake_list()})
+            elif route == "/api/discharge":
+                self._json(self._discharge_forecast(params))
+            elif route == "/api/monitor":
+                self._json(self._monitor_snapshot(params))
+            elif route == "/api/discharge/metrics":
+                import discharge as dis_mod
+                bundle = dis_mod.load_bundle()
+                if bundle is None:
+                    self._json({"error": "Model not trained. Run scripts/train_discharge.py"}, status=404)
+                else:
+                    self._json({"metrics": bundle["metrics"], "importance": bundle["importance"]})
             elif route == "/api/geo":
                 # map geometry for the Android client, thinned for a phone
                 import mobile_geo
@@ -220,15 +348,52 @@ class Handler(BaseHTTPRequestHandler):
     # ---- handlers -------------------------------------------------------
 
     def _risk_snapshot(self):
+        """Today's rain risk for every hotspot, crossed with the ground.
+
+        The trigger number alone has never been enough to act on: 60% on a
+        hillside that has failed four times is an evacuation, and 60% on a
+        terrace above a floodplain is a wet Tuesday. The cached
+        susceptibility scores are joined here so the client gets one row per
+        place carrying both, and the verdict that follows from the pair.
+        """
         import pandas as pd
 
         if not os.path.exists(LIVE_RISK_CSV):
             return {"error": "no snapshot", "fix": "python src/compute_live_risk.py"}
         df = pd.read_csv(LIVE_RISK_CSV)
+        rows = df.to_dict(orient="records")
+
+        card, counts = None, None
+        try:
+            import susceptibility as susc
+
+            table = susc.hotspot_map()
+            if table:
+                card = susc.model_card()
+                counts = {"ACT": 0, "PREPARE": 0, "WATCH": 0, "CLEAR": 0}
+                for r in rows:
+                    h = table.get(r.get("id"))
+                    if not h:
+                        continue
+                    d = susc.decision(float(r.get("live_risk") or 0.0),
+                                      h["with_roads"], h["terrain_only"])
+                    r["susceptibility"] = h["with_roads"]
+                    r["susceptibility_terrain_only"] = h["terrain_only"]
+                    r["ground"] = h["ground"]
+                    r["ground_label"] = h["ground_label"]
+                    r["dist_road_m"] = h["dist_road_m"]
+                    r["action"] = d["action"]
+                    r["action_why"] = d["why"]
+                    counts[d["action"]] += 1
+        except Exception as exc:                          # noqa: BLE001
+            card = {"error": f"{type(exc).__name__}: {exc}"}
+
         return {
             "count": len(df),
             "as_of": str(df["as_of_date"].iloc[0]) if len(df) else None,
-            "locations": df.to_dict(orient="records"),
+            "susceptibility_model": card,
+            "action_counts": counts,
+            "locations": rows,
         }
 
     def _alerts(self, threshold):
@@ -254,23 +419,41 @@ class Handler(BaseHTTPRequestHandler):
         if not os.path.exists(LIVE_RISK_CSV):
             return {"error": "no snapshot"}
         df = pd.read_csv(LIVE_RISK_CSV)
+
+        # Two more characters per point, and the device stops needing a
+        # network to know which of its cached alerts is worth walking to.
+        table = {}
+        try:
+            import susceptibility as susc
+
+            table = susc.hotspot_map()
+        except Exception:                                 # noqa: BLE001
+            pass
+
+        points = []
+        for _, r in df.iterrows():
+            p = {
+                "i": str(r["id"]),
+                # A few catalogue rows have no location text at all, which
+                # pandas reads as NaN rather than a string.
+                "n": ("" if pd.isna(r["location"]) else str(r["location"]))[:60],
+                "s": "" if pd.isna(r["state"]) else str(r["state"]),
+                "y": round(float(r["lat"]), 4),
+                "x": round(float(r["lon"]), 4),
+                "r": round(float(r["live_risk"]), 3),
+            }
+            h = table.get(str(r["id"]))
+            if h:
+                p["g"] = h["terrain_only"]          # ground, terrain only
+                p["a"] = susc.decision(p["r"], h["with_roads"],
+                                       h["terrain_only"])["action"]
+            points.append(p)
+
         return {
             "version": int(os.path.getmtime(LIVE_RISK_CSV)),
             "as_of": str(df["as_of_date"].iloc[0]) if len(df) else None,
             "count": len(df),
-            "points": [
-                {
-                    "i": str(r["id"]),
-                    # A few catalogue rows have no location text at all, which
-                    # pandas reads as NaN rather than a string.
-                    "n": ("" if pd.isna(r["location"]) else str(r["location"]))[:60],
-                    "s": "" if pd.isna(r["state"]) else str(r["state"]),
-                    "y": round(float(r["lat"]), 4),
-                    "x": round(float(r["lon"]), 4),
-                    "r": round(float(r["live_risk"]), 3),
-                }
-                for _, r in df.iterrows()
-            ],
+            "points": points,
         }
 
     def _receive_report(self):
@@ -419,6 +602,22 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 _predict_cache[key] = result
                 out["model"] = dict(result, cached=False)
+
+        # Three numbers, not one. How high the risk is, how much of the
+        # feature vector was real, and how old it was -- plus, when a node is
+        # attached, whether the node and the satellite agree about the same
+        # hillside. An operator asked to close a road on the strength of 74%
+        # is entitled to all four.
+        if out.get("model"):
+            try:
+                import trust
+
+                m = out["model"]
+                out["trust"] = trust.assess(
+                    m.get("features"), (m.get("risk_percent") or 0) / 100.0,
+                    m.get("date"), station)
+            except Exception as exc:                      # noqa: BLE001
+                out["trust"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         return out
 
@@ -571,6 +770,221 @@ class Handler(BaseHTTPRequestHandler):
             out.pop("timeline", None)
         return out
 
+    def _monitor_snapshot(self, params):
+        """Single-call snapshot of all hazard data for the monitoring dashboard.
+
+        Calls every model in series and assembles a unified payload so the
+        dashboard JS makes one request instead of seven.  Total compute time
+        is ~200 ms because none of these need network I/O.
+        """
+        import glof as glof_mod
+        import discharge as dis_mod
+        import wcn
+
+        out = {}
+
+        # ── server health ───────────────────────────────────────────
+        out["health"] = {
+            "model_present": os.path.exists("data/processed/model.pkl"),
+            "discharge_model": os.path.exists("data/processed/discharge_model.pkl"),
+            "snapshot_present": os.path.exists("data/processed/live_risk.csv"),
+        }
+
+        # ── GLOF lakes ──────────────────────────────────────────────
+        out["lakes"] = glof_mod.lake_list()
+
+        # ── GLOF simulation for the highest-instability lake ────────
+        top_lake = max(out["lakes"], key=lambda l: l["instability"])
+        scenario = params.get("glof_scenario", ["normal"])[0]
+        rainfall = 180.0 if scenario == "monsoon" else 80.0
+        out["glof"] = glof_mod.simulate(
+            lake_id=top_lake["id"],
+            trigger="overtopping",
+            rainfall_mm_30d=rainfall,
+        )
+
+        # ── WCN physics for current conditions ──────────────────────
+        q_scenario = params.get("scenario", ["normal"])[0]
+        rain_hist, q_hist = _default_scenario(q_scenario)
+        wcn_result = wcn.simulate_daily(rain_hist, cn_ii=wcn.TEESTA_CN_II)
+        out["wcn"] = {
+            "current_cn": wcn_result["cn_eff"][-1],
+            "current_api": round(wcn.api_at(rain_hist), 1),
+            "current_runoff_mm": wcn_result["q_direct"][-1],
+            "current_q_phys": round(wcn_result["q_total"][-1], 1),
+        }
+
+        # ── Discharge forecast ───────────────────────────────────────
+        dis_bundle = dis_mod.load_bundle()
+        if dis_bundle:
+            out["discharge"] = dis_mod.forecast(rain_hist, q_hist, bundle=dis_bundle)
+            out["model_metrics"] = {
+                "horizons": {str(h): m for h, m in dis_bundle["metrics"].items()},
+                "importance": dis_bundle["importance"][:8],
+            }
+        else:
+            out["discharge"] = None
+            out["model_metrics"] = None
+
+        # ── Cascade simulation ───────────────────────────────────────
+        import cascade
+        rain_today = rain_hist[-1]
+        out["cascade"] = cascade.simulate(
+            rain_mm_per_day=max(rain_today * 24, 60.0),
+            hours=48,
+            slope_deg=38.0,
+            catchment_km2=180.0,
+            start_soil=0.25,
+        )
+        # Trim timeline to keep payload small
+        out["cascade"]["timeline"] = out["cascade"]["timeline"][::4]
+
+        # ── Live risk snapshot ───────────────────────────────────────
+        if os.path.exists("data/processed/live_risk.csv"):
+            import pandas as pd
+            df = pd.read_csv("data/processed/live_risk.csv")
+            out["live_risk"] = {
+                "count": len(df),
+                "as_of": str(df["as_of_date"].iloc[0]) if len(df) else None,
+                "high_count": int((df["live_risk"] >= 0.6).sum()),
+                "severe_count": int((df["live_risk"] >= 0.75).sum()),
+                "top5": df.nlargest(5, "live_risk")[
+                    ["location", "state", "lat", "lon", "live_risk"]
+                ].to_dict(orient="records"),
+            }
+        else:
+            out["live_risk"] = None
+
+        # ── Field sensors ────────────────────────────────────────────
+        import datetime as _dt
+        if os.path.exists(SENSOR_INDEX):
+            import json as _json
+            with open(SENSOR_INDEX) as f:
+                rows = [_json.loads(x) for x in f if x.strip()]
+            latest = {}
+            for r in rows:
+                latest[r.get("node_id")] = r
+            nodes = list(latest.values())
+            for n in nodes:
+                seen = _dt.datetime.fromisoformat(n["received_at"])
+                n["age_s"] = round((_dt.datetime.now() - seen).total_seconds(), 0)
+                n["live"] = n["age_s"] < 60
+            out["sensors"] = {"nodes": nodes, "count": len(nodes)}
+        else:
+            out["sensors"] = {"nodes": [], "count": 0}
+
+        # ── Composite Risk Index ─────────────────────────────────────
+        glof_score = top_lake["instability"]
+        dis_score = 0.0
+        if out["discharge"]:
+            bankfull = out["discharge"]["bankfull_q"]
+            dis_score = min(1.0, max(out["discharge"]["p90"]) / bankfull)
+        cascade_peak = out["cascade"]["peak"]
+        cascade_score = cascade_peak["landslide_risk"]
+        cri = round(
+            (0.35 * glof_score + 0.45 * dis_score + 0.20 * cascade_score) * 100, 1
+        )
+        out["cri"] = {
+            "score": cri,
+            "band": ("CRITICAL" if cri >= 70 else "HIGH" if cri >= 50
+                     else "MODERATE" if cri >= 30 else "LOW"),
+            "components": {
+                "glof": round(glof_score * 100, 1),
+                "discharge": round(dis_score * 100, 1),
+                "cascade": round(cascade_score * 100, 1),
+            },
+        }
+
+        # ── Compound event flag ──────────────────────────────────────
+        out["compound"] = (
+            glof_score >= 0.6 and
+            (out["discharge"] and max(out["discharge"]["p50"]) > 0.7 * 3800)
+        )
+
+        return out
+
+    def _discharge_forecast(self, params):
+        """7-day discharge forecast for Teesta at Gajoldoba.
+
+        Accepts:
+          ?rain=v1,v2,...,v30   last 30 days of rainfall (mm), comma-separated
+          ?q=v1,v2,...,v30      last 30 days of discharge (m³/s)
+          ?scenario=dry|normal|monsoon  synthetic scenario if no data given
+        """
+        import discharge as dis_mod
+
+        # Provenance travels with the numbers. This model is trained on
+        # generated hydrology, not gauge records, and any client showing its
+        # output has to be able to say so without asking.
+        PROVENANCE = {
+            "training_data": "synthetic",
+            "warning": ("Trained on generated hydrology, not observed gauge "
+                        "records. NSE 0.418 at day+1 falls to 0.023 by day+4, "
+                        "which is no better than predicting the long-term "
+                        "mean. Treat day+1 as indicative and anything past "
+                        "day+3 as unusable."),
+            "needs": "CWC daily discharge for the Teesta from India-WRIS",
+            "top_feature": "yesterday's flow, 45x the weight of rainfall",
+        }
+
+        bundle = dis_mod.load_bundle()
+        if bundle is None:
+            return {"error": "Model not trained. Run: python scripts/train_discharge.py"}
+
+        # Parse or generate rain/discharge history
+        scenario = params.get("scenario", ["normal"])[0]
+        rain_hist, q_hist = _default_scenario(scenario)
+
+        if "rain" in params:
+            try:
+                rain_hist = [float(x) for x in params["rain"][0].split(",")]
+            except (ValueError, IndexError):
+                return {"error": "rain must be comma-separated floats"}
+
+        if "q" in params:
+            try:
+                q_hist = [float(x) for x in params["q"][0].split(",")]
+            except (ValueError, IndexError):
+                return {"error": "q must be comma-separated floats"}
+
+        out = dis_mod.forecast(rain_hist, q_hist, bundle=bundle)
+        if isinstance(out, dict):
+            out["provenance"] = PROVENANCE
+        return out
+
+    def _glof(self, params):
+        """GLOF breach simulation for a Teesta glacial lake.
+
+        ?lake_id=SL01&trigger=overtopping&rainfall=180
+        &insar=0.0&seismic=0.0
+        """
+        import glof as glof_mod
+
+        def fnum(key, default):
+            try:
+                return float(params[key][0])
+            except (KeyError, TypeError, ValueError, IndexError):
+                return default
+
+        lake_id = params.get("lake_id", ["SL01"])[0]
+        trigger = params.get("trigger", ["overtopping"])[0]
+        if trigger not in ("overtopping", "piping", "seismic"):
+            trigger = "overtopping"
+        rainfall = fnum("rainfall", 180.0)
+        insar = params.get("insar", [None])[0]
+        seismic = params.get("seismic", [None])[0]
+
+        insar_val = float(insar) if insar is not None else None
+        seismic_val = float(seismic) if seismic is not None else None
+
+        return glof_mod.simulate(
+            lake_id=lake_id,
+            trigger=trigger,
+            rainfall_mm_30d=rainfall,
+            insar_override=insar_val,
+            seismic_override=seismic_val,
+        )
+
     def _decision(self, params):
         import scenarios
 
@@ -594,7 +1008,7 @@ class Handler(BaseHTTPRequestHandler):
         import predict as predict_mod
 
         risk, feats = predict_mod.predict(lat, lon, date, with_features=True)
-        return {
+        out = {
             "lat": lat,
             "lon": lon,
             "date": date,
@@ -603,6 +1017,91 @@ class Handler(BaseHTTPRequestHandler):
             "severity": _band(risk),
             "features": feats,
         }
+
+        # The trigger score on its own does not say what to do. Adding the
+        # ground costs one more Earth Engine round trip on a request that is
+        # already making one, and turns a probability into an instruction.
+        try:
+            import trust
+
+            out["trust"] = trust.assess(feats, risk, date, None)
+        except Exception as exc:                          # noqa: BLE001
+            out["trust"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+        if params.get("ground", ["1"])[0] not in ("0", "false", "no"):
+            try:
+                import susceptibility as susc
+
+                s = susc.score_points([{"id": "q", "lat": lat, "lon": lon}])[0]
+                out["susceptibility"] = {
+                    "with_roads": s["with_roads"],
+                    "terrain_only": s["terrain_only"],
+                    "band": susc.band(s["terrain_only"]),
+                    "model": susc.model_card(),
+                }
+                out["decision"] = susc.decision(
+                    risk, s["with_roads"], s["terrain_only"])
+            except Exception as exc:                      # noqa: BLE001
+                out["susceptibility"] = {
+                    "error": f"{type(exc).__name__}: {exc}"}
+        if isinstance(out, dict):
+            out["provenance"] = PROVENANCE
+        return out
+
+    def _susceptibility(self, params):
+        """The cached susceptibility table, or one point from it.
+
+        Static: this does not move when it rains. It is recomputed only when
+        the model is retrained or the hotspot list changes, by
+        scripts/score_hotspots.py.
+        """
+        import susceptibility as susc
+
+        data = susc.hotspots()
+        if data is None:
+            return {"error": "not scored yet",
+                    "fix": "python scripts/score_hotspots.py"}
+        if "id" in params:
+            row = susc.hotspot_map().get(params["id"][0])
+            return row or {"error": f"no hotspot {params['id'][0]}"}
+
+        rows = data["hotspots"]
+        kind = (params.get("ground") or [None])[0]
+        if kind:
+            rows = [r for r in rows if r["ground"] == kind]
+        rows = sorted(rows, key=lambda r: -r["terrain_only"])
+        limit = int((params.get("limit") or ["0"])[0])
+        return {
+            "generated": data["generated"],
+            "model": data["model"],
+            "counts": data["counts"],
+            "legend": {
+                "with_roads": "AUC 0.9467. Strongest, but 46% of it is road "
+                              "proximity, which partly maps where GSI surveyed.",
+                "terrain_only": "AUC 0.8682. Road features removed. Weaker, "
+                                "and the one to trust where nobody has walked.",
+                "ground": "What their disagreement means: slope / road_cut / "
+                          "unmapped / stable.",
+            },
+            "count": len(rows),
+            "hotspots": rows[:limit] if limit else rows,
+        }
+
+
+def _default_scenario(scenario: str):
+    """Synthetic 30-day rain/discharge histories for the UI sliders."""
+    import random
+    rng = random.Random(42)
+    if scenario == "monsoon":
+        rain = [rng.uniform(5, 60) for _ in range(28)] + [45.0, 80.0]
+        q = [rng.uniform(800, 2500) for _ in range(28)] + [1800.0, 2400.0]
+    elif scenario == "dry":
+        rain = [rng.uniform(0, 3) for _ in range(30)]
+        q = [rng.uniform(20, 80) for _ in range(30)]
+    else:  # normal
+        rain = [rng.uniform(0, 20) for _ in range(25)] + [12.0, 8.0, 5.0, 3.0, 2.0]
+        q = [rng.uniform(100, 500) for _ in range(25)] + [350.0, 280.0, 200.0, 150.0, 110.0]
+    return rain, q
 
 
 def _band(risk):
@@ -660,11 +1159,20 @@ def main():
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"NER Slope Watch running at http://{args.host}:{args.port}")
     print("  dashboard   /")
+    print("  page guide  /guide   (what each page does)")
     print("  health      /api/health")
     print("  snapshot    /api/risk")
     print("  alerts      /api/alerts?threshold=0.6")
     print("  prediction  /api/predict?lat=23.73&lon=92.72&date=2024-05-28")
+    print("  ground      /api/susceptibility  (static: where slopes fail)")
+    print("  NHPC feed   /nhpc  |  /api/scada?scenario=oct2023&hour=2.4&lead=0")
+    print("  impact      /api/impact?lat=&lon=  (what the red zone cuts off)")
+    print("  event graph /api/eventgraph/findings  (what follows what, counted)")
+    print("  GLOF model  /api/glof/model  (learned peak discharge vs Froehlich)")
     print("  sensors     /api/sensor   (GET readings, POST from a node)")
+    print("  GLOF sim    /glof  |  /api/glof?lake_id=SL01&trigger=overtopping")
+    print("  Discharge   /discharge  |  /api/discharge?scenario=monsoon")
+    print("  Monitor     /monitor   |  /api/monitor?scenario=normal")
     print("  live panel  /api/live?lat=&lon=")
     print("Ctrl+C to stop.")
     try:

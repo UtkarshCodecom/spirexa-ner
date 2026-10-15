@@ -17,6 +17,7 @@
     --glass-fill: rgba(255,255,255,0.48);
     --glass-fill-strong: rgba(255,255,255,0.74);
     --glass-border: rgba(255,255,255,0.7);
+    --border: rgba(31,45,38,0.13);
     --glass-shadow: 0 8px 32px rgba(28,45,36,0.13), inset 0 1px 0 rgba(255,255,255,0.55);
 
     --accent: #6355d8;
@@ -140,6 +141,97 @@
 
   /* ---- stats ---- */
   .stats-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .triage { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; }
+  .triage-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .triage-head h2 { font-size: 15px; margin: 0 0 3px; }
+  .triage-clear {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    border-radius: 999px; padding: 4px 11px; font-size: 11px; cursor: pointer;
+  }
+  .triage-clear:hover { color: var(--text); border-color: var(--text-muted); }
+  .triage-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  @media (max-width: 900px) { .triage-grid { grid-template-columns: repeat(2,1fr); } }
+  .tri-card {
+    text-align: left; cursor: pointer; padding: 12px 13px; border-radius: 11px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.35);
+    display: flex; flex-direction: column; gap: 3px; transition: border-color .15s, background .15s;
+  }
+  .tri-card:hover { background: rgba(255,255,255,0.72); }
+  .tri-card.on { border-color: currentColor; background: rgba(255,255,255,0.85); }
+  .tri-n {
+    font-family: var(--font-mono); font-weight: 600; font-size: 24px;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .tri-name { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; }
+  .tri-what { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+  .tri-act { color: var(--risk-severe); }
+  .tri-prepare { color: var(--risk-high); }
+  .tri-watch { color: var(--risk-moderate); }
+  .tri-clear { color: var(--text-faint); }
+  .triage-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
+  .triage-note b { color: var(--text); font-weight: 600; }
+  .chain-flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+                margin: 12px 0 14px; }
+  .chain-node { padding: 7px 11px; border-radius: 9px; border: 1px solid var(--border);
+                background: rgba(255,255,255,.4); font-size: 11.5px; }
+  .chain-node b { display: block; font-size: 12.5px; font-weight: 600; }
+  .chain-node span { font-size: 10px; color: var(--text-muted); }
+  .chain-arrow { color: var(--text-faint); font-size: 13px; }
+  .chain-find { display: grid; grid-template-columns: 1fr auto auto; gap: 6px 12px;
+                align-items: center; font-size: 11.5px; padding: 6px 0;
+                border-bottom: 1px solid var(--border); }
+  .chain-find .bar { height: 5px; border-radius: 3px; background: var(--risk-high);
+                     min-width: 3px; }
+  .chain-find .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+                   font-size: 11px; }
+  .chain-lift { font-weight: 600; }
+  .lift-up { color: var(--risk-severe); }
+  .lift-dn { color: var(--risk-low); }
+  .chain-note { font-size: 10.5px; color: var(--text-muted); line-height: 1.6;
+                margin-top: 10px; }
+  .trust-row { display: flex; gap: 16px; margin-top: 11px; }
+  .trust-n { font-family: var(--font-mono); font-size: 19px; font-weight: 600;
+             line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .trust-k { font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em;
+             color: var(--text-muted); }
+  .t-ok { color: var(--risk-low); }
+  .t-mid { color: var(--risk-moderate); }
+  .t-bad { color: var(--risk-severe); }
+  .trust-why { font-size: 10.5px; color: var(--text-muted); line-height: 1.5;
+               margin-top: 6px; }
+  .trust-feeds { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .trust-feeds span { font-size: 9.5px; padding: 2px 7px; border-radius: 999px;
+                      border: 1px solid var(--border); color: var(--text-muted); }
+  .trust-feeds span.slow { opacity: .6; }
+  .trust-conf { margin-top: 10px; padding: 9px 11px; border-radius: 9px;
+                border: 1px solid var(--border); font-size: 11px; }
+  .trust-conf.t-bad { border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.05); }
+  .trust-conf.t-mid { border-color: rgba(180,83,9,.3); }
+  .trust-cmp { display: flex; justify-content: space-between; gap: 8px;
+               margin-top: 5px; font-size: 10.5px; color: var(--text-muted); }
+  .imp-head { display: flex; gap: 14px; margin-bottom: 10px; }
+  .imp-n { font-family: var(--font-mono); font-size: 21px; font-weight: 600;
+           line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .imp-l { font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em;
+           color: var(--text-muted); }
+  .imp-row { display: flex; justify-content: space-between; gap: 8px;
+             font-size: 11.5px; padding: 5px 0;
+             border-bottom: 1px solid var(--border); }
+  .imp-row b { font-weight: 600; }
+  .imp-cut { color: var(--risk-severe); font-weight: 600; }
+  .imp-det { color: var(--risk-moderate); }
+  .imp-note { font-size: 10.5px; color: var(--text-muted); line-height: 1.5;
+              margin-top: 9px; }
+  .row-act { font-weight: 700; letter-spacing: 0.05em; }
+  .row-act.a-ACT { color: var(--risk-severe); }
+  .row-act.a-PREPARE { color: var(--risk-high); }
+  .row-act.a-WATCH { color: var(--risk-moderate); }
+  .row-act.a-CLEAR { color: var(--text-faint); }
+  .ground-pill {
+    display: inline-block; font-size: 10px; letter-spacing: 0.05em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-muted);
+  }
   @media (max-width: 900px) { .stats-strip { grid-template-columns: repeat(2,1fr); } }
   .stat-tile { padding: 13px 17px; display: flex; flex-direction: column; gap: 2px; }
   .stat-value {
@@ -835,6 +927,21 @@
 
   <div class="stats-strip" id="statsGrid"></div>
 
+  <!-- Two models, one instruction. Rainfall risk says whether today is
+       dangerous; the susceptibility model says whether this particular
+       hillside is the kind that fails. Neither sorts the list on its own. -->
+  <section class="triage glass" id="triageStrip" hidden>
+    <div class="triage-head">
+      <div>
+        <h2>What to do today</h2>
+        <p class="sub" id="triageSub">&mdash;</p>
+      </div>
+      <button class="triage-clear" id="triageClear" hidden>show all</button>
+    </div>
+    <div class="triage-grid" id="triageGrid"></div>
+    <div class="triage-note" id="triageNote"></div>
+  </section>
+
   <details class="speed-strip glass">
     <summary class="speed-summary">
       <span class="speed-icon">⚡</span>
@@ -933,6 +1040,12 @@
       <h2>Where the next sensor should go</h2>
       <p class="sub" id="spSub">&mdash;</p>
       <div id="spRows"></div>
+    </section>
+
+    <section class="under glass" id="chainCard">
+      <h2>What follows what</h2>
+      <p class="sub">Counted over 7,498 GSI field records, not drawn as a diagram</p>
+      <div id="chainBody"><div class="rep-empty">Loading&hellip;</div></div>
     </section>
 
     <section class="under glass" id="autopsyCard" hidden>
@@ -1036,6 +1149,14 @@
           <p id="probeSubtitle">Get a risk reading for any place and date</p>
         </div>
         <div class="probe" id="probeBody"></div>
+      </div>
+
+      <div class="panel glass" id="impactPanel" hidden>
+        <div class="panel-header">
+          <h2>What is behind the break</h2>
+          <p id="impactSubtitle">Roads cut, and who loses their road out</p>
+        </div>
+        <div class="probe" id="impactBody"></div>
       </div>
 
       <div class="panel glass" id="analysisPanel" hidden>
@@ -1294,6 +1415,7 @@ const LIVE_MARKERS = __LIVE_MARKERS__;
 const CASE_STUDIES = __CASE_STUDIES__;
 const IMPORTANCE = __IMPORTANCE__;
 const MODEL_META = __MODEL_META__;
+const SUSC_CARD = __SUSC_CARD__;
 const AS_OF = __AS_OF__;
 const LOCALES = __LOCALES__;
 const WARN_STATE_LANGS = __STATE_LANGUAGES__;
@@ -1320,6 +1442,7 @@ function band(r) {
 
 let mode = 'live';
 let stateFilter = 'All';
+let actionFilter = null;
 let selectedId = null;
 let apiAvailable = false;
 
@@ -1640,7 +1763,71 @@ function setupSwitches() {
 /* ---------------- data ---------------- */
 function currentData() {
   const src = mode === 'live' ? LIVE_MARKERS : HIST_MARKERS;
-  return stateFilter === 'All' ? src : src.filter(m => m.state === stateFilter);
+  let out = stateFilter === 'All' ? src : src.filter(m => m.state === stateFilter);
+  if (mode === 'live' && actionFilter) out = out.filter(m => m.action === actionFilter);
+  return out;
+}
+
+/* ---------------- what to do today ----------------
+   The rainfall model scores 311 places every morning. Eighty-odd come back
+   above 50%, which is more than any district can visit, and the list gives
+   no way to choose between them. The susceptibility model does: it was
+   trained on 7,498 GSI field-mapped slides and knows which of those slopes
+   has the terrain, soil and cut geometry of ground that fails. Crossing the
+   two collapses 311 probabilities into four piles, in priority order.     */
+const TRIAGE = [
+  ['ACT',     'tri-act',     'Rain is triggering and the ground is prone. Close, patrol, move people off the toe.'],
+  ['PREPARE', 'tri-prepare', 'Dry today, but this ground fails when it is not. Sensors and drainage work go here.'],
+  ['WATCH',   'tri-watch',   'Rain is high, but this slope has no terrain signature of failing. Keep it on the board.'],
+  ['CLEAR',   'tri-clear',   'Neither the sky nor the ground is a problem today.'],
+];
+
+function actionOf(m) { return m.action || null; }
+
+function renderTriage() {
+  const strip = $('triageStrip');
+  const scored = LIVE_MARKERS.filter(m => m.action);
+  if (mode !== 'live' || !scored.length) { strip.hidden = true; return; }
+  strip.hidden = false;
+
+  const pool = stateFilter === 'All' ? scored : scored.filter(m => m.state === stateFilter);
+  const counts = {};
+  TRIAGE.forEach(([k]) => counts[k] = 0);
+  pool.forEach(m => { if (counts[m.action] !== undefined) counts[m.action]++; });
+
+  $('triageGrid').innerHTML = '';
+  TRIAGE.forEach(([key, cls, what]) => {
+    const card = document.createElement('button');
+    card.className = 'tri-card ' + cls + (actionFilter === key ? ' on' : '');
+    card.innerHTML = `<div class="tri-n">${counts[key]}</div>`
+      + `<div class="tri-name">${key}</div>`
+      + `<div class="tri-what">${what}</div>`;
+    card.onclick = () => {
+      actionFilter = actionFilter === key ? null : key;
+      selectedId = null;
+      render();
+    };
+    $('triageGrid').appendChild(card);
+  });
+
+  const hot = pool.filter(m => m.risk >= 0.5).length;
+  const act = counts['ACT'];
+  $('triageSub').innerHTML = `${pool.length} places, scored on rainfall <em>and</em> on the ground itself`;
+  $('triageClear').hidden = !actionFilter;
+
+  let note = `Rainfall alone puts <b>${hot}</b> places above 50% today. `
+    + `Crossing that with the susceptibility model leaves <b>${act}</b> worth `
+    + `sending someone to &mdash; the other ${Math.max(hot - act, 0)} are heavy `
+    + `rain on ground that does not fail.`;
+  if (SUSC_CARD && SUSC_CARD.with_roads) {
+    note += `<br>The ground model is trained on ${(SUSC_CARD.n_slides || 0).toLocaleString()} `
+      + `GSI field-mapped landslides. It is scored twice: <b>${SUSC_CARD.with_roads.auc}</b> AUC `
+      + `with road proximity, <b>${SUSC_CARD.terrain_only.auc}</b> with road features removed. `
+      + `${Math.round((SUSC_CARD.road_share || 0) * 100)}% of the stronger model is distance to a road, `
+      + `and GSI surveyors walk roads &mdash; so the weaker number is the one driving these piles, `
+      + `and the gap between them is reported as the ground type.`;
+  }
+  $('triageNote').innerHTML = note;
 }
 
 function markerClass(m) {
@@ -1657,6 +1844,12 @@ const tooltip = $('tooltip');
 function showTooltip(evt, m) {
   let rows = `<div class="tooltip-row"><span>${mode === 'live' ? 'Risk today' : 'Model score'}</span><span>${(m.risk * 100).toFixed(1)}%</span></div>`;
   rows += `<div class="tooltip-row"><span>State</span><span>${m.state}</span></div>`;
+  if (mode === 'live' && m.action) {
+    rows += `<div class="tooltip-row"><span>Ground (terrain only)</span><span>${(m.suscNr * 100).toFixed(0)}%</span></div>`;
+    rows += `<div class="tooltip-row"><span>Ground (with roads)</span><span>${(m.susc * 100).toFixed(0)}%</span></div>`;
+    rows += `<div class="tooltip-row"><span>Type</span><span>${m.groundLabel}</span></div>`;
+    rows += `<div class="tooltip-row"><span>Verdict</span><span>${m.action}</span></div>`;
+  }
   if (mode !== 'live') {
     rows += `<div class="tooltip-row"><span>Occurred</span><span>${m.date}</span></div>`;
     if (m.trigger) rows += `<div class="tooltip-row"><span>Trigger</span><span>${m.trigger}</span></div>`;
@@ -1709,6 +1902,7 @@ function renderMarkers(data) {
       selectedId = m.id;
       fillPanelsFromMarker(m);
       render();
+      renderImpact(m);
       showWarningModal(m);
     };
     [c, hit].forEach(el => {
@@ -1837,23 +2031,49 @@ function renderList(data) {
   }
 
   $('listTitle').textContent = mode === 'live' ? 'Most at risk right now' : 'Past landslide events';
-  $('listSubtitle').textContent = mode === 'live'
-    ? 'Areas sorted by current risk level'
-    : 'Sorted by how strongly the model predicted them';
+  const scored = mode === 'live' && data.some(m => m.action);
+  $('listSubtitle').textContent = mode !== 'live'
+    ? 'Sorted by how strongly the model predicted them'
+    : scored ? 'Sorted by what to do, then by today\u2019s risk'
+             : 'Areas sorted by current risk level';
 
-  [...data].sort((a, b) => b.risk - a.risk).slice(0, 80).forEach(m => {
+  // A 92% on ground that does not fail should not outrank a 61% on ground
+  // that does, so the pile comes first and the percentage breaks ties
+  // inside it. Falls back to plain risk order if nothing has been scored.
+  const ACT_ORDER = { ACT: 0, PREPARE: 1, WATCH: 2, CLEAR: 3 };
+  const sorted = [...data].sort((a, b) => {
+    if (scored) {
+      const d = (ACT_ORDER[a.action] ?? 4) - (ACT_ORDER[b.action] ?? 4);
+      if (d) return d;
+    }
+    return b.risk - a.risk;
+  });
+
+  sorted.slice(0, 80).forEach(m => {
     const b = band(m.risk);
     const row = document.createElement('div');
     row.className = 'risk-row' + (selectedId === m.id ? ' selected' : '');
+    let meta = m.state + (mode !== 'live' ? ' \u00b7 ' + m.date : '');
+    if (scored && m.action) {
+      meta += ` \u00b7 <span class="row-act a-${m.action}">${m.action}</span>`
+        + ` \u00b7 ground ${(m.suscNr * 100).toFixed(0)}%`;
+      // Where the road-free and road-aware models part company, saying only
+      // the low number next to ACT reads as a contradiction. It is not one:
+      // it is the model saying the cut is the hazard, not the hillside.
+      if (m.susc - m.suscNr >= 0.25) {
+        meta += ` (${(m.susc * 100).toFixed(0)}% at the road cut)`;
+      }
+    }
     row.innerHTML = `<span class="dot ${dotClass(m)}"></span>
       <div class="row-main">
         <div class="row-loc">${m.loc}</div>
-        <div class="row-meta">${m.state}${mode !== 'live' ? ' · ' + m.date : ''}</div>
+        <div class="row-meta">${meta}</div>
       </div>
       <div class="row-pct p-${b}">${(m.risk * 100).toFixed(0)}%</div>`;
     row.addEventListener('click', () => {
       selectedId = m.id;
       render();
+      renderImpact(m);
       focusOn(m.x, m.y);
       showWarningModal(m);
     });
@@ -2050,6 +2270,7 @@ async function renderReports() {
 
 function render() {
   const data = currentData();
+  renderTriage();
   renderStats(data);
   renderLegend();
   renderMarkers(data);
@@ -2059,9 +2280,152 @@ function render() {
   // the autopsy is about the hindcast, so it belongs with "How accurate?"
   $('autopsyCard').hidden = mode !== 'validation';
   $('sensingCard').hidden = mode !== 'live';
+  if (mode !== 'live') { $('impactPanel').hidden = true; impactFor = null; }
   if (mode === 'live' && !sensingLoaded) renderSensing();
   if (mode === 'validation' && !autopsyLoaded) renderAutopsy();
   if (!reportsLoaded) renderReports();
+  renderChain();
+}
+
+/* ---------------- what follows what ----------------
+   The usual version of this is a diagram nobody measured. The GSI inventory
+   records, for 7,498 mapped slides, what triggered each one, what the slope
+   was made of, how it failed and what it hit -- so the arrows can carry
+   counts. The useful output is not the chain itself but the lift: which
+   conditions actually change the odds of a road being closed rather than
+   merely scraped.                                                          */
+let chainLoaded = false;
+
+async function renderChain() {
+  if (chainLoaded) return;
+  chainLoaded = true;
+  const body = $('chainBody');
+  try {
+    const f = await fetch('/api/eventgraph/findings').then(r => r.json());
+    const c = await fetch('/api/eventgraph/chain?trigger=Rainfall&cover=Cut%20slope')
+      .then(r => r.json());
+
+    const top = k => (c[k] && c[k].top && c[k].top[0]) || null;
+    const node = (label, v, extra) => v
+      ? `<div class="chain-node"><span>${label}</span><b>${v.name}</b>`
+        + `<span>${Math.round(v.p * 100)}% of ${extra}</span></div>` : '';
+    let html = `<div class="chain-flow">
+      <div class="chain-node"><span>Trigger</span><b>Rainfall</b>
+        <span>on a cut slope · ${c.n.toLocaleString()} records</span></div>
+      <span class="chain-arrow">&rarr;</span>
+      ${node('How it failed', top('mechanism'), 'those that say')}
+      <span class="chain-arrow">&rarr;</span>
+      ${node('How it moved', top('movement'), 'those that say')}
+      <span class="chain-arrow">&rarr;</span>
+      ${node('What it hit', top('consequence'), 'those that say')}
+    </div>`;
+    html += `<div class="chain-note" style="margin-bottom:12px">`
+      + `${Math.round(c.on_highway * 100)}% of those 1,212 slides sit on a national `
+      + `or state highway. That is what "cut slope" means in this region: the cut `
+      + `is the road.</div>`;
+
+    html += `<div class="imp-l" style="margin-bottom:6px">`
+      + `Which conditions turn a damaged road into a closed one`
+      + ` &mdash; baseline ${Math.round(f.blocked_baseline * 100)}% blocked</div>`;
+    const rows = f.road.filter(r => r.blocked_share).slice(0, 7);
+    const maxS = Math.max(...rows.map(r => r.blocked_share), 0.01);
+    html += rows.map(r => {
+      const lift = r.blocked_lift;
+      const cls = lift >= 1.15 ? 'lift-up' : lift <= 0.88 ? 'lift-dn' : '';
+      return `<div class="chain-find">
+        <span>${r.value} <span style="color:var(--text-faint)">(${r.factor})</span></span>
+        <span class="n">${Math.round(r.blocked_share * 100)}% · n=${r.n}</span>
+        <span class="chain-lift ${cls}">${lift.toFixed(2)}&times;</span>
+        <div class="bar" style="grid-column:1/-1;width:${r.blocked_share / maxS * 100}%;
+             background:${lift >= 1.15 ? 'var(--risk-severe)' : lift <= 0.88 ? 'var(--risk-low)' : 'var(--risk-moderate)'}"></div>
+      </div>`;
+    }).join('');
+
+    const rx = f.reactivation.slice(0, 4);
+    html += `<div class="imp-l" style="margin:14px 0 6px">`
+      + `And which sites come back &mdash; baseline `
+      + `${(rx[0].baseline * 100).toFixed(1)}% reactivate</div>`;
+    html += rx.map(r => `<div class="chain-find">
+        <span>${r.value} <span style="color:var(--text-faint)">(${r.factor})</span></span>
+        <span class="n">${(r.reactivation_rate * 100).toFixed(1)}% · n=${r.n}</span>
+        <span class="chain-lift ${r.lift >= 1.15 ? 'lift-up' : ''}">${r.lift.toFixed(2)}&times;</span>
+      </div>`).join('');
+
+    html += `<div class="chain-note">${f.bias_note}</div>`;
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = `<div class="rep-empty">Needs the local server.</div>`;
+    chainLoaded = false;
+  }
+}
+
+/* ---------------- what is behind the break ----------------
+   A red dot says a place is dangerous. This says what that costs: which road
+   segments the run-out takes out, and which villages lose their road to a
+   hospital once those segments are gone. Both shortest paths are computed on
+   the real OSM graph, once with the network whole and once with the cut
+   edges removed, so "isolated" means no path exists rather than no path was
+   drawn.                                                                   */
+let impactFor = null;
+
+async function renderImpact(m) {
+  const panel = $('impactPanel'), body = $('impactBody');
+  if (!m || mode !== 'live') { panel.hidden = true; return; }
+  panel.hidden = false;
+  if (impactFor === m.id) return;
+  impactFor = m.id;
+  body.innerHTML = '<div class="probe-offline">Tracing the road network…</div>';
+  try {
+    const d = await fetch(`/api/impact?lat=${m.lat}&lon=${m.lon}&radius=0.5`)
+      .then(r => r.json());
+    if (d.error) { body.innerHTML = `<div class="probe-offline">${d.error}</div>`; return; }
+    const c = d.counts, r = d.roads;
+    let html = `<div class="imp-head">
+      <div><div class="imp-n imp-cut">${r.segments_cut}</div><div class="imp-l">road segments cut</div></div>
+      <div><div class="imp-n">${r.km_cut.toFixed(1)}</div><div class="imp-l">km of road</div></div>
+      <div><div class="imp-n ${c.isolated ? 'imp-cut' : ''}">${c.isolated}</div><div class="imp-l">villages isolated</div></div>
+    </div>`;
+    if (r.by_class) {
+      html += `<div class="imp-row"><span>By class</span><b>`
+        + Object.entries(r.by_class).map(([k, v]) => `${v} ${k}`).join(' · ') + `</b></div>`;
+    }
+    if (d.inside && d.inside.length) {
+      html += d.inside.slice(0, 5).map(a =>
+        `<div class="imp-row"><span>Inside the zone</span><b>${a.name || a.kind} (${a.kind})</b></div>`).join('');
+    }
+    if (d.isolated.length) {
+      html += `<div class="imp-l" style="margin-top:11px">No road left to a `
+        + `${d.centre_kind === 'hospital' ? 'hospital' : 'town'} once the cut is in</div>`;
+      html += d.isolated.slice(0, 6).map(v =>
+        `<div class="imp-row"><span>${v.name}${v.population ? ' · ' + v.population.toLocaleString() + ' people' : ''}</span>`
+        + `<b class="imp-cut">was ${v.before_km} km</b></div>`).join('');
+      if (d.people_isolated) {
+        html += `<div class="imp-row"><span><b>People cut off</b></span><b class="imp-cut">${d.people_isolated.toLocaleString()}</b></div>`;
+      }
+    }
+    if (d.detoured.length) {
+      html += `<div class="imp-l" style="margin-top:11px">Still reachable, but the long way</div>`;
+      html += d.detoured.slice(0, 5).map(v =>
+        `<div class="imp-row"><span>${v.name}</span><b class="imp-det">+${v.extra_km} km</b></div>`).join('');
+    }
+    if (d.no_centre_in_range) {
+      html += `<div class="imp-note"><b>No town, large settlement or hospital `
+        + `within 45 km of here.</b> ${c.settlements_checked} villages sit in that `
+        + `window and none of them has a service centre inside it, so a closure `
+        + `here is not a detour problem. Whatever the road carried was already `
+        + `coming from further away than this search looks.</div>`;
+    } else if (!d.isolated.length && !d.detoured.length) {
+      html += `<div class="imp-note">${c.settlements_checked
+        ? c.settlements_checked + ' settlements checked; every one keeps a route to a hospital. '
+          + 'The road closure is a delay here, not a cut-off.'
+        : 'Settlement and hospital layers are still being fetched from OpenStreetMap; '
+          + 'the road cut above is computed and correct without them.'}</div>`;
+    }
+    html += `<div class="imp-note">${d.note}</div>`;
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = `<div class="probe-offline">Impact needs the local server.</div>`;
+  }
 }
 
 /* ---------------- live probe ---------------- */
@@ -2600,6 +2964,7 @@ function renderLiveShell() {
     <div class="sensor-grid" id="sensorGrid"></div>
     <button class="probe-btn" id="locateBtn">Use my location</button>
     <div id="liveRiskBox"></div>
+    <div id="trustBox"></div>
     <div class="hint" id="liveHint">
       The station measures rainfall and air conditions at the site. Soil moisture,
       rainfall history and terrain come from satellites. The station does not judge
@@ -2679,6 +3044,46 @@ async function pollLive(withModel) {
       (m.features && m.features.slope_max_nbhd !== null
         ? ` Steepest slope within 300 m: <b>${Number(m.features.slope_max_nbhd).toFixed(0)}&deg;</b>.` : '');
   }
+  renderTrust(data.trust);
+}
+
+/* ---------------- how much of this to believe ----------------
+   One number hides everything that went into it. These three do not: how
+   high the risk is, how much of the feature vector was real rather than
+   median-filled, and how old it was. And when a node is standing on the
+   slope, whether it agrees with the satellite looking at it -- because an
+   11 km grid cell averages away the cell that sits on one hillside, and
+   that is usually the hillside that goes.                                 */
+function renderTrust(t) {
+  const box = $('trustBox');
+  if (!box) return;
+  if (!t || t.error || !t.confidence || t.confidence.score === null) {
+    box.innerHTML = ''; return;
+  }
+  const c = t.confidence, f = t.freshness, x = t.conflict;
+  const cls = v => v >= 0.75 ? 'ok' : v >= 0.45 ? 'mid' : 'bad';
+  let html = `<div class="trust-row">
+    <div class="trust-cell"><div class="trust-n t-${cls(c.score)}">${Math.round(c.score*100)}%</div><div class="trust-k">confidence</div></div>
+    <div class="trust-cell"><div class="trust-n t-${cls(f.score)}">${Math.round(f.score*100)}%</div><div class="trust-k">data freshness</div></div>
+  </div>
+  <div class="trust-why">${c.reasons[0]}${f.absent && f.absent.length ? ' &middot; ' + f.absent.join(', ') + ' missing' : ''}</div>`;
+  if (f.feeds && f.feeds.length) {
+    html += `<div class="trust-feeds">` + f.feeds.map(fd =>
+      `<span>${fd.source} <b>${fd.latency_h}h</b></span>`).join('') +
+      (f.slow_layers || []).map(fd =>
+      `<span class="slow">${fd.source} <b>${Math.round(fd.latency_h/24)}d</b></span>`).join('') + `</div>`;
+  }
+  if (x) {
+    const lvl = x.level === 'ANOMALY' ? 'bad' : x.level === 'DIVERGING' ? 'mid' : 'ok';
+    html += `<div class="trust-conf t-${lvl}"><b>${x.level === 'AGREED'
+      ? 'Node and satellite agree' : x.level === 'DIVERGING'
+      ? 'Node and satellite drifting apart' : 'Local anomaly'}</b>`;
+    html += x.rows.slice(0, 2).map(r =>
+      `<div class="trust-cmp"><span>${r.what}</span>
+        <span>node ${Math.round(r.ground*100)}% &middot; satellite ${Math.round(r.satellite*100)}%</span></div>`).join('');
+    html += `<div class="trust-why" style="margin-top:6px">${x.text}</div></div>`;
+  }
+  box.innerHTML = html;
 }
 
 function startLive() {
@@ -2690,10 +3095,11 @@ function startLive() {
 
 /* ---------------- mode switching ---------------- */
 function setMode(next, btnId) {
-  mode = next; selectedId = null;
+  mode = next; selectedId = null; actionFilter = null;
   ['btnLive', 'btnHist', 'btnVal'].forEach(id => $(id).classList.toggle('active', id === btnId));
   render();
 }
+$('triageClear').addEventListener('click', () => { actionFilter = null; render(); });
 $('btnLive').addEventListener('click', () => setMode('live', 'btnLive'));
 $('btnHist').addEventListener('click', () => setMode('hindcast', 'btnHist'));
 $('btnVal').addEventListener('click', () => setMode('validation', 'btnVal'));

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPIREXA · What each page does</title>
+<style>
+:root{--c0:#07080d;--g:rgba(255,255,255,.03);--bdr:rgba(255,255,255,.08);
+ --t0:#f1f5f9;--t1:#94a3b8;--t2:#5a6679;
+ --cyan:#22d3ee;--blue:#818cf8;--green:#4ade80;--amber:#fbbf24;--red:#f87171;--purple:#c084fc}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--c0);color:var(--t0);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;padding-bottom:70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse 60% 40% at 18% 6%,rgba(34,211,238,.05),transparent 70%),
+            radial-gradient(ellipse 50% 60% at 84% 78%,rgba(129,140,248,.05),transparent 70%)}
+.wrap{position:relative;max-width:1180px;margin:0 auto;padding:0 22px}
+header{padding:38px 0 26px;border-bottom:1px solid var(--bdr);margin-bottom:26px}
+h1{font-size:25px;font-weight:650;letter-spacing:-.3px}
+.sub{color:var(--t1);font-size:13.5px;line-height:1.65;margin-top:8px;max-width:830px}
+h2{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--t2);margin:32px 0 14px}
+.card{background:var(--g);backdrop-filter:blur(18px);border:1px solid var(--bdr);
+ border-radius:13px;padding:20px 24px;margin-bottom:14px;display:grid;
+ grid-template-columns:186px 1fr;gap:22px}
+@media(max-width:760px){.card{grid-template-columns:1fr;gap:12px}}
+.rt{font-family:'JetBrains Mono','SF Mono',Consolas,monospace;font-size:14px;font-weight:600;color:var(--cyan)}
+.rt a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(34,211,238,.35)}
+.rt a:hover{border-bottom-color:var(--cyan)}
+.tag{display:inline-block;font-size:9px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;
+ padding:3px 8px;border-radius:999px;margin-top:9px}
+.t-live{background:rgba(74,222,128,.14);color:var(--green)}
+.t-sim{background:rgba(129,140,248,.16);color:var(--blue)}
+.t-ml{background:rgba(192,132,252,.17);color:var(--purple)}
+.t-phys{background:rgba(34,211,238,.14);color:var(--cyan)}
+.does{font-size:14px;font-weight:600;margin-bottom:7px}
+.body{color:var(--t1);font-size:13px;line-height:1.65}
+.body b{color:var(--t0);font-weight:600}
+.meta{margin-top:11px;padding-top:11px;border-top:1px solid var(--bdr);
+ display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:10.5px;color:var(--t1);border:1px solid var(--bdr);border-radius:7px;padding:4px 9px}
+.chip b{color:var(--t0)}
+.note{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);
+ border-radius:11px;padding:16px 20px;color:var(--t1);font-size:12.5px;line-height:1.7;margin-top:22px}
+.note b{color:var(--amber)}
+a.back{color:var(--t2);font-size:12px;text-decoration:none}
+a.back:hover{color:var(--t0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="back" href="/">&larr; dashboard</a>
+  <h1 style="margin-top:12px">What each page does</h1>
+  <p class="sub">SPIREXA is eight pages over one pipeline. Three of them are what an operator
+  opens every morning; three are what you show somebody to explain the physics; two are
+  for checking the system's own arithmetic. Each card below says which, what data drives
+  it, and whether any machine learning is involved.</p>
+</header>
+
+<h2>Operational — open these daily</h2>
+
+<div class="card">
+  <div><div class="rt"><a href="/">/</a></div><span class="tag t-live">live</span><span class="tag t-ml">ML</span></div>
+  <div>
+    <div class="does">The dashboard &mdash; which slopes to visit today</div>
+    <div class="body">Scores <b>311 monitored slopes</b> every morning against today's satellite
+      rainfall and sorts them into four piles: <b>ACT, PREPARE, WATCH, CLEAR</b>. Click any red dot
+      and the impact panel traces what a slide there cuts off &mdash; road segments, villages
+      isolated, detour kilometres &mdash; on the real OSM road graph. Below the map: where the next
+      sensor should go, and what the GSI records say follows what.</div>
+    <div class="meta"><span class="chip">rainfall model <b>ROC-AUC 0.933</b></span>
+      <span class="chip">ground model <b>0.8622</b></span>
+      <span class="chip">impact graph <b>492,257 junctions</b></span>
+      <span class="chip">today <b>73 ACT</b></span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div><div class="rt"><a href="/monitor">/monitor</a></div><span class="tag t-live">live</span><span class="tag t-phys">physics</span></div>
+  <div>
+    <div class="does">Basin monitor &mdash; the cascading hazard timeline</div>
+    <div class="body">One storm marched forward through soil, slope and channel together, so the
+      <b>order</b> of the hazards falls out rather than being assumed. Same 110 mm/day: on dry
+      ground a landslide at +23 h and no flood at all; on ground already 58% wet the river leaves
+      its banks at +10.5 h and the slope goes at +11 h. Combines the landslide score, the GLOF
+      score and the river forecast into one basin risk.</div>
+    <div class="meta"><span class="chip">SCS curve number</span><span class="chip">factor of safety</span>
+      <span class="chip">the hazard order <b>flips on antecedent wetness</b></span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div><div class="rt"><a href="/nhpc">/nhpc</a></div><span class="tag t-sim">scenario</span><span class="tag t-phys">physics</span></div>
+  <div>
+    <div class="does">NHPC Teesta control feed &mdash; the 83-minute warning</div>
+    <div class="body">A control-room view of the four Teesta projects using NHPC's real tag
+      structure (ARMAC, TSI, eAabhas). Toggle between <b>a normal monsoon day</b> and
+      <b>3&ndash;4 October 2023</b>, then between <b>no warning</b> and <b>90 minutes of notice</b>.
+      Same lake, same breach, same wave: without warning three dams are lost and 5,000 people sit
+      below a breach; with it, none. Scrub the timeline minute by minute.</div>
+    <div class="meta"><span class="chip">29 tags: <b>14 sensor, 12 physics, 3 ML</b></span>
+      <span class="chip">gate travel <b>30 min</b></span>
+      <span class="chip">wave to Chungthang <b>1.9 h</b></span></div>
+  </div>
+</div>
+
+<h2>Explain the physics</h2>
+
+<div class="card">
+  <div><div class="rt"><a href="/glof">/glof</a></div><span class="tag t-ml">ML</span><span class="tag t-phys">physics</span></div>
+  <div>
+    <div class="does">Glacial lakes &mdash; which one, and how long you have</div>
+    <div class="body">The <b>276 lakes</b> detected from Sentinel-2 in the 2025 melt season, ranked
+      by what each would do if it burst. Picks out lakes nobody is watching: <b>GL01 holds 173
+      million m&sup3;, four times South Lhonak</b>, and has no name. Peak discharge now comes from a
+      model trained on <b>502 real outbursts</b> worldwide, reported beside the Froehlich equation
+      the project used to ship alone.</div>
+    <div class="meta"><span class="chip">learned <b>within 2&times; on 86% of HMA events</b></span>
+      <span class="chip">Froehlich <b>17%</b></span>
+      <span class="chip">Huggel &rarr; Froehlich &rarr; Muskingum</span>
+      <span class="chip">2022 baseline vs <b>2025 current</b></span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div><div class="rt"><a href="/flood">/flood</a></div><span class="tag t-sim">scenario</span><span class="tag t-phys">physics</span></div>
+  <div>
+    <div class="does">Teesta dam cascade &mdash; three dams, all adjustable</div>
+    <div class="body">The real NHPC cascade with real inter-dam distances. Drive it from
+      <b>manual sliders</b>, from <b>the Arduino ground node</b>, or from <b>live satellite</b>.
+      Shows what a dam actually is in a flood: not a pipe but pondage, a spillway rating, a gate
+      that takes half an hour to travel &mdash; and, once it fails, its own stored water joining the
+      wave below.</div>
+    <div class="meta"><span class="chip">Muskingum routing</span><span class="chip">3 dams</span>
+      <span class="chip">manual / node / live</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div><div class="rt"><a href="/simulator">/simulator</a></div><span class="tag t-sim">scenario</span><span class="tag t-ml">ML</span></div>
+  <div>
+    <div class="does">3D slope &mdash; simulate, live, replay</div>
+    <div class="body">One hillside, three modes. <b>Simulate</b> is the visitor's sliders.
+      <b>Live</b> pulls a real monitored slope's conditions this morning from IMERG, SMAP and the
+      DEM. <b>Replay</b> takes a recorded failure &mdash; the 2008 Itanagar slide that killed 21
+      &mdash; and scores each of the thirty days before it, so the question becomes how much notice
+      there would have been, not whether it would have been flagged.</div>
+    <div class="meta"><span class="chip">random forest, live</span>
+      <span class="chip">USGS factor of safety</span>
+      <span class="chip">lead time is an <b>upper bound</b></span></div>
+  </div>
+</div>
+
+<h2>Check the system's own arithmetic</h2>
+
+<div class="card">
+  <div><div class="rt"><a href="/discharge">/discharge</a></div><span class="tag t-ml">ML</span></div>
+  <div>
+    <div class="does">River discharge &mdash; 7 days ahead, with bands</div>
+    <div class="body">Twenty-one gradient-boosted models (7 horizons &times; 3 quantiles) give a
+      p10/p50/p90 fan for the Teesta at Gajoldoba, on top of SCS curve-number runoff rather than raw
+      rain. <b>This is the weakest module in the project and the page says so.</b> It is trained on
+      synthetic hydrology, and it has essentially learned persistence &mdash; yesterday's flow
+      matters 45&times; more than the rain.</div>
+    <div class="meta"><span class="chip">NSE <b>0.418</b> at day+1</span>
+      <span class="chip"><b>0.023</b> by day+4</span>
+      <span class="chip">needs real CWC gauge series</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div><div class="rt">/api/&hellip;</div><span class="tag t-live">live</span></div>
+  <div>
+    <div class="does">The API &mdash; everything above, as JSON</div>
+    <div class="body">Every page is a thin client over the same endpoints, so anything on screen can
+      be checked directly: <b>/api/risk</b> (today's four piles), <b>/api/impact</b> (what a slide
+      cuts off), <b>/api/glof/model</b> (the learned discharge scorecard), <b>/api/eventgraph/findings</b>
+      (what follows what, counted), <b>/api/scada</b> (the plant feed), <b>/api/replay</b> (a failure,
+      day by day), <b>/api/sync</b> (the offline payload the Android app caches).</div>
+  </div>
+</div>
+
+<div class="note">
+  <b>What is machine learning here, and what is not.</b> Four trained models: the rainfall trigger
+  (318 dated events, ROC-AUC 0.933), the ground susceptibility model (7,741 field-mapped slides,
+  0.8622 with road features removed), the GLOF peak-discharge model (502 real outbursts) and the
+  river discharge forecast (synthetic, and weak). Everything else &mdash; Huggel, Froehlich,
+  Muskingum, Manning, SCS curve number, the infinite-slope factor of safety &mdash; is published
+  physics you can check by hand, and it stays that way on purpose. A trip limit off a protection
+  schedule beats a model you have to trust.
+</div>
+
+</div>
+</body>
+</html>
