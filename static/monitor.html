@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPIREXA · Teesta Basin Monitor</title>
+<style>
+:root{
+  --c0:#07080d;--c1:#0d1117;--c2:#111827;
+  --g:rgba(255,255,255,.03);--gb:rgba(255,255,255,.05);
+  --bdr:rgba(255,255,255,.07);--bdr2:rgba(255,255,255,.12);
+  --t0:#f1f5f9;--t1:#94a3b8;--t2:#475569;
+  --cyan:#22d3ee;--teal:#2dd4bf;--blue:#818cf8;
+  --green:#4ade80;--amber:#fbbf24;--red:#f87171;--purple:#c084fc;
+  --glow-c:rgba(34,211,238,.18);--glow-a:rgba(251,191,36,.18);
+  --glow-r:rgba(248,113,113,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--c0);color:var(--t0);
+  font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;
+  min-height:100vh;overflow-x:hidden;
+}
+/* background texture */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%,rgba(34,211,238,.04) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 80%,rgba(129,140,248,.04) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 30% at 60% 20%,rgba(45,212,191,.03) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+}
+
+/* glass card */
+.glass{
+  background:var(--g);
+  backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border:1px solid var(--bdr);
+  border-radius:12px;position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.glass-hi{border-color:var(--bdr2)}
+
+/* header */
+header{
+  position:sticky;top:0;z-index:200;
+  padding:0 16px;height:46px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(7,8,13,.85);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--bdr);
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#000;letter-spacing:-.02em;
+}
+.logo-text{font-size:14px;font-weight:700;color:var(--t0);letter-spacing:.02em}
+.logo-text span{color:var(--t1);font-weight:400}
+nav{display:flex;gap:2px}
+nav a{
+  padding:5px 10px;border-radius:6px;font-size:11px;
+  color:var(--t1);text-decoration:none;transition:all .15s;
+}
+nav a:hover{background:var(--gb);color:var(--t0)}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.sc-group{display:flex;border:1px solid var(--bdr);border-radius:7px;overflow:hidden}
+.sc-btn{
+  padding:4px 12px;font-size:11px;color:var(--t2);
+  background:transparent;border:none;cursor:pointer;transition:all .15s;
+}
+.sc-btn.on{background:rgba(34,211,238,.15);color:var(--cyan);font-weight:600}
+.sc-btn:hover:not(.on){color:var(--t1);background:var(--g)}
+.refresh-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:20px;border:1px solid var(--bdr);
+  font-size:10px;color:var(--t2);
+}
+.led{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.led.pulse{animation:led-pulse 2s ease-in-out infinite}
+@keyframes led-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0)}
+  50%{opacity:.6;box-shadow:0 0 0 4px rgba(74,222,128,.2)}}
+.btn-export{
+  display:flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:6px;border:1px solid var(--bdr);background:transparent;
+  color:var(--t1);font-size:11px;cursor:pointer;transition:all .15s;
+}
+.btn-export:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* compound banner */
+#banner{
+  display:none;align-items:center;gap:10px;
+  padding:8px 16px;z-index:150;
+  background:linear-gradient(90deg,rgba(239,68,68,.12),rgba(147,51,234,.08));
+  border-bottom:1px solid rgba(239,68,68,.3);
+  font-size:12px;font-weight:600;color:#fca5a5;
+}
+#banner.show{display:flex}
+#banner-icon{font-size:18px;animation:shake .5s infinite alternate}
+@keyframes shake{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+
+/* KPI strip */
+.kpi-strip{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  padding:10px 14px;position:relative;z-index:1;isolation:isolate;
+}
+.kpi{padding:10px 14px}
+.kpi-lbl{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.kpi-sub{font-size:9px;color:var(--t2);margin-top:3px}
+.kpi-badge{
+  display:inline-block;font-size:8px;font-weight:700;letter-spacing:.06em;
+  padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;
+}
+
+/* main layout */
+main{
+  display:grid;
+  grid-template-columns:280px 1fr 300px;
+  grid-template-rows:auto;
+  gap:8px;padding:0 14px 14px;
+  position:relative;z-index:1;
+  isolation:isolate;
+  align-items:start;
+}
+.col{display:flex;flex-direction:column;gap:8px}
+.card-hd{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t2);
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.chip{
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;
+}
+
+/* ── CRI arc gauge ── */
+.cri-wrap{padding:14px 14px 10px}
+#cri-svg{display:block;margin:0 auto}
+.cri-number{
+  font-size:48px;font-weight:800;text-anchor:middle;
+  dominant-baseline:middle;letter-spacing:-.04em;
+  font-family:'Segoe UI',system-ui,sans-serif;
+}
+.cri-unit{font-size:11px;fill:var(--t2);text-anchor:middle}
+.cri-band{font-size:10px;font-weight:700;letter-spacing:.08em;text-anchor:middle}
+.cri-comps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.cri-comp{
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:7px;padding:7px 4px;text-align:center;
+}
+.cri-comp-v{font-size:16px;font-weight:700;line-height:1}
+.cri-comp-l{font-size:8px;color:var(--t2);margin-top:2px}
+
+/* ── basin hydrology (WCN) ── */
+.wcn-row{display:flex;gap:6px;margin-bottom:6px}
+.wcn-cell{
+  flex:1;background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:7px;padding:8px 6px;text-align:center;
+}
+.wcn-v{font-size:17px;font-weight:700;color:var(--teal);line-height:1}
+.wcn-l{font-size:8px;color:var(--t2);margin-top:2px}
+
+/* ── Bangladesh alert ── */
+.bd-card{padding:10px 12px}
+.bd-level{font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:4px}
+.bd-msg{font-size:10px;color:var(--t1);line-height:1.5}
+.bd-threshold{font-size:9px;color:var(--t2);margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)}
+
+/* ── sensor nodes ── */
+.sensor-nodes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sn{
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:8px;padding:8px;
+}
+.sn-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sn-id{font-size:10px;font-weight:700}
+.sn-led{width:6px;height:6px;border-radius:50%}
+.sn-gauges{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.sn-g{text-align:center}
+.sn-g canvas{display:block;margin:0 auto}
+.sn-g-l{font-size:8px;color:var(--t2);margin-top:2px}
+.sn-g-v{font-size:11px;font-weight:700;margin-top:1px}
+.sn-age{font-size:8px;color:var(--t2);margin-top:4px;text-align:right}
+
+/* ── discharge chart card ── */
+.dis-card{padding:12px 14px}
+.dis-meta{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;color:var(--t2);margin-top:6px}
+.day-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.day-box{
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:7px;padding:7px 4px;text-align:center;
+  transition:background .15s,border-color .15s;cursor:default;
+}
+.day-box:hover{background:rgba(255,255,255,.07);border-color:var(--bdr2)}
+.day-d{font-size:8px;color:var(--t2);margin-bottom:2px}
+.day-v{font-size:13px;font-weight:700;line-height:1}
+.day-u{font-size:7px;color:var(--t2);margin-top:2px}
+
+/* ── Teesta schematic SVG ── */
+.schematic-card{padding:12px 14px;min-height:320px}
+#ts-svg{width:100%;height:300px}
+
+/* ── cascade mini-chart ── */
+.casc-card{padding:12px 14px}
+#casc-canvas{display:block;width:100%;height:120px;margin-bottom:8px}
+.casc-events{display:flex;flex-direction:column;gap:0}
+.ce{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.ce:last-child{border:none}
+.ce-dot{
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;font-weight:900;margin-top:1px;
+}
+.ce-body{flex:1}
+.ce-label{font-size:11px;font-weight:600}
+.ce-detail{font-size:9px;color:var(--t2);margin-top:1px;line-height:1.4}
+.ce-t{font-size:10px;color:var(--cyan);font-weight:600;white-space:nowrap}
+
+/* ── lake table ── */
+.lake-card{padding:12px 14px}
+.lt{width:100%;border-collapse:collapse;font-size:10px}
+.lt th{
+  color:var(--t2);font-weight:600;padding:3px 6px 6px;
+  border-bottom:1px solid var(--bdr);text-align:left;white-space:nowrap;
+}
+.lt td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.lt tr:last-child td{border:none}
+.lt tr:hover td{background:rgba(255,255,255,.02)}
+.ibar{
+  display:inline-block;height:4px;border-radius:2px;
+  vertical-align:middle;transition:width .4s;
+}
+.i-val{font-weight:700;margin-left:5px;font-size:11px}
+.tag{
+  font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;letter-spacing:.04em;
+}
+
+/* ── GLOF simulation ── */
+.glof-card{padding:12px 14px}
+.glof-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.glof-stat{
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:7px;padding:7px 8px;
+}
+.glof-stat-v{font-size:16px;font-weight:700;line-height:1;color:var(--cyan)}
+.glof-stat-l{font-size:8px;color:var(--t2);margin-top:2px}
+.asset-row{
+  display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;
+}
+.asset-row:last-child{border:none}
+.asset-icon{font-size:12px;width:18px;text-align:center;flex-shrink:0}
+.asset-name{flex:1;color:var(--t1)}
+.asset-eta{color:var(--t2);white-space:nowrap;margin-right:4px}
+.asset-q{font-weight:700;width:52px;text-align:right}
+
+/* ── NHPC dams ── */
+.nhpc-card{padding:12px 14px}
+.dam-row{
+  display:flex;align-items:center;gap:8px;padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.dam-row:last-child{border:none}
+.dam-name{width:68px;font-size:10px;font-weight:600;flex-shrink:0}
+.dam-fill-bg{
+  flex:1;height:10px;border-radius:5px;
+  background:rgba(255,255,255,.06);border:1px solid var(--bdr);overflow:hidden;
+}
+.dam-fill{height:100%;border-radius:5px;transition:width .6s}
+.dam-cap{font-size:9px;color:var(--t2);width:42px;text-align:right;flex-shrink:0}
+.dam-status{font-size:9px;font-weight:700;width:36px;text-align:right;flex-shrink:0}
+
+/* ── model metrics ── */
+.mm-card{padding:12px 14px}
+.mm-row{display:flex;align-items:center;gap:6px;padding:3px 0}
+.mm-h{font-size:9px;font-weight:700;color:var(--cyan);width:24px;flex-shrink:0}
+.mm-bar-bg{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.mm-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),var(--cyan))}
+.mm-nse{font-size:9px;width:36px;text-align:right}
+.mm-kge{font-size:9px;color:var(--t2);width:36px;text-align:right}
+.feat-row{display:flex;align-items:center;gap:6px;padding:2px 0}
+.feat-n{font-size:9px;color:var(--t2);width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.feat-bg{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.feat-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.feat-v{font-size:9px;color:var(--t2);width:36px;text-align:right}
+
+/* ── monsoon tracker ── */
+.ms-card{padding:12px 14px}
+.ms-rings{display:flex;gap:10px;justify-content:space-around;margin:6px 0}
+.ms-ring{text-align:center}
+.ms-ring canvas{display:block;margin:0 auto}
+.ms-ring-l{font-size:8px;color:var(--t2);margin-top:3px}
+.ms-ring-v{font-size:13px;font-weight:700;margin-top:1px}
+
+/* ── event timeline ── */
+.et-card{padding:12px 14px}
+.et-scroll{max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.et-row{
+  display:flex;align-items:flex-start;gap:7px;padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;
+}
+.et-row:last-child{border:none}
+.et-t{color:var(--cyan);font-weight:600;width:42px;flex-shrink:0;font-size:9px;padding-top:1px}
+.et-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.et-lbl{flex:1;color:var(--t1);line-height:1.4}
+.et-sev{
+  font-size:7px;font-weight:700;padding:1px 5px;border-radius:3px;
+  flex-shrink:0;white-space:nowrap;
+}
+
+/* ── health card ── */
+.health-card{padding:10px 12px}
+.hitem{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;
+}
+.hitem:last-child{border:none}
+.hitem-l{color:var(--t1)}
+.hitem-ok{color:var(--green);font-weight:600}
+.hitem-bad{color:var(--red);font-weight:600}
+
+/* scrollbar global */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">SX</div>
+    <div class="logo-text">SPIREXA <span>/ Teesta Basin Monitor</span></div>
+    <nav>
+      <a href="/glof">GLOF</a>
+      <a href="/discharge">Discharge</a>
+      <a href="/simulator">Landslide</a>
+      <a href="/flood">Flood Sim</a>
+      <a href="/">Dashboard</a>
+    </nav>
+  </div>
+  <div class="hdr-right">
+    <div class="sc-group">
+      <button class="sc-btn" data-sc="dry">Dry</button>
+      <button class="sc-btn on" data-sc="normal">Normal</button>
+      <button class="sc-btn" data-sc="monsoon">Monsoon</button>
+    </div>
+    <button class="btn-export" id="btn-export">&#8615; Export</button>
+    <div class="refresh-pill">
+      <div class="led pulse" id="led"></div>
+      <span id="cd">30s</span>
+    </div>
+    <span id="ts" style="font-size:9px;color:var(--t2)"></span>
+  </div>
+</header>
+
+<!-- COMPOUND BANNER -->
+<div id="banner">
+  <span id="banner-icon">⚠</span>
+  <span>COMPOUND EVENT ACTIVE — GLOF + High Discharge. Transboundary Bangladesh alert triggered. Evacuate low-lying settlements.</span>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip" id="kpi-strip">
+  <div class="glass kpi"><div class="kpi-lbl">Composite Risk</div><div class="kpi-val" id="k-cri">—</div><div class="kpi-sub" id="k-cri-band">—</div></div>
+  <div class="glass kpi"><div class="kpi-lbl">Discharge D+1</div><div class="kpi-val" id="k-q1">—</div><div class="kpi-sub" id="k-q1-sub">m³/s · p50</div></div>
+  <div class="glass kpi"><div class="kpi-lbl">GLOF Q-peak</div><div class="kpi-val" id="k-glof">—</div><div class="kpi-sub" id="k-glof-sub">m³/s · South Lhonak</div></div>
+  <div class="glass kpi"><div class="kpi-lbl">Cascade Risk</div><div class="kpi-val" id="k-casc">—</div><div class="kpi-sub" id="k-casc-sub">peak landslide %</div></div>
+  <div class="glass kpi"><div class="kpi-lbl">River Stage</div><div class="kpi-val" id="k-stage">—</div><div class="kpi-sub">m · peak cascade</div></div>
+</div>
+
+<!-- MAIN -->
+<main>
+<!-- ━━ LEFT COLUMN ━━ -->
+<div class="col">
+
+  <!-- CRI gauge -->
+  <div class="glass glass-hi cri-wrap">
+    <div class="card-hd">Composite Risk Index <span id="cri-chip" class="chip"></span></div>
+    <svg id="cri-svg" viewBox="0 0 200 130" width="200" height="130">
+      <defs>
+        <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#4ade80"/>
+          <stop offset="40%" stop-color="#fbbf24"/>
+          <stop offset="70%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#c084fc"/>
+        </linearGradient>
+      </defs>
+      <!-- track -->
+      <path id="arc-track" d="M20,110 A80,80 0 0,1 180,110"
+        fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10" stroke-linecap="round"/>
+      <!-- fill -->
+      <path id="arc-fill" d="M20,110 A80,80 0 0,1 180,110"
+        fill="none" stroke="url(#arc-grad)" stroke-width="10" stroke-linecap="round"
+        stroke-dasharray="0 1000" style="transition:stroke-dasharray .8s ease"/>
+      <text id="cri-num" class="cri-number" x="100" y="96" fill="white">—</text>
+      <text class="cri-unit" x="100" y="112" fill="#64748b">/ 100</text>
+    </svg>
+    <div class="cri-comps" id="cri-comps">
+      <div class="cri-comp"><div class="cri-comp-v" style="color:var(--cyan)" id="cc-glof">—</div><div class="cri-comp-l">GLOF</div></div>
+      <div class="cri-comp"><div class="cri-comp-v" style="color:var(--teal)" id="cc-dis">—</div><div class="cri-comp-l">Discharge</div></div>
+      <div class="cri-comp"><div class="cri-comp-v" style="color:var(--purple)" id="cc-casc">—</div><div class="cri-comp-l">Cascade</div></div>
+    </div>
+  </div>
+
+  <!-- Basin hydrology -->
+  <div class="glass" style="padding:10px 12px">
+    <div class="card-hd">Basin Hydrology — WCN/SCS</div>
+    <div class="wcn-row">
+      <div class="wcn-cell"><div class="wcn-v" id="w-api">—</div><div class="wcn-l">API (mm)</div></div>
+      <div class="wcn-cell"><div class="wcn-v" id="w-cn">—</div><div class="wcn-l">Eff. CN</div></div>
+    </div>
+    <div class="wcn-row">
+      <div class="wcn-cell"><div class="wcn-v" id="w-ro" style="color:var(--amber)">—</div><div class="wcn-l">Runoff mm</div></div>
+      <div class="wcn-cell"><div class="wcn-v" id="w-q" style="color:var(--blue)">—</div><div class="wcn-l">Q-phys m³/s</div></div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:var(--t2)">
+      SCS-CN · Catchment 7132 km² · Gajoldoba outlet
+    </div>
+  </div>
+
+  <!-- Bangladesh transboundary -->
+  <div class="glass bd-card" id="bd-card">
+    <div class="card-hd">Bangladesh Transboundary</div>
+    <div class="bd-level" id="bd-level">—</div>
+    <div class="bd-msg" id="bd-msg">—</div>
+    <div class="bd-threshold">JRC threshold: 2500 m³/s at Gajoldoba barrage · BWDB notification protocol</div>
+  </div>
+
+  <!-- Sensor nodes -->
+  <div class="glass" style="padding:10px 12px">
+    <div class="card-hd">Field Sensors <span id="sn-count" style="color:var(--t2);font-size:9px;font-weight:400"></span></div>
+    <div class="sensor-nodes" id="sensor-nodes">
+      <div style="color:var(--t2);font-size:10px;padding:8px 0;grid-column:span 2">No nodes connected</div>
+    </div>
+  </div>
+
+</div><!-- /left -->
+
+<!-- ━━ CENTRE COLUMN ━━ -->
+<div class="col">
+
+  <!-- Discharge chart -->
+  <div class="glass dis-card">
+    <div class="card-hd">
+      7-Day Discharge Forecast — Teesta at Gajoldoba
+      <span class="chip" id="dis-chip"></span>
+    </div>
+    <canvas id="dis-canvas" style="width:100%;height:160px;display:block"></canvas>
+    <div class="day-row" id="day-row"></div>
+    <div class="dis-meta">
+      <span>Peak p90: <b id="dis-peak" style="color:var(--amber)">—</b> m³/s</span>
+      <span>Bankfull: 3800 m³/s</span>
+      <span>Current Q: <b id="dis-cur">—</b> m³/s</span>
+    </div>
+  </div>
+
+  <!-- Teesta basin schematic -->
+  <div class="glass schematic-card">
+    <div class="card-hd">Teesta Basin Schematic <span style="color:var(--t2);font-size:9px;font-weight:400">Sikkim → Bangladesh</span></div>
+    <svg id="ts-svg" viewBox="0 0 520 280"></svg>
+  </div>
+
+  <!-- Cascade multi-variable chart -->
+  <div class="glass casc-card">
+    <div class="card-hd">
+      Cascading Hazard Chain — 48h
+      <div style="display:flex;gap:10px;font-size:8px">
+        <span style="color:var(--red)">━ Landslide risk</span>
+        <span style="color:var(--cyan)">━ River stage %</span>
+        <span style="color:var(--amber)">━ Soil sat.</span>
+      </div>
+    </div>
+    <canvas id="casc-canvas"></canvas>
+    <div class="casc-events" id="casc-events"></div>
+  </div>
+
+  <!-- Glacial lake table -->
+  <div class="glass lake-card">
+    <div class="card-hd">Glacial Lake Instability <span style="color:var(--t2);font-size:9px;font-weight:400">8 lakes monitored</span></div>
+    <table class="lt">
+      <thead><tr>
+        <th>Lake</th><th>Elev m</th><th>Area km²</th><th>Dam type</th>
+        <th colspan="2">Instability</th><th>Sensors</th>
+      </tr></thead>
+      <tbody id="lake-tbody"></tbody>
+    </table>
+  </div>
+
+</div><!-- /center -->
+
+<!-- ━━ RIGHT COLUMN ━━ -->
+<div class="col">
+
+  <!-- GLOF simulation -->
+  <div class="glass glof-card">
+    <div class="card-hd">GLOF — <span id="glof-lake-name">South Lhonak</span>
+      <span class="chip" id="glof-chip"></span>
+    </div>
+    <div class="glof-stats">
+      <div class="glof-stat">
+        <div class="glof-stat-v" id="gs-qpeak">—</div>
+        <div class="glof-stat-l">Q-peak m³/s</div>
+      </div>
+      <div class="glof-stat">
+        <div class="glof-stat-v" id="gs-fail" style="color:var(--amber)">—</div>
+        <div class="glof-stat-l">Fail time min</div>
+      </div>
+      <div class="glof-stat">
+        <div class="glof-stat-v" id="gs-lead" style="color:var(--teal)">—</div>
+        <div class="glof-stat-l">Dam lead h</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--t2);margin-bottom:8px" id="gs-breach"></div>
+    <div id="glof-assets"></div>
+  </div>
+
+  <!-- NHPC dam status -->
+  <div class="glass nhpc-card">
+    <div class="card-hd">NHPC Dam Status</div>
+    <div id="nhpc-rows"></div>
+    <div style="margin-top:8px;font-size:9px;color:var(--t2)">Fill bar = forecasted Q / capacity. SCADA integration pending.</div>
+  </div>
+
+  <!-- Model performance -->
+  <div class="glass mm-card">
+    <div class="card-hd">Model Performance — NSE(log)</div>
+    <div id="mm-rows"></div>
+    <div class="card-hd" style="margin-top:10px">Feature Importance (Permutation)</div>
+    <div id="feat-rows"></div>
+  </div>
+
+  <!-- Monsoon tracker -->
+  <div class="glass ms-card">
+    <div class="card-hd">Monsoon Season Tracker</div>
+    <div class="ms-rings" id="ms-rings">
+      <div class="ms-ring">
+        <canvas id="ms-season" width="72" height="72"></canvas>
+        <div class="ms-ring-l">Season</div>
+        <div class="ms-ring-v" id="ms-season-v">—</div>
+      </div>
+      <div class="ms-ring">
+        <canvas id="ms-api" width="72" height="72"></canvas>
+        <div class="ms-ring-l">API Load</div>
+        <div class="ms-ring-v" id="ms-api-v">—</div>
+      </div>
+      <div class="ms-ring">
+        <canvas id="ms-q" width="72" height="72"></canvas>
+        <div class="ms-ring-l">Q/Bankfull</div>
+        <div class="ms-ring-v" id="ms-q-v">—</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--t2);margin-top:4px">Jun 1 – Oct 15 · NER peak rainfall window</div>
+  </div>
+
+  <!-- Event timeline -->
+  <div class="glass et-card">
+    <div class="card-hd">Event Timeline</div>
+    <div class="et-scroll" id="et-scroll"></div>
+  </div>
+
+  <!-- System health -->
+  <div class="glass health-card">
+    <div class="card-hd">System Health</div>
+    <div id="health-rows"></div>
+    <div style="margin-top:6px;font-size:9px;color:var(--t2)">
+      NHPC SCADA · Sentinel-1 InSAR · IMD gridded: integration sockets wired.
+    </div>
+  </div>
+
+</div><!-- /right -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════
+let _sc = 'normal', _data = null, _cd = 30, _timer = null;
+const BF = 3800;
+const DAYS = ['D+1','D+2','D+3','D+4','D+5','D+6','D+7'];
+
+// ═══════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const band = score =>
+  score >= 70 ? 'CRITICAL' : score >= 50 ? 'HIGH' : score >= 30 ? 'MODERATE' : 'LOW';
+const bandCol = b => ({
+  CRITICAL:'var(--purple)', HIGH:'var(--red)',
+  MODERATE:'var(--amber)', LOW:'var(--green)'
+}[b] || 'var(--t2)');
+const chipCls = b => ({
+  CRITICAL:'background:rgba(192,132,252,.2);color:var(--purple)',
+  HIGH:    'background:rgba(248,113,113,.2);color:var(--red)',
+  MODERATE:'background:rgba(251,191,36,.2);color:var(--amber)',
+  LOW:     'background:rgba(74,222,128,.2);color:var(--green)',
+}[b] || '');
+const sevCol = s => ({
+  fail:'var(--red)', warn:'var(--amber)', watch:'var(--blue)',
+  crit:'var(--red)', info:'var(--cyan)'
+}[s] || 'var(--t2)');
+const sevIcon = s => ({
+  fail:'✕', warn:'⚠', watch:'◉', crit:'✕', info:'›'
+}[s] || '·');
+
+function drawArcGauge(canvas, pct, color, bg='rgba(255,255,255,.06)') {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const s = parseInt(canvas.getAttribute('width')) || 44;
+  canvas.width = s * dpr; canvas.height = s * dpr;
+  canvas.style.width = s + 'px'; canvas.style.height = s + 'px';
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+  const cx = s/2, cy = s/2, r = s/2 - 5;
+  const startA = Math.PI * 0.75, endA = Math.PI * 2.25;
+  const fillA = startA + (endA - startA) * Math.min(1, Math.max(0, pct/100));
+  ctx.beginPath(); ctx.arc(cx,cy,r,startA,endA);
+  ctx.strokeStyle = bg; ctx.lineWidth = 4; ctx.lineCap='round'; ctx.stroke();
+  if (pct > 0) {
+    ctx.beginPath(); ctx.arc(cx,cy,r,startA,fillA);
+    ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap='round'; ctx.stroke();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CRI arc gauge
+// ═══════════════════════════════════════════════════════════════
+function setCRI(score) {
+  const b = band(score);
+  const col = bandCol(b);
+  // arc path: semi-circle from left to right, radius=80, center=100,110
+  const r = 80, cx = 100, cy = 110;
+  const startRad = Math.PI; // left
+  const endRad   = 0;       // right
+  // total arc length of the semi-circle
+  const totalLen = Math.PI * r; // ≈251.3
+  const fillLen  = totalLen * (score / 100);
+  const trackLen = totalLen;
+
+  $('arc-fill').style.stroke = col;
+  $('arc-fill').style.strokeDasharray = `${fillLen} ${trackLen + 10}`;
+  $('cri-num').textContent = score.toFixed(1);
+  $('cri-num').style.fill = col;
+
+  // Update chip
+  const chip = $('cri-chip');
+  chip.textContent = b;
+  chip.style.cssText = chipCls(b);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Discharge canvas chart
+// ═══════════════════════════════════════════════════════════════
+function drawDischarge(dis) {
+  const canvas = $('dis-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width * dpr;
+  canvas.height = 160 * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = 160;
+  const pd = {t:10, r:10, b:22, l:44};
+  const cw = W - pd.l - pd.r, ch = H - pd.t - pd.b;
+
+  const p10 = dis.p10, p50 = dis.p50, p90 = dis.p90, n = p50.length;
+  const maxY = Math.max(BF * 1.15, Math.max(...p90) * 1.1);
+  const scY = v => pd.t + ch * (1 - v / maxY);
+  const scX = i => pd.l + i / (n-1) * cw;
+
+  // background
+  ctx.fillStyle = 'rgba(7,8,13,.0)'; ctx.fillRect(0,0,W,H);
+
+  // grid lines
+  ctx.setLineDash([2,4]); ctx.lineWidth = 0.5;
+  for (let v = 0; v <= maxY; v += 1000) {
+    const y = scY(v);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.beginPath(); ctx.moveTo(pd.l, y); ctx.lineTo(W-pd.r, y); ctx.stroke();
+    ctx.fillStyle = '#475569'; ctx.font = `9px sans-serif`;
+    ctx.fillText(v >= 1000 ? (v/1000).toFixed(0)+'k' : v+'', 2, y+3);
+  }
+  ctx.setLineDash([]);
+
+  // bankfull line
+  const bfy = scY(BF);
+  ctx.strokeStyle = 'rgba(248,113,113,.4)'; ctx.lineWidth = 1;
+  ctx.setLineDash([5,5]);
+  ctx.beginPath(); ctx.moveTo(pd.l, bfy); ctx.lineTo(W-pd.r, bfy); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f87171'; ctx.font = '8px sans-serif';
+  ctx.fillText('Bankfull', pd.l+3, bfy-3);
+
+  // p10/p90 band gradient fill
+  const grad = ctx.createLinearGradient(0, scY(Math.max(...p90)), 0, scY(0));
+  grad.addColorStop(0, 'rgba(34,211,238,.18)');
+  grad.addColorStop(1, 'rgba(34,211,238,.02)');
+  ctx.beginPath();
+  ctx.moveTo(scX(0), scY(p90[0]));
+  for (let i=1;i<n;i++) ctx.lineTo(scX(i), scY(p90[i]));
+  for (let i=n-1;i>=0;i--) ctx.lineTo(scX(i), scY(p10[i]));
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.strokeStyle = 'rgba(34,211,238,.2)'; ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // p50 line with glow
+  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(34,211,238,.5)';
+  ctx.beginPath(); ctx.moveTo(scX(0), scY(p50[0]));
+  for (let i=1;i<n;i++) ctx.lineTo(scX(i), scY(p50[i]));
+  ctx.strokeStyle = 'var(--cyan)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // dots + vertical lines
+  for (let i=0;i<n;i++) {
+    // subtle column line
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(scX(i), pd.t); ctx.lineTo(scX(i), H-pd.b); ctx.stroke();
+    // dot
+    ctx.beginPath(); ctx.arc(scX(i), scY(p50[i]), 3, 0, Math.PI*2);
+    ctx.fillStyle = '#22d3ee'; ctx.fill();
+    // x label
+    ctx.fillStyle = '#475569'; ctx.font = '8px sans-serif';
+    ctx.fillText(DAYS[i], scX(i)-8, H-6);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Cascade mini-chart (3 vars)
+// ═══════════════════════════════════════════════════════════════
+function drawCascade(timeline) {
+  const canvas = $('casc-canvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(rect.width, 300), H = 120;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = '100%'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+
+  const pd = {t:8, r:8, b:18, l:30};
+  const cw = W - pd.l - pd.r, ch = H - pd.t - pd.b;
+  const n = timeline.length;
+  const scX = i => pd.l + i/(n-1)*cw;
+
+  // background
+  ctx.fillStyle = 'rgba(255,255,255,.0)'; ctx.fillRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 0.5; ctx.setLineDash([2,4]);
+  for (let p of [0.25,0.5,0.75,1.0]) {
+    const y = pd.t + ch*(1-p);
+    ctx.beginPath(); ctx.moveTo(pd.l,y); ctx.lineTo(W-pd.r,y); ctx.stroke();
+    ctx.fillStyle='#475569'; ctx.font='8px sans-serif';
+    ctx.fillText(Math.round(p*100)+'%', 0, y+3);
+  }
+  ctx.setLineDash([]);
+
+  const COLOR_MAP = {
+    'var(--red)':   {hex:'#f87171', fill:'rgba(248,113,113,.08)'},
+    'var(--cyan)':  {hex:'#22d3ee', fill:'rgba(34,211,238,.08)'},
+    'var(--amber)': {hex:'#fbbf24', fill:'rgba(251,191,36,.08)'},
+  };
+  function drawLine(getter, colorKey, glow) {
+    const c = COLOR_MAP[colorKey] || {hex:colorKey, fill:'rgba(255,255,255,.06)'};
+    // fill under
+    ctx.beginPath();
+    ctx.moveTo(scX(0), pd.t+ch);
+    for (let i=0;i<n;i++) ctx.lineTo(scX(i), pd.t + ch*(1-Math.min(1,getter(timeline[i]))));
+    ctx.lineTo(scX(n-1), pd.t+ch); ctx.closePath();
+    ctx.fillStyle = c.fill; ctx.fill();
+    // line
+    if (glow) { ctx.shadowBlur = 6; ctx.shadowColor = glow; }
+    ctx.beginPath();
+    for (let i=0;i<n;i++) {
+      const x = scX(i), y = pd.t + ch*(1-Math.min(1,getter(timeline[i])));
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = c.hex; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  const maxStage = Math.max(...timeline.map(r=>r.stage), 1);
+  drawLine(r => r.landslide_risk, 'var(--red)', 'rgba(248,113,113,.4)');
+  drawLine(r => r.stage / maxStage, 'var(--cyan)', 'rgba(34,211,238,.3)');
+  drawLine(r => r.soil_pct / 100, 'var(--amber)', null);
+
+  // x axis labels (hours)
+  ctx.fillStyle = '#475569'; ctx.font = '8px sans-serif';
+  const step = Math.floor(n/6);
+  for (let i=0; i<n; i+=step) {
+    ctx.fillText(timeline[i].t.toFixed(0)+'h', scX(i)-8, H-4);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Ring gauge (monsoon tracker)
+// ═══════════════════════════════════════════════════════════════
+function drawRing(canvas, pct, color) {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const s = 72; // fixed logical size — always 72px
+  canvas.width = s * dpr; canvas.height = s * dpr;
+  canvas.style.width = s + 'px'; canvas.style.height = s + 'px';
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+  const cx=s/2, cy=s/2, r=s/2-6;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
+  ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=7; ctx.stroke();
+  if (pct>0) {
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+2*Math.PI*Math.min(1,pct/100));
+    ctx.strokeStyle=color; ctx.lineWidth=7; ctx.lineCap='round'; ctx.stroke();
+  }
+  ctx.fillStyle='rgba(255,255,255,.9)';
+  ctx.font=`bold ${Math.round(s*0.22)}px sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(Math.round(pct)+'%', cx, cy);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Sensor gauge (small arc)
+// ═══════════════════════════════════════════════════════════════
+function sensorGauge(canvasId, pct, color) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  drawArcGauge(c, pct, color);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Teesta basin schematic
+// ═══════════════════════════════════════════════════════════════
+function drawSchematic(lakes, glofEvents) {
+  const svg = $('ts-svg');
+  const W=520, H=280;
+
+  // event map for quick lookup
+  const evMap = {};
+  for (const ev of (glofEvents||[])) evMap[ev.asset_id] = ev;
+
+  // River path: approximate Teesta from Lhonak area to Bangladesh border
+  // Coordinates: [x,y] in 520×280 space (N=top, S=bottom)
+  const riverPts = [
+    [100,12],[110,30],[120,50],[125,70],[130,90],  // upper Sikkim
+    [145,105],                                      // Chungthang confluence
+    [160,120],[175,138],                            // Stage III area
+    [200,150],[220,160],                            // Stage V
+    [240,168],[255,178],                            // Stage VI
+    [270,188],[290,200],                            // Rangpo
+    [310,210],[325,218],                            // Sivok
+    [340,226],[355,235],                            // Gajoldoba
+    [370,244],[390,252],[415,258],[440,264],[470,270],[500,275], // to Bangladesh
+  ];
+
+  // Lake positions (upper left area, scattered)
+  const lakePos = [
+    {id:'SL01', x:50,  y:20,  label:'S.Lhonak'},
+    {id:'SL02', x:90,  y:15,  label:'N.Lhonak'},
+    {id:'SL03', x:30,  y:38,  label:'Shako Cho'},
+    {id:'SL04', x:68,  y:45,  label:'Karma Pk'},
+    {id:'SL05', x:20,  y:58,  label:'Chho Lhamo'},
+    {id:'SL06', x:52,  y:65,  label:'Gurudongmar'},
+    {id:'SL07', x:78,  y:72,  label:'Zemu Gl'},
+    {id:'SL08', x:35,  y:80,  label:'Tholung'},
+  ];
+
+  // Asset positions along river
+  const assetPos = [
+    {id:'TSTIII', x:148, y:108, label:'Stage III', cap:1200},
+    {id:'TSTV',   x:222, y:162, label:'Stage V',   cap:1600},
+    {id:'TSTVI',  x:258, y:180, label:'Stage VI',  cap:2200},
+    {id:'RANGPO', x:292, y:202, label:'Rangpo',    cap:null},
+    {id:'SIVOK',  x:327, y:220, label:'Sivok',     cap:null},
+    {id:'GAJOL',  x:357, y:238, label:'Gajoldoba', cap:null},
+    {id:'JALP',   x:395, y:254, label:'Jalpaiguri',cap:null},
+  ];
+
+  // Build instability map
+  const insMap = {};
+  for (const l of (lakes||[])) insMap[l.id] = l.instability;
+
+  let html = '';
+
+  // ── river gradient definition ──
+  html += `<defs>
+    <linearGradient id="river-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#818cf8" stop-opacity=".7"/>
+    </linearGradient>
+    <filter id="glow-f">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
+  // ── background region labels ──
+  html += `<text x="460" y="14" fill="#1e3a5f" font-size="9" font-weight="700">WEST BENGAL</text>`;
+  html += `<text x="8" y="14" fill="#1e3a5f" font-size="9" font-weight="700">SIKKIM</text>`;
+
+  // ── region dividers ──
+  html += `<line x1="0" y1="195" x2="520" y2="195" stroke="rgba(255,255,255,.05)" stroke-width="1" stroke-dasharray="6,4"/>`;
+  html += `<text x="4" y="192" fill="#334155" font-size="8">Rangpo — Sikkim/WB boundary</text>`;
+  html += `<line x1="0" y1="258" x2="520" y2="258" stroke="rgba(255,255,255,.05)" stroke-width="1" stroke-dasharray="6,4"/>`;
+  html += `<text x="4" y="254" fill="#334155" font-size="8">Jalpaiguri — India/Bangladesh border</text>`;
+
+  // ── river glow background ──
+  const pts = riverPts.map(([x,y])=>`${x},${y}`).join(' ');
+  html += `<polyline points="${pts}" fill="none" stroke="rgba(34,211,238,.06)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // river line
+  html += `<polyline points="${pts}" fill="none" stroke="url(#river-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-f)"/>`;
+  // flow direction arrows every few points
+  for (let i=3; i<riverPts.length-1; i+=4) {
+    const [x1,y1]=riverPts[i], [x2,y2]=riverPts[i+1];
+    const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+    html+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2}" fill="rgba(34,211,238,.4)" font-size="8" transform="rotate(${ang},${(x1+x2)/2},${(y1+y2)/2})">▶</text>`;
+  }
+
+  // ── lake nodes ──
+  for (const lk of lakePos) {
+    const ins = insMap[lk.id] || 0;
+    const col = ins >= 0.7 ? '#c084fc' : ins >= 0.5 ? '#f87171' : ins >= 0.3 ? '#fbbf24' : '#4ade80';
+    const r = 5 + ins * 5;
+    // draw line from lake to river start
+    html += `<line x1="${lk.x}" y1="${lk.y}" x2="${riverPts[0][0]}" y2="${riverPts[0][1]}" stroke="rgba(34,211,238,.12)" stroke-width="1" stroke-dasharray="3,3"/>`;
+    html += `<circle cx="${lk.x}" cy="${lk.y}" r="${r}" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="1.5"/>`;
+    html += `<circle cx="${lk.x}" cy="${lk.y}" r="2.5" fill="${col}"/>`;
+    html += `<text x="${lk.x+r+3}" y="${lk.y+3}" fill="${col}" font-size="7.5" font-weight="600">${lk.label}</text>`;
+    html += `<text x="${lk.x-2}" y="${lk.y+3.5}" fill="${col}" font-size="7" font-weight="700">${Math.round(ins*100)}</text>`;
+  }
+
+  // ── dam / asset nodes ──
+  for (const a of assetPos) {
+    const ev = evMap[a.id];
+    const sev = ev?.severity || (ev?.exceeded ? 'fail' : 'safe');
+    const col = sev === 'fail' ? '#f87171' : sev === 'warn' ? '#fbbf24' : '#4ade80';
+    const label = ev?.exceeded ? `${a.label} ✕` : a.label;
+    const q = ev ? Math.round(ev.q_m3s) : '';
+
+    html += `<rect x="${a.x-8}" y="${a.y-5}" width="16" height="10" rx="2"
+      fill="${col}" fill-opacity="${ev ? '.35' : '.15'}" stroke="${col}" stroke-width="1.5"/>`;
+    html += `<text x="${a.x}" y="${a.y+3.5}" text-anchor="middle" fill="${col}" font-size="7" font-weight="900">
+      ${sev === 'fail' ? '✕' : sev === 'warn' ? '⚠' : '▬'}</text>`;
+    html += `<text x="${a.x+12}" y="${a.y+3}" fill="${col}" font-size="8" font-weight="600">${label}</text>`;
+    if (q) html += `<text x="${a.x+12}" y="${a.y+12}" fill="${col}" fill-opacity=".7" font-size="7">${q} m³/s · ${ev.t_h?.toFixed(1)}h</text>`;
+    // cap bar
+    if (a.cap && ev) {
+      const pct = Math.min(1, ev.q_m3s / a.cap);
+      html += `<rect x="${a.x-8}" y="${a.y+15}" width="50" height="3" rx="1.5" fill="rgba(255,255,255,.08)"/>`;
+      html += `<rect x="${a.x-8}" y="${a.y+15}" width="${50*pct}" height="3" rx="1.5" fill="${col}" fill-opacity=".7"/>`;
+    }
+  }
+
+  // ── legend ──
+  html += `<g transform="translate(8,200)">
+    <rect width="120" height="56" rx="5" fill="rgba(7,8,13,.7)" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+    <text x="6" y="13" fill="#64748b" font-size="7" font-weight="700">LEGEND</text>
+    <circle cx="10" cy="25" r="4" fill="#f87171" fill-opacity=".3" stroke="#f87171" stroke-width="1.5"/>
+    <text x="18" y="28" fill="#94a3b8" font-size="7">Lake instability ≥ 0.7</text>
+    <circle cx="10" cy="38" r="4" fill="#fbbf24" fill-opacity=".3" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="18" y="41" fill="#94a3b8" font-size="7">Lake instability 0.3–0.7</text>
+    <rect x="6" y="47" width="8" height="4" rx="1" fill="#f87171" fill-opacity=".3" stroke="#f87171" stroke-width="1"/>
+    <text x="18" y="52" fill="#94a3b8" font-size="7">Dam / asset (✕ = exceeded)</text>
+  </g>`;
+
+  svg.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Render all panels
+// ═══════════════════════════════════════════════════════════════
+function render(d) {
+  if (!d) return;
+  const cri = d.cri || {};
+  const dis = d.discharge || {};
+  const glof = d.glof || {};
+  const casc = d.cascade || {};
+  const wcn = d.wcn || {};
+  const sensors = d.sensors || {};
+  const mm = d.model_metrics || {};
+  const health = d.health || {};
+  const lakes = d.lakes || [];
+  const br = glof.breach || {};
+
+  // ── KPI strip ──
+  const criScore = cri.score || 0;
+  const criB = band(criScore);
+  $('k-cri').textContent = criScore.toFixed(1);
+  $('k-cri').style.color = bandCol(criB);
+  $('k-cri-band').textContent = criB;
+  $('k-q1').textContent = Math.round((dis.p50||[0])[0]);
+  $('k-q1').style.color = (dis.p50||[0])[0] > BF*0.7 ? 'var(--red)' : 'var(--cyan)';
+  $('k-glof').textContent = Math.round(br.q_peak_m3s||0).toLocaleString();
+  $('k-glof').style.color = 'var(--purple)';
+  const peakRisk = (casc.peak||{}).landslide_risk || 0;
+  $('k-casc').textContent = Math.round(peakRisk*100)+'%';
+  $('k-casc').style.color = peakRisk > 0.7 ? 'var(--red)' : peakRisk > 0.4 ? 'var(--amber)' : 'var(--green)';
+  $('k-stage').textContent = ((casc.peak||{}).stage_m || 0).toFixed(1);
+
+  // ── Compound banner ──
+  $('banner').className = d.compound ? 'show' : '';
+
+  // ── CRI arc gauge ──
+  setCRI(criScore);
+  $('cc-glof').textContent = (cri.components?.glof || 0).toFixed(1);
+  $('cc-dis').textContent  = (cri.components?.discharge || 0).toFixed(1);
+  $('cc-casc').textContent = (cri.components?.cascade || 0).toFixed(1);
+
+  // ── WCN ──
+  $('w-api').textContent = (wcn.current_api || 0).toFixed(1);
+  $('w-cn').textContent  = (wcn.current_cn  || 0).toFixed(1);
+  $('w-ro').textContent  = (wcn.current_runoff_mm || 0).toFixed(1);
+  $('w-q').textContent   = (wcn.current_q_phys || 0).toFixed(0);
+
+  // ── Bangladesh alert ──
+  const p90max = dis.p90 ? Math.max(...dis.p90) : 0;
+  let bdLevel='MONITOR', bdMsg='No elevated risk at this time. Routine monitoring.', bdCol='var(--t2)';
+  if (d.compound || criScore >= 70) {
+    bdLevel='🔴 ALERT'; bdCol='var(--red)';
+    bdMsg='Compound GLOF + flood. Notify BWDB and FFWC immediately. All embankments at risk.';
+  } else if (criScore >= 50 || p90max > 0.8*BF) {
+    bdLevel='🟠 WARNING'; bdCol='var(--amber)';
+    bdMsg=`Forecast: ${Math.round(p90max)} m³/s at Gajoldoba (${Math.round(p90max/BF*100)}% of bankfull). Downstream readiness required.`;
+  } else if (criScore >= 30) {
+    bdLevel='🟡 WATCH'; bdCol='#fde047';
+    bdMsg='Elevated basin risk. Pre-position teams at Hilli and Chilahati border crossings.';
+  }
+  $('bd-level').textContent = bdLevel;
+  $('bd-level').style.color = bdCol;
+  $('bd-msg').textContent = bdMsg;
+
+  // ── Sensors ──
+  const nodes = sensors.nodes || [];
+  $('sn-count').textContent = `${nodes.length} node${nodes.length !== 1 ? 's' : ''}`;
+  if (nodes.length === 0) {
+    $('sensor-nodes').innerHTML = `<div style="color:var(--t2);font-size:10px;padding:8px 0;grid-column:span 2">No sensor nodes. POST to /api/sensor</div>`;
+  } else {
+    $('sensor-nodes').innerHTML = nodes.map((n,i) => {
+      const live = n.live;
+      const soilPct = n.soil_moisture_pct || 0;
+      const rainPct = n.rain_pct || 0;
+      const soilId = `sn-soil-${i}`, rainId = `sn-rain-${i}`;
+      return `
+      <div class="sn" style="border-color:${live ? 'rgba(74,222,128,.3)':'rgba(251,191,36,.2)'}">
+        <div class="sn-head">
+          <span class="sn-id">${n.node_id||'node'}</span>
+          <span class="sn-led" style="background:${live ? 'var(--green)':'var(--amber)'}"></span>
+        </div>
+        <div class="sn-gauges">
+          <div class="sn-g">
+            <canvas id="${soilId}" width="44" height="44"></canvas>
+            <div class="sn-g-l">Soil moist.</div>
+            <div class="sn-g-v" style="color:var(--teal)">${soilPct.toFixed(0)}%</div>
+          </div>
+          <div class="sn-g">
+            <canvas id="${rainId}" width="44" height="44"></canvas>
+            <div class="sn-g-l">Rain level</div>
+            <div class="sn-g-v" style="color:var(--blue)">${rainPct.toFixed(0)}%</div>
+          </div>
+        </div>
+        ${n.temperature_c ? `<div style="font-size:9px;color:var(--t2);margin-top:4px">Temp: ${n.temperature_c}°C · Humidity: ${n.humidity_pct||'—'}%</div>` : ''}
+        <div class="sn-age">${live ? 'Live' : Math.round(n.age_s||0)+'s ago'}</div>
+      </div>`;
+    }).join('');
+    // draw gauges after DOM insert
+    nodes.forEach((n,i) => {
+      drawArcGauge(document.getElementById(`sn-soil-${i}`), n.soil_moisture_pct||0, '#2dd4bf');
+      drawArcGauge(document.getElementById(`sn-rain-${i}`), n.rain_pct||0, '#818cf8');
+    });
+  }
+
+  // ── Discharge chart ──
+  if (dis.p50) {
+    const riskBandRaw = Array.isArray(dis.risk_band) ? dis.risk_band[0] : (dis.risk_band||'low');
+    const rb = (riskBandRaw||'low').toUpperCase();
+    const chip = $('dis-chip');
+    chip.textContent = rb; chip.style.cssText = chipCls(band(
+      rb==='CRITICAL'?80:rb==='HIGH'?60:rb==='MODERATE'?40:10
+    ));
+    drawDischarge(dis);
+    // day cards
+    const maxQ = Math.max(...dis.p90);
+    $('day-row').innerHTML = dis.p50.map((v,i) => {
+      const pct = v/BF;
+      const col = pct>1?'var(--purple)':pct>.75?'var(--red)':pct>.5?'var(--amber)':'var(--green)';
+      return `<div class="day-box">
+        <div class="day-d">${DAYS[i]}</div>
+        <div class="day-v" style="color:${col}">${Math.round(v)}</div>
+        <div class="day-u">m³/s</div>
+      </div>`;
+    }).join('');
+    $('dis-peak').textContent = Math.round(maxQ).toLocaleString();
+    $('dis-peak').style.color = maxQ > BF ? 'var(--red)' : 'var(--amber)';
+    $('dis-cur').textContent  = Math.round(dis.current_q||0).toLocaleString();
+  }
+
+  // ── Teesta schematic ──
+  drawSchematic(lakes, glof.events||[]);
+
+  // ── Cascade chart & events ──
+  if (casc.timeline && casc.timeline.length > 0) {
+    setTimeout(() => drawCascade(casc.timeline), 50);
+  }
+  const cascEvents = casc.events || [];
+  $('casc-events').innerHTML = cascEvents.map(ev => {
+    const col = sevCol(ev.severity);
+    const icon = sevIcon(ev.severity);
+    return `<div class="ce">
+      <div class="ce-dot" style="background:${col}20;border:1.5px solid ${col};color:${col}">${icon}</div>
+      <div class="ce-body">
+        <div class="ce-label">${ev.label}</div>
+        <div class="ce-detail">${ev.detail||''}</div>
+      </div>
+      <div class="ce-t">T+${ev.t?.toFixed(1)}h</div>
+    </div>`;
+  }).join('') || `<div style="color:var(--t2);font-size:10px;padding:8px 0">No cascade events at current conditions.</div>`;
+
+  // ── Lake table ──
+  $('lake-tbody').innerHTML = lakes.map(l => {
+    const ins = l.instability;
+    const col = ins>=.7?'var(--purple)':ins>=.5?'var(--red)':ins>=.3?'var(--amber)':'var(--green)';
+    const barW = Math.round(ins*90);
+    const insar = l.insar_live ? `<span style="color:var(--green);font-size:9px">●</span>` : `<span style="color:var(--t2);font-size:9px">○</span>`;
+    const seis  = l.seismic_live ? `<span style="color:var(--red);font-size:9px">●</span>` : `<span style="color:var(--t2);font-size:9px">○</span>`;
+    const damTag = l.dam_type === 'moraine' ?
+      `<span class="tag" style="background:rgba(192,132,252,.15);color:var(--purple)">moraine</span>` :
+      `<span class="tag" style="background:rgba(129,140,248,.15);color:var(--blue)">${l.dam_type}</span>`;
+    return `<tr>
+      <td style="font-weight:600;white-space:nowrap">${l.name.length>12?l.name.slice(0,12)+'…':l.name}</td>
+      <td style="color:var(--t2)">${l.elevation_m.toLocaleString()}</td>
+      <td style="color:var(--t2)">${l.area_km2}</td>
+      <td>${damTag}</td>
+      <td><span class="ibar" style="width:${barW}px;background:${col}"></span></td>
+      <td><span class="i-val" style="color:${col}">${(ins*100).toFixed(0)}</span></td>
+      <td>${insar}${seis}</td>
+    </tr>`;
+  }).join('');
+
+  // ── GLOF card ──
+  $('glof-lake-name').textContent = (glof.lake||{}).name || 'South Lhonak';
+  const glofChip = $('glof-chip');
+  const glofB = glof.exceeded_count > 0 ? 'HIGH' : 'LOW';
+  glofChip.textContent = glof.exceeded_count > 0 ? 'EXCEEDED' : 'SAFE';
+  glofChip.style.cssText = chipCls(glofB);
+  $('gs-qpeak').textContent = Math.round(br.q_peak_m3s||0).toLocaleString();
+  $('gs-fail').textContent  = br.time_to_failure_min ? br.time_to_failure_min.toFixed(1)+'m' : '—';
+  $('gs-lead').textContent  = glof.lead_to_dam_h ? glof.lead_to_dam_h.toFixed(1)+'h' : '—';
+  $('gs-breach').textContent = br.breach_width_m
+    ? `Breach width: ${Math.round(br.breach_width_m)}m · Trigger: ${br.trigger||'—'}`
+    : 'Breach data unavailable';
+  const ASSET_ICON = {dam:'🏗', town:'🏘', bridge:'🌉', junction:'🔀'};
+  $('glof-assets').innerHTML = (glof.events||[]).map(ev => {
+    const col = sevCol(ev.severity);
+    const icon = sevIcon(ev.severity);
+    return `<div class="asset-row">
+      <div class="asset-icon" style="color:${col}">${icon}</div>
+      <div class="asset-name">${ev.asset_name||ev.asset_id}</div>
+      <div class="asset-eta" style="color:var(--t2)">${ev.t_h?.toFixed(1)}h</div>
+      <div class="asset-q" style="color:${col}">${Math.round(ev.q_m3s||0).toLocaleString()}</div>
+    </div>`;
+  }).join('') || `<div style="color:var(--t2);font-size:10px;padding:6px 0">No downstream assets exceeded.</div>`;
+
+  // ── NHPC dams ──
+  const NHPC = [
+    {id:'TSTIII', name:'Teesta III',  cap:1200, km:62},
+    {id:'TSTV',   name:'Teesta V',    cap:1600, km:130},
+    {id:'TSTVI',  name:'Teesta VI',   cap:2200, km:172},
+  ];
+  const evMap2 = {};
+  for (const ev of (glof.events||[])) evMap2[ev.asset_id] = ev;
+  $('nhpc-rows').innerHTML = NHPC.map(dam => {
+    const ev = evMap2[dam.id];
+    const q = ev ? Math.round(ev.q_m3s) : 0;
+    const pct = Math.min(100, ev ? ev.q_m3s / dam.cap * 100 : 0);
+    const sev = ev?.severity || 'safe';
+    const col = sev==='fail'?'var(--red)':sev==='warn'?'var(--amber)':'var(--green)';
+    const statusTxt = sev==='fail'?'✕ FAIL':sev==='warn'?'⚠ WARN':'✓ OK';
+    return `<div class="dam-row">
+      <div class="dam-name">${dam.name}</div>
+      <div class="dam-fill-bg">
+        <div class="dam-fill" style="width:${pct}%;background:${col};opacity:.8"></div>
+      </div>
+      <div class="dam-cap" style="color:var(--t2)">${q ? q.toLocaleString() : '—'} m³/s</div>
+      <div class="dam-status" style="color:${col}">${statusTxt}</div>
+    </div>`;
+  }).join('');
+
+  // ── Model metrics ──
+  const horizons = mm.horizons || {};
+  $('mm-rows').innerHTML = Object.entries(horizons).sort(([a],[b])=>+a-+b).map(([h,m]) => {
+    const nse = m.nse_log ?? m.nse ?? 0;
+    const pct = Math.max(0, Math.min(100, nse*100));
+    const col = nse>.7?'var(--green)':nse>.5?'var(--teal)':nse>.3?'var(--amber)':'var(--red)';
+    return `<div class="mm-row">
+      <div class="mm-h">+${h}d</div>
+      <div class="mm-bar-bg"><div class="mm-bar" style="width:${pct}%;background:${col}"></div></div>
+      <div class="mm-nse" style="color:${col}">${nse.toFixed(3)}</div>
+      <div class="mm-kge" title="KGE">${m.kge?.toFixed(2)||'—'}</div>
+    </div>`;
+  }).join('');
+  const feats = (mm.importance||[]).slice(0,6);
+  const maxImp = feats.length ? Math.max(...feats.map(f=>f.importance)) : 1;
+  $('feat-rows').innerHTML = feats.map(f => {
+    const pct = (f.importance/maxImp*100).toFixed(0);
+    return `<div class="feat-row">
+      <div class="feat-n" title="${f.feature}">${f.feature}</div>
+      <div class="feat-bg"><div class="feat-fill" style="width:${pct}%"></div></div>
+      <div class="feat-v">${f.importance.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+
+  // ── Monsoon rings ──
+  const now = new Date();
+  const yr = now.getFullYear();
+  const onset = new Date(yr,5,1), end = new Date(yr,9,15);
+  const seasonPct = Math.round(Math.max(0,Math.min(100,(now-onset)/(end-onset)*100)));
+  const apiPct    = Math.min(100, Math.round((wcn.current_api||0)/400*100));
+  const qPct      = Math.min(100, Math.round((dis.current_q||0)/BF*100));
+  const daysLeft  = Math.max(0, Math.round((end-now)/86400000));
+
+  drawRing($('ms-season'), seasonPct, '#22d3ee');
+  drawRing($('ms-api'),    apiPct,    '#fbbf24');
+  drawRing($('ms-q'),      qPct,      '#4ade80');
+  $('ms-season-v').textContent = daysLeft+'d left';
+  $('ms-api-v').textContent    = (wcn.current_api||0).toFixed(0)+' mm';
+  $('ms-q-v').textContent      = Math.round(dis.current_q||0)+' m³/s';
+
+  // ── Event timeline ──
+  $('et-scroll').innerHTML = (casc.events||[]).length === 0
+    ? `<div style="color:var(--t2);font-size:10px;padding:6px 0">No events at current conditions.</div>`
+    : (casc.events||[]).map(ev => {
+        const col = sevCol(ev.severity);
+        const sevCls = ({fail:'background:rgba(248,113,113,.15);color:#f87171',
+          warn:'background:rgba(251,191,36,.15);color:#fbbf24',
+          watch:'background:rgba(129,140,248,.15);color:#818cf8',
+          crit:'background:rgba(248,113,113,.15);color:#f87171',
+        })[ev.severity]||'background:rgba(100,116,139,.15);color:#94a3b8';
+        return `<div class="et-row">
+          <div class="et-t">T+${ev.t?.toFixed(1)}h</div>
+          <div class="et-dot" style="background:${col}"></div>
+          <div class="et-lbl">${ev.label}</div>
+          <div class="et-sev" style="${sevCls}">${ev.severity?.toUpperCase()}</div>
+        </div>`;
+      }).join('');
+
+  // ── Health ──
+  const hItems = [
+    ['Landslide model', health.model_present],
+    ['Discharge model', health.discharge_model],
+    ['Live risk CSV',   health.snapshot_present],
+  ];
+  $('health-rows').innerHTML = hItems.map(([l,ok])=>`
+    <div class="hitem">
+      <span class="hitem-l">${l}</span>
+      <span class="${ok?'hitem-ok':'hitem-bad'}">${ok?'✓ Ready':'✕ Missing'}</span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Fetch
+// ═══════════════════════════════════════════════════════════════
+async function fetchData() {
+  $('led').style.background = 'var(--amber)';
+  try {
+    const res = await fetch(`/api/monitor?scenario=${_sc}`);
+    _data = await res.json();
+    render(_data);
+    $('ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    $('led').style.background = 'var(--green)';
+  } catch(e) {
+    console.error('Monitor fetch failed', e);
+    $('led').style.background = 'var(--red)';
+  }
+  resetCD();
+}
+
+function resetCD() {
+  clearInterval(_timer);
+  _cd = 30;
+  $('cd').textContent = _cd + 's';
+  _timer = setInterval(() => {
+    _cd--;
+    $('cd').textContent = _cd + 's';
+    if (_cd <= 0) fetchData();
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Scenario buttons
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.sc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sc-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    _sc = btn.dataset.sc;
+    fetchData();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Export
+// ═══════════════════════════════════════════════════════════════
+$('btn-export').addEventListener('click', () => {
+  if (!_data) return;
+  const blob = new Blob([JSON.stringify(_data,null,2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `spirexa-${_sc}-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Redraw charts on resize
+// ═══════════════════════════════════════════════════════════════
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => { if (_data) render(_data); }, 200);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════
+fetchData();
+</script>
+</body>
+</html>

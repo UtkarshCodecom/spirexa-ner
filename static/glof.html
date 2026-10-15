@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPIREXA — GLOF Flash Flood Simulator</title>
+<style>
+  :root{
+    --ink:#0e1420; --muted:#7d8798; --accent:#5b8cff;
+    --low:#22c55e; --mod:#f59e0b; --high:#f97316; --sev:#ef4444;
+    --glof:#a78bfa; --water:#38bdf8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#05070c;overflow:hidden;
+    font-family:"Avenir Next","Helvetica Neue",system-ui,sans-serif;color:#eaf0fb}
+
+  .panel{
+    backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.16);border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+  h2{font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin-bottom:11px}
+
+  /* ---- left controls ---- */
+  #left{position:fixed;top:18px;left:18px;width:300px;
+    display:flex;flex-direction:column;gap:10px;
+    max-height:calc(100vh - 36px);overflow-y:auto;scrollbar-width:none}
+  #left::-webkit-scrollbar{display:none}
+  #left .panel{padding:15px 17px}
+
+  /* lake select */
+  #lakeinfo .name{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px}
+  #lakeinfo .meta{font-size:11px;color:#c9d3e4;line-height:1.6}
+  #lakeinfo .score{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)}
+  #instability-val{font-size:42px;font-weight:600;font-variant-numeric:tabular-nums;
+    transition:color .4s}
+  #instability-label{font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);margin-top:2px}
+
+  /* sensor hooks */
+  .hook-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;
+    padding:2px 8px;border-radius:20px;font-weight:600;margin-top:6px;margin-right:4px}
+  .hook-offline{background:rgba(255,255,255,.08);color:var(--muted);
+    border:1px solid rgba(255,255,255,.12)}
+  .hook-live{background:rgba(34,197,94,.15);color:#4ade80;
+    border:1px solid rgba(34,197,94,.3)}
+  .hook-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  /* controls */
+  select{width:100%;padding:8px 10px;border-radius:10px;font-size:12.5px;
+    background:rgba(255,255,255,.1);color:#eaf0fb;
+    border:1px solid rgba(255,255,255,.16);outline:none;cursor:pointer}
+  select option{background:#1a2035;color:#eaf0fb}
+  .ctl{margin-bottom:13px}
+  .ctl label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+  .ctl label span:last-child{color:var(--accent);font-weight:600;
+    font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:5px;
+    background:rgba(255,255,255,.18);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--accent);cursor:pointer;
+    box-shadow:0 0 0 3px rgba(91,140,255,.25)}
+  .btn-group{display:flex;gap:6px;margin-bottom:13px}
+  .btn{flex:1;padding:8px 6px;border-radius:10px;font-size:11px;font-weight:600;
+    border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);
+    color:#c9d3e4;cursor:pointer;transition:all .2s}
+  .btn.active,.btn:hover{background:rgba(91,140,255,.25);color:#fff;
+    border-color:rgba(91,140,255,.45)}
+  .btn.seismic.active{background:rgba(239,68,68,.25);color:#fca5a5;
+    border-color:rgba(239,68,68,.4)}
+
+  /* ---- right events panel ---- */
+  #right{position:fixed;top:18px;right:18px;width:310px;
+    display:flex;flex-direction:column;gap:10px;
+    max-height:calc(100vh - 36px);overflow-y:auto;scrollbar-width:none}
+  #right::-webkit-scrollbar{display:none}
+  #right .panel{padding:15px 17px}
+
+  #warning-box{border-radius:14px;padding:13px 15px;
+    border:1px solid rgba(239,68,68,.4);
+    background:rgba(30,10,12,.7);transition:opacity .3s}
+  #warning-box.hidden{opacity:0;pointer-events:none}
+  #warning-title{font-size:14px;font-weight:600;color:#f87171;margin-bottom:5px}
+  #warning-body{font-size:11px;color:#fca5a5;line-height:1.6}
+
+  #events-list{display:flex;flex-direction:column;gap:7px}
+  .evt{border-radius:12px;padding:10px 13px;border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.04);transition:border-color .3s,background .3s}
+  .evt.ok{border-color:rgba(34,197,94,.25)}
+  .evt.warn{border-color:rgba(245,158,11,.35);background:rgba(38,28,10,.5)}
+  .evt.fail{border-color:rgba(239,68,68,.4);background:rgba(30,10,12,.6)}
+  .evt.fail.pulse{animation:evtpulse 1.2s ease-in-out infinite}
+  @keyframes evtpulse{0%,100%{box-shadow:none}
+    50%{box-shadow:0 0 0 3px rgba(239,68,68,.18)}}
+  .evt-head{display:flex;justify-content:space-between;align-items:baseline}
+  .evt-name{font-size:12.5px;font-weight:600}
+  .evt-t{font-size:12px;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+  .evt-detail{font-size:11px;color:#9ba8bb;margin-top:3px;line-height:1.45}
+  .evt-q{font-size:11px;margin-top:4px}
+  .evt-q span{font-weight:600;font-variant-numeric:tabular-nums}
+
+  #secondary-box{border-radius:12px;padding:11px 13px;display:none;
+    border:1px solid rgba(167,139,250,.35);background:rgba(20,10,35,.6)}
+  #secondary-box.on{display:block}
+  #secondary-title{font-size:11.5px;font-weight:600;color:var(--glof);margin-bottom:5px}
+  #secondary-body{font-size:11px;color:#c4b5fd;line-height:1.55}
+
+  /* ---- center canvas ---- */
+  #canvas-wrap{position:fixed;
+    left:336px;right:346px;top:18px;bottom:18px;border-radius:18px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.35)}
+  canvas{display:block;width:100%;height:100%}
+
+  /* ---- title ---- */
+  #title-chip{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);
+    padding:7px 18px;border-radius:20px;font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+
+<!-- ── LEFT CONTROLS ──────────────────────────────────────────── -->
+<div id="left">
+
+  <!-- lake selector + instability -->
+  <div class="panel" id="lakeinfo">
+    <h2>Glacial Lake</h2>
+    <select id="lake-sel"></select>
+    <div id="lakeinfo-body" style="margin-top:12px">
+      <div class="name" id="lake-name">—</div>
+      <div class="meta" id="lake-meta">—</div>
+      <div class="score">
+        <div id="instability-val">—</div>
+        <div id="instability-label">Instability index</div>
+        <div id="sensor-badges" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- trigger type -->
+  <div class="panel">
+    <h2>Breach Trigger</h2>
+    <div class="btn-group">
+      <button class="btn active" data-trigger="overtopping">Overtopping</button>
+      <button class="btn" data-trigger="piping">Piping</button>
+      <button class="btn seismic" data-trigger="seismic">Seismic</button>
+    </div>
+  </div>
+
+  <!-- sliders -->
+  <div class="panel">
+    <h2>Conditions</h2>
+    <div class="ctl">
+      <label>
+        <span>Rainfall (30-day mm)</span>
+        <span id="rain-val">180</span>
+      </label>
+      <input type="range" id="rain" min="0" max="500" step="10" value="180">
+    </div>
+    <div class="ctl">
+      <label>
+        <span>InSAR deformation (mm/yr)</span>
+        <span id="insar-val">—</span>
+      </label>
+      <input type="range" id="insar" min="0" max="80" step="1" value="0"
+             title="Simulates Sentinel-1 InSAR moraine deformation signal">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">
+        Sentinel-1 InSAR hook — real data plugs in here
+      </div>
+    </div>
+    <div class="ctl">
+      <label>
+        <span>Seismic instability score</span>
+        <span id="seismic-val">—</span>
+      </label>
+      <input type="range" id="seismic" min="0" max="1" step="0.01" value="0"
+             title="Simulates accelerometer network signal from lake shore">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">
+        Accelerometer network hook — hardware deploys here
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── CANVAS ─────────────────────────────────────────────────── -->
+<div id="canvas-wrap">
+  <canvas id="cv"></canvas>
+</div>
+
+<!-- ── RIGHT EVENTS ───────────────────────────────────────────── -->
+<div id="right">
+
+  <div id="warning-box" class="hidden">
+    <div id="warning-title">—</div>
+    <div id="warning-body">—</div>
+  </div>
+
+  <div class="panel">
+    <h2>Breach Parameters</h2>
+    <div id="breach-stats" style="font-size:12px;line-height:2;color:#c9d3e4">—</div>
+  </div>
+
+  <div class="panel">
+    <h2>Downstream Event Chain</h2>
+    <div id="events-list"></div>
+  </div>
+
+  <div id="secondary-box">
+    <div id="secondary-title">Secondary GLOF Risk</div>
+    <div id="secondary-body">—</div>
+  </div>
+
+</div>
+
+<div id="title-chip">SPIREXA · GLOF Flash Flood · Teesta Basin</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────
+let lakes = [];
+let result = null;
+let trigger = "overtopping";
+let animT = 0;  // 0–1 animation progress
+let animAF = null;
+let animStart = null;
+const ANIM_DURATION_MS = 4000;
+
+// ─────────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const r = await fetch("/api/glof/lakes");
+    const data = await r.json();
+    lakes = data.lakes;
+    buildLakeSelect();
+    setupControls();
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    await run();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function buildLakeSelect() {
+  const sel = document.getElementById("lake-sel");
+  lakes.forEach(l => {
+    const o = document.createElement("option");
+    o.value = l.id;
+    o.textContent = `${l.name}  (${l.area_km2} km² · ${l.elevation_m} m)`;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", run);
+}
+
+function setupControls() {
+  document.querySelectorAll("[data-trigger]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-trigger]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      trigger = btn.dataset.trigger;
+      run();
+    });
+  });
+
+  ["rain","insar","seismic"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      updateSliderLabels();
+      run();
+    });
+  });
+
+  updateSliderLabels();
+}
+
+function updateSliderLabels() {
+  document.getElementById("rain-val").textContent = document.getElementById("rain").value;
+  const insarV = parseFloat(document.getElementById("insar").value);
+  document.getElementById("insar-val").textContent = insarV === 0 ? "—" : insarV.toFixed(0);
+  const seismicV = parseFloat(document.getElementById("seismic").value);
+  document.getElementById("seismic-val").textContent = seismicV === 0 ? "—" : seismicV.toFixed(2);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// API call
+// ─────────────────────────────────────────────────────────────────
+let pending = null;
+async function run() {
+  const lakeId = document.getElementById("lake-sel").value;
+  if (!lakeId) return;
+
+  const rain = document.getElementById("rain").value;
+  const insarRaw = parseFloat(document.getElementById("insar").value);
+  const seismicRaw = parseFloat(document.getElementById("seismic").value);
+
+  const params = new URLSearchParams({
+    lake_id: lakeId,
+    trigger,
+    rainfall: rain,
+    insar: insarRaw === 0 ? "" : insarRaw,
+    seismic: seismicRaw === 0 ? "" : seismicRaw,
+  });
+  // Remove blanks (= leave sensor as None on server)
+  if (insarRaw === 0) params.delete("insar");
+  if (seismicRaw === 0) params.delete("seismic");
+
+  if (pending) pending._cancelled = true;
+  const token = { _cancelled: false };
+  pending = token;
+
+  try {
+    const resp = await fetch(`/api/glof?${params}`);
+    if (token._cancelled) return;
+    result = await resp.json();
+    render();
+    startAnim();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UI render (panels)
+// ─────────────────────────────────────────────────────────────────
+function render() {
+  if (!result) return;
+  const lake = result.lake;
+  const breach = result.breach;
+  const score = result.instability;
+
+  // Lake info
+  document.getElementById("lake-name").textContent = lake.name;
+  document.getElementById("lake-meta").innerHTML =
+    `${lake.area_km2} km² · ${(lake.volume_m3/1e6).toFixed(1)} Mm³ · ` +
+    `${lake.elevation_m} m · ${lake.dam_type}`;
+
+  const pct = Math.round(score * 100);
+  const iEl = document.getElementById("instability-val");
+  iEl.textContent = pct + "%";
+  iEl.style.color = scoreColor(score);
+
+  // Sensor badges
+  const badges = document.getElementById("sensor-badges");
+  badges.innerHTML =
+    badge("InSAR", lake.insar_deformation_mmyr != null) +
+    badge("Seismic", lake.seismic_score != null);
+
+  // Warning box
+  const wb = document.getElementById("warning-box");
+  const wt = document.getElementById("warning-title");
+  const wy = document.getElementById("warning-body");
+  if (result.exceeded_count > 0) {
+    wb.classList.remove("hidden");
+    const parts = result.warning_text.split("  ");
+    wt.textContent = parts[0] || "";
+    wy.innerHTML = parts.slice(1).join("<br>");
+  } else {
+    wb.classList.add("hidden");
+  }
+
+  // Breach stats
+  document.getElementById("breach-stats").innerHTML =
+    kv("Trigger", breach.trigger) +
+    kv("Peak discharge", fmt_q(breach.q_peak_m3s)) +
+    kv("Time to failure", breach.time_to_failure_min.toFixed(0) + " min") +
+    kv("Breach width", breach.breach_width_m.toFixed(0) + " m") +
+    (result.lead_to_dam_h != null ?
+      kv("Lead to 1st dam", result.lead_to_dam_h.toFixed(1) + " h") : "") +
+    (result.lead_to_town_h != null ?
+      kv("Lead to 1st town", result.lead_to_town_h.toFixed(1) + " h") : "");
+
+  // Event chain
+  const list = document.getElementById("events-list");
+  list.innerHTML = "";
+  result.events.forEach(e => {
+    const div = document.createElement("div");
+    div.className = "evt " + e.severity + (e.severity === "fail" ? " pulse" : "");
+    const sev_dot = e.severity === "fail" ? "🔴" : e.severity === "warn" ? "🟡" : "🟢";
+    div.innerHTML = `
+      <div class="evt-head">
+        <span class="evt-name">${sev_dot} ${e.asset_name}</span>
+        <span class="evt-t">T+${e.t_h.toFixed(1)}h</span>
+      </div>
+      <div class="evt-detail">${kindLabel(e.kind)}${e.people > 0 ? ` · ${e.people.toLocaleString()} people` : ""}</div>
+      <div class="evt-q"><span style="color:${e.exceeded ? "var(--sev)" : "var(--mod)"}">${fmt_q(e.q_m3s)}</span>
+        <span style="color:var(--muted)"> / bankfull ${fmt_q(e.bankfull_q_m3s)}</span></div>
+    `;
+    list.appendChild(div);
+  });
+
+  // Secondary cascade
+  const sb = document.getElementById("secondary-box");
+  const sy = document.getElementById("secondary-body");
+  if (result.secondary && result.secondary.length > 0) {
+    sb.classList.add("on");
+    sy.innerHTML = result.secondary.map(s =>
+      `<b>${s.lake.name}</b> may be overtopped — ` +
+      `${fmt_q(s.q_arriving_m3s)} arriving, ` +
+      `+${s.approx_km_from_primary.toFixed(0)} km downstream.`
+    ).join("<br><br>");
+  } else {
+    sb.classList.remove("on");
+  }
+}
+
+function badge(label, live) {
+  return `<span class="hook-badge ${live ? "hook-live" : "hook-offline"}">
+    <span class="hook-dot"></span>${label}${live ? " LIVE" : " offline"}
+  </span>`;
+}
+
+function kv(k, v) {
+  return `<span style="color:var(--muted)">${k}:</span> <b style="color:#eaf0fb">${v}</b><br>`;
+}
+
+function kindLabel(k) {
+  return {dam:"NHPC dam",town:"Downstream town",bridge:"Road/rail bridge",
+    road:"Valley road"}[k] || k;
+}
+
+function fmt_q(q) {
+  return q >= 1000 ? (q/1000).toFixed(1)+"k m³/s" : q.toFixed(0)+" m³/s";
+}
+
+function scoreColor(s) {
+  if (s >= 0.75) return "var(--sev)";
+  if (s >= 0.55) return "var(--high)";
+  if (s >= 0.35) return "var(--mod)";
+  return "var(--low)";
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Canvas — Teesta valley schematic
+// ─────────────────────────────────────────────────────────────────
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+
+function resizeCanvas() {
+  const wrap = document.getElementById("canvas-wrap");
+  cv.width = wrap.clientWidth * devicePixelRatio;
+  cv.height = wrap.clientHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  drawFrame(animT);
+}
+
+// Valley profile: vertical axis = elevation (top=high, bottom=low)
+// Horizontal axis = left to right = upstream to downstream (river km)
+//
+// We map river-km into x, elevation into y, then draw:
+//   • the valley wall profile (two lines, top and bottom)
+//   • the river as a thin blue line
+//   • lake position (upstream, left)
+//   • asset positions (circles on the river line)
+//   • animated flood wave (filled wave shape sweeping downstream)
+
+const ELEVATION_TOP = 5400;    // m — top of chart
+const ELEVATION_BOTTOM = 200;  // m — bottom of chart
+const KM_START = -5;           // small buffer before lake
+const KM_END = 240;            // furthest asset
+
+function mapX(km, W) {
+  return ((km - KM_START) / (KM_END - KM_START)) * (W - 60) + 30;
+}
+function mapY(elev, H) {
+  return ((ELEVATION_TOP - elev) / (ELEVATION_TOP - ELEVATION_BOTTOM)) * (H - 60) + 30;
+}
+
+// River elevation profile: piecewise linear along the Teesta
+// (x=km from SL01, y=elevation in m — very approximate, illustrative)
+const RIVER_PROFILE = [
+  [0, 5200], [10, 4800], [20, 4200], [30, 3600], [40, 3100],
+  [50, 2700], [60, 2300], [70, 2000], [80, 1750], [90, 1550],
+  [100, 1380], [110, 1230], [120, 1100], [130, 970], [140, 840],
+  [150, 730], [160, 640], [170, 560], [180, 480], [190, 400],
+  [200, 330], [210, 275], [220, 230], [230, 200],
+];
+
+function riverElev(km) {
+  for (let i = 1; i < RIVER_PROFILE.length; i++) {
+    const [k0, e0] = RIVER_PROFILE[i-1];
+    const [k1, e1] = RIVER_PROFILE[i];
+    if (km <= k1) {
+      const t = (km - k0) / (k1 - k0);
+      return e0 + t * (e1 - e0);
+    }
+  }
+  return RIVER_PROFILE[RIVER_PROFILE.length-1][1];
+}
+
+function startAnim() {
+  if (animAF) cancelAnimationFrame(animAF);
+  animStart = null;
+  animT = 0;
+  function frame(ts) {
+    if (!animStart) animStart = ts;
+    animT = Math.min(1, (ts - animStart) / ANIM_DURATION_MS);
+    drawFrame(animT);
+    if (animT < 1) animAF = requestAnimationFrame(frame);
+  }
+  animAF = requestAnimationFrame(frame);
+}
+
+function drawFrame(t) {
+  const W = cv.width / devicePixelRatio;
+  const H = cv.height / devicePixelRatio;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#060a14");
+  bg.addColorStop(1, "#04080f");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Valley walls (soft ridgelines)
+  drawValleyWalls(W, H);
+
+  // River bed
+  drawRiverBed(W, H);
+
+  // Flood wave up to current t
+  if (result) drawFloodWave(W, H, t);
+
+  // Asset markers
+  if (result) drawAssets(W, H, t);
+
+  // Lake marker
+  if (result) drawLake(W, H);
+
+  // Elevation axis
+  drawAxis(W, H);
+
+  // Distance labels
+  drawKmLabels(W, H);
+}
+
+function drawValleyWalls(W, H) {
+  ctx.save();
+  // Upper wall
+  ctx.beginPath();
+  ctx.moveTo(mapX(KM_START, W), 0);
+  RIVER_PROFILE.forEach(([km, elev]) => {
+    const wallElev = elev + 600 + Math.sin(km * 0.3) * 120;
+    ctx.lineTo(mapX(km, W), mapY(Math.min(ELEVATION_TOP, wallElev), H));
+  });
+  ctx.lineTo(mapX(KM_END, W), 0);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+  grad.addColorStop(0, "rgba(30,40,60,0.9)");
+  grad.addColorStop(1, "rgba(15,20,35,0.6)");
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Lower wall
+  ctx.beginPath();
+  RIVER_PROFILE.forEach(([km, elev], i) => {
+    const wallElev = elev - 300 - Math.sin(km * 0.25 + 1) * 80;
+    const x = mapX(km, W);
+    const y = mapY(Math.max(ELEVATION_BOTTOM, wallElev), H);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(mapX(KM_END, W), H);
+  ctx.lineTo(mapX(KM_START, W), H);
+  ctx.closePath();
+  const grad2 = ctx.createLinearGradient(0, H * 0.5, 0, H);
+  grad2.addColorStop(0, "rgba(20,30,50,0.7)");
+  grad2.addColorStop(1, "rgba(10,15,25,0.9)");
+  ctx.fillStyle = grad2;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawRiverBed(W, H) {
+  ctx.save();
+  ctx.beginPath();
+  RIVER_PROFILE.forEach(([km, elev], i) => {
+    const x = mapX(km, W);
+    const y = mapY(elev, H);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = "rgba(56,189,248,0.35)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawFloodWave(W, H, t) {
+  if (!result || result.events.length === 0) return;
+
+  // Find the maximum river km that the wave has reached at progress t
+  const maxT_h = result.events[result.events.length - 1].t_h;
+  const currentT_h = t * maxT_h;
+
+  // Interpolate: which km has the wave front reached?
+  // Wave front = event with t_h <= currentT_h
+  const reached = result.events.filter(e => e.t_h <= currentT_h);
+  const nextIdx = result.events.findIndex(e => e.t_h > currentT_h);
+
+  let waveKm;
+  if (reached.length === 0) {
+    waveKm = 0 + (result.events[0].river_km) * (currentT_h / result.events[0].t_h);
+  } else if (nextIdx === -1) {
+    waveKm = result.events[result.events.length - 1].river_km;
+  } else {
+    const prev = result.events[nextIdx - 1 < 0 ? 0 : nextIdx - 1];
+    const next = result.events[nextIdx];
+    const frac = (currentT_h - prev.t_h) / (next.t_h - prev.t_h);
+    waveKm = prev.river_km + frac * (next.river_km - prev.river_km);
+  }
+
+  // Draw filled flood area from lake (km=0) to waveKm
+  const lakeKm = -2;
+  ctx.save();
+  ctx.beginPath();
+  // Follow river profile from lakeKm to waveKm
+  const pts = [];
+  pts.push([mapX(lakeKm, W), mapY(riverElev(lakeKm) + 80, H)]);
+  for (let km = lakeKm; km <= waveKm; km += 2) {
+    pts.push([mapX(km, W), mapY(riverElev(km) + 60, H)]);
+  }
+  pts.push([mapX(waveKm, W), mapY(riverElev(waveKm) + 60, H)]);
+  // Return along lower edge
+  for (let km = waveKm; km >= lakeKm; km -= 2) {
+    pts.push([mapX(km, W), mapY(riverElev(km) - 20, H)]);
+  }
+
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  pts.forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+
+  const wg = ctx.createLinearGradient(
+    mapX(lakeKm, W), 0, mapX(waveKm, W), 0
+  );
+  wg.addColorStop(0, "rgba(167,139,250,0.55)");   // purple at source (GLOF)
+  wg.addColorStop(0.3, "rgba(56,189,248,0.50)");  // blue = flood water
+  wg.addColorStop(1, "rgba(56,189,248,0.18)");    // fade at front
+  ctx.fillStyle = wg;
+  ctx.fill();
+
+  // Wave front line
+  ctx.beginPath();
+  const frontX = mapX(waveKm, W);
+  const topY = mapY(riverElev(waveKm) + 80, H);
+  const botY = mapY(riverElev(waveKm) - 20, H);
+  ctx.moveTo(frontX, topY);
+  ctx.lineTo(frontX, botY);
+  ctx.strokeStyle = "rgba(56,189,248,0.9)";
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Speed label at wave front
+  ctx.fillStyle = "rgba(56,189,248,0.95)";
+  ctx.font = "bold 11px 'Avenir Next', system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("▶ wave front", frontX, topY - 8);
+
+  ctx.restore();
+}
+
+function drawAssets(W, H, t) {
+  if (!result) return;
+  const maxT_h = result.events[result.events.length - 1].t_h;
+  const currentT_h = t * maxT_h;
+
+  result.events.forEach(e => {
+    const km = e.river_km;
+    const x = mapX(km, W);
+    const elev = riverElev(km);
+    const y = mapY(elev, H);
+    const hit = e.t_h <= currentT_h;
+    const color = hit
+      ? (e.severity === "fail" ? "#ef4444" : "#f59e0b")
+      : "rgba(100,120,160,0.7)";
+
+    // Vertical marker line from river to label
+    ctx.save();
+    ctx.strokeStyle = hit ? color : "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y - 35);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Circle marker
+    ctx.beginPath();
+    ctx.arc(x, y, hit ? 6 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    if (hit && e.severity === "fail") {
+      ctx.shadowColor = "#ef4444";
+      ctx.shadowBlur = 12;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.fillStyle = hit ? "#fff" : "rgba(160,175,200,0.7)";
+    ctx.font = hit ? "bold 10px 'Avenir Next',system-ui" : "10px 'Avenir Next',system-ui";
+    ctx.textAlign = "center";
+    const shortName = e.asset_name.split(" ")[0] + (e.asset_name.split(" ").length > 1 ? " " + e.asset_name.split(" ").slice(1,3).join(" ") : "");
+    ctx.fillText(shortName, x, y - 42);
+    if (hit) {
+      ctx.fillStyle = "rgba(56,189,248,0.9)";
+      ctx.font = "10px 'Avenir Next',system-ui";
+      ctx.fillText(`T+${e.t_h.toFixed(1)}h`, x, y - 52);
+    }
+    ctx.restore();
+  });
+}
+
+function drawLake(W, H) {
+  if (!result) return;
+  const lake = result.lake;
+  const x = mapX(-2, W);
+  const y = mapY(lake.elevation_m, H);
+  const score = result.instability;
+  const color = scoreColor(score);
+
+  ctx.save();
+  // Lake shape (triangle pointing down = glacier + lake below)
+  ctx.beginPath();
+  ctx.moveTo(x, y - 18);
+  ctx.lineTo(x + 14, y + 6);
+  ctx.lineTo(x - 14, y + 6);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 18;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 10px 'Avenir Next',system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(lake.name, x, y + 22);
+  ctx.fillStyle = "rgba(200,210,230,0.7)";
+  ctx.font = "9px 'Avenir Next',system-ui";
+  ctx.fillText(`${(lake.volume_m3/1e6).toFixed(1)} Mm³`, x, y + 33);
+
+  // Instability ring
+  ctx.beginPath();
+  ctx.arc(x, y - 7, 20, -Math.PI/2, -Math.PI/2 + 2 * Math.PI * result.instability);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawAxis(W, H) {
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  [1000, 2000, 3000, 4000, 5000].forEach(e => {
+    const y = mapY(e, H);
+    ctx.beginPath();
+    ctx.moveTo(20, y);
+    ctx.lineTo(W - 20, y);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "9px 'Avenir Next',system-ui";
+    ctx.textAlign = "right";
+    ctx.fillText(e >= 1000 ? (e/1000).toFixed(0)+"k m" : e+"m", 25, y + 3);
+  });
+  ctx.restore();
+}
+
+function drawKmLabels(W, H) {
+  ctx.save();
+  [0, 50, 100, 150, 200].forEach(km => {
+    const x = mapX(km, W);
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, 20);
+    ctx.lineTo(x, H - 20);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "9px 'Avenir Next',system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(km + " km", x, H - 22);
+  });
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.font = "9px 'Avenir Next',system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("← Upstream (Sikkim glaciers)    River distance from breach (km)    Downstream (West Bengal) →", W / 2, H - 10);
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>

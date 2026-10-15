@@ -1,0 +1,287 @@
+{
+ "SLK": {
+  "name": "South Lhonak",
+  "lat": 27.915,
+  "lon": 88.192,
+  "series": [
+   {
+    "year": 2016,
+    "scenes": 4,
+    "area_km2": 1.5114
+   },
+   {
+    "year": 2017,
+    "scenes": 4,
+    "area_km2": 1.4383
+   },
+   {
+    "year": 2018,
+    "scenes": 7,
+    "area_km2": 1.5635
+   },
+   {
+    "year": 2019,
+    "scenes": 10,
+    "area_km2": 1.563
+   },
+   {
+    "year": 2020,
+    "scenes": 11,
+    "area_km2": 1.6353
+   },
+   {
+    "year": 2021,
+    "scenes": 9,
+    "area_km2": 1.6572
+   },
+   {
+    "year": 2022,
+    "scenes": 18,
+    "area_km2": 1.7066
+   },
+   {
+    "year": 2023,
+    "scenes": 18,
+    "area_km2": 1.5443
+   },
+   {
+    "year": 2024,
+    "scenes": 15,
+    "area_km2": 1.4955
+   },
+   {
+    "year": 2025,
+    "scenes": 24,
+    "area_km2": 1.4884
+   }
+  ]
+ },
+ "SHK": {
+  "name": "Shako Chho",
+  "lat": 27.88,
+  "lon": 88.34,
+  "series": [
+   {
+    "year": 2016,
+    "scenes": 4,
+    "area_km2": 0.001
+   },
+   {
+    "year": 2017,
+    "scenes": 4,
+    "area_km2": 0.0006
+   },
+   {
+    "year": 2018,
+    "scenes": 7,
+    "area_km2": 0
+   },
+   {
+    "year": 2019,
+    "scenes": 10,
+    "area_km2": 0.0011
+   },
+   {
+    "year": 2020,
+    "scenes": 11,
+    "area_km2": 0.0002
+   },
+   {
+    "year": 2021,
+    "scenes": 9,
+    "area_km2": 0.0093
+   },
+   {
+    "year": 2022,
+    "scenes": 18,
+    "area_km2": 0.0005
+   },
+   {
+    "year": 2023,
+    "scenes": 18,
+    "area_km2": 0
+   },
+   {
+    "year": 2024,
+    "scenes": 15,
+    "area_km2": 0.0008
+   },
+   {
+    "year": 2025,
+    "scenes": 24,
+    "area_km2": 0.0045
+   }
+  ]
+ },
+ "GRL": {
+  "name": "Gurudongmar group",
+  "lat": 28.02,
+  "lon": 88.71,
+  "series": [
+   {
+    "year": 2016,
+    "scenes": 6,
+    "area_km2": 2.5466
+   },
+   {
+    "year": 2017,
+    "scenes": 8,
+    "area_km2": 2.5347
+   },
+   {
+    "year": 2018,
+    "scenes": 14,
+    "area_km2": 2.4971
+   },
+   {
+    "year": 2019,
+    "scenes": 18,
+    "area_km2": 2.5288
+   },
+   {
+    "year": 2020,
+    "scenes": 19,
+    "area_km2": 2.5164
+   },
+   {
+    "year": 2021,
+    "scenes": 19,
+    "area_km2": 2.5883
+   },
+   {
+    "year": 2022,
+    "scenes": 20,
+    "area_km2": 2.4996
+   },
+   {
+    "year": 2023,
+    "scenes": 25,
+    "area_km2": 2.4923
+   },
+   {
+    "year": 2024,
+    "scenes": 17,
+    "area_km2": 2.5628
+   },
+   {
+    "year": 2025,
+    "scenes": 27,
+    "area_km2": 2.5841
+   }
+  ]
+ },
+ "TSO": {
+  "name": "Tso Lhamo",
+  "lat": 28.03,
+  "lon": 88.83,
+  "series": [
+   {
+    "year": 2016,
+    "scenes": 6,
+    "area_km2": 0.0012
+   },
+   {
+    "year": 2017,
+    "scenes": 8,
+    "area_km2": 0
+   },
+   {
+    "year": 2018,
+    "scenes": 14,
+    "area_km2": 0
+   },
+   {
+    "year": 2019,
+    "scenes": 18,
+    "area_km2": 0.0009
+   },
+   {
+    "year": 2020,
+    "scenes": 19,
+    "area_km2": 0.0003
+   },
+   {
+    "year": 2021,
+    "scenes": 19,
+    "area_km2": 0.0109
+   },
+   {
+    "year": 2022,
+    "scenes": 20,
+    "area_km2": 0.005
+   },
+   {
+    "year": 2023,
+    "scenes": 25,
+    "area_km2": 0.0004
+   },
+   {
+    "year": 2024,
+    "scenes": 17,
+    "area_km2": 0.0032
+   },
+   {
+    "year": 2025,
+    "scenes": 27,
+    "area_km2": 0.0024
+   }
+  ]
+ },
+ "KHG": {
+  "name": "Khangchung Chho",
+  "lat": 27.76,
+  "lon": 88.76,
+  "series": [
+   {
+    "year": 2016,
+    "scenes": 2,
+    "area_km2": 0
+   },
+   {
+    "year": 2017,
+    "scenes": 3,
+    "area_km2": 0
+   },
+   {
+    "year": 2018,
+    "scenes": 4,
+    "area_km2": 0
+   },
+   {
+    "year": 2019,
+    "scenes": 7,
+    "area_km2": 0.002
+   },
+   {
+    "year": 2020,
+    "scenes": 7,
+    "area_km2": 0.0001
+   },
+   {
+    "year": 2021,
+    "scenes": 6,
+    "area_km2": 0
+   },
+   {
+    "year": 2022,
+    "scenes": 9,
+    "area_km2": 0
+   },
+   {
+    "year": 2023,
+    "scenes": 10,
+    "area_km2": 0
+   },
+   {
+    "year": 2024,
+    "scenes": 6,
+    "area_km2": 0
+   },
+   {
+    "year": 2025,
+    "scenes": 13,
+    "area_km2": 0
+   }
+  ]
+ }
+}

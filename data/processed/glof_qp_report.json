@@ -1,0 +1,78 @@
+{
+ "results": [
+  {
+   "model": "power law on volume",
+   "median_factor_error": 2.17,
+   "mae_log10": 0.4425,
+   "r2_log10": 0.4606,
+   "within_2x_pct": 46.8,
+   "within_5x_pct": 78.6
+  },
+  {
+   "model": "Froehlich (shipped)",
+   "median_factor_error": 9.58,
+   "mae_log10": 0.9874,
+   "r2_log10": -1.1279,
+   "within_2x_pct": 10.3,
+   "within_5x_pct": 34.9
+  },
+  {
+   "model": "learned, operational",
+   "median_factor_error": 1.52,
+   "mae_log10": 0.2958,
+   "r2_log10": 0.7197,
+   "within_2x_pct": 65.1,
+   "within_5x_pct": 90.5
+  },
+  {
+   "model": "learned + hindsight mechanism",
+   "median_factor_error": 1.52,
+   "mae_log10": 0.295,
+   "r2_log10": 0.7192,
+   "within_2x_pct": 63.5,
+   "within_5x_pct": 89.7
+  }
+ ],
+ "hma": {
+  "n": 29,
+  "power_law": {
+   "model": "power law",
+   "median_factor_error": 2.49,
+   "mae_log10": 0.4482,
+   "r2_log10": -0.1954,
+   "within_2x_pct": 37.9,
+   "within_5x_pct": 82.8
+  },
+  "froehlich": {
+   "model": "Froehlich",
+   "median_factor_error": 3.75,
+   "mae_log10": 0.6805,
+   "r2_log10": -1.6498,
+   "within_2x_pct": 17.2,
+   "within_5x_pct": 58.6
+  },
+  "learned": {
+   "model": "learned, operational",
+   "median_factor_error": 1.27,
+   "mae_log10": 0.1582,
+   "r2_log10": 0.8177,
+   "within_2x_pct": 86.2,
+   "within_5x_pct": 100.0
+  }
+ },
+ "south_lhonak": {
+  "volume_mcm": 52.9,
+  "learned_qp": 7676,
+  "power_law_qp": 602,
+  "froehlich_qp": 5028,
+  "published_range": "5,000-7,000 m3/s at Chungthang"
+ },
+ "n_events": 502,
+ "n_train": 376,
+ "n_test": 126,
+ "power_law": {
+  "a": -1.0380628557888472,
+  "b": 0.4943317593602021
+ },
+ "source": "Lutzow, N. & Veh, G. (2023) Glacier Lake Outburst Flood Database V3.1, Zenodo 7924369, CC-BY-4.0"
+}
