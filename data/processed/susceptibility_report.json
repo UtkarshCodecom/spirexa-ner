@@ -1,0 +1,233 @@
+{
+ "results": {
+  "random_all": {
+   "label": "all features",
+   "auc": 0.9512,
+   "accuracy": 0.8917,
+   "precision": 0.8773,
+   "recall": 0.8354,
+   "f1": 0.8558,
+   "tp": 1294,
+   "fp": 181,
+   "fn": 255,
+   "tn": 2296,
+   "n_train": 16100,
+   "n_test": 4026
+  },
+  "random_no_road": {
+   "label": "without road distance",
+   "auc": 0.8853,
+   "accuracy": 0.8053,
+   "precision": 0.7354,
+   "recall": 0.7715,
+   "f1": 0.753,
+   "tp": 1195,
+   "fp": 430,
+   "fn": 354,
+   "tn": 2047,
+   "n_train": 16100,
+   "n_test": 4026
+  },
+  "spatial_all": {
+   "label": "all features",
+   "auc": 0.9369,
+   "accuracy": 0.8748,
+   "precision": 0.8857,
+   "recall": 0.7661,
+   "f1": 0.8216,
+   "tp": 1186,
+   "fp": 153,
+   "fn": 362,
+   "tn": 2414,
+   "n_train": 16011,
+   "n_test": 4115
+  },
+  "spatial_no_road": {
+   "label": "without road distance",
+   "auc": 0.8622,
+   "accuracy": 0.791,
+   "precision": 0.7679,
+   "recall": 0.637,
+   "f1": 0.6963,
+   "tp": 986,
+   "fp": 298,
+   "fn": 562,
+   "tn": 2269,
+   "n_train": 16011,
+   "n_test": 4115
+  },
+  "matched_slope": {
+   "label": "slope-matched, no road",
+   "auc": 0.8454,
+   "accuracy": 0.7503,
+   "precision": 0.8233,
+   "recall": 0.6517,
+   "f1": 0.7275,
+   "tp": 1048,
+   "fp": 225,
+   "fn": 560,
+   "tn": 1311,
+   "n_train": 12107,
+   "n_test": 3144
+  },
+  "matched_road": {
+   "label": "road-matched, all features",
+   "auc": 0.8975,
+   "accuracy": 0.8185,
+   "precision": 0.9068,
+   "recall": 0.8349,
+   "f1": 0.8694,
+   "tp": 1381,
+   "fp": 142,
+   "fn": 273,
+   "tn": 490,
+   "n_train": 8694,
+   "n_test": 2286
+  }
+ },
+ "importance": [
+  {
+   "feature": "dist_road_m",
+   "importance": 0.3293
+  },
+  {
+   "feature": "dist_major_road_m",
+   "importance": 0.12069
+  },
+  {
+   "feature": "ndvi",
+   "importance": 0.05562
+  },
+  {
+   "feature": "cop_slope",
+   "importance": 0.03388
+  },
+  {
+   "feature": "tri",
+   "importance": 0.02459
+  },
+  {
+   "feature": "frac_built",
+   "importance": 0.0239
+  },
+  {
+   "feature": "forest_loss_frac_mean",
+   "importance": 0.02352
+  },
+  {
+   "feature": "rain_annual_mm",
+   "importance": 0.0229
+  },
+  {
+   "feature": "slope",
+   "importance": 0.02127
+  },
+  {
+   "feature": "cop_slope_mean",
+   "importance": 0.02092
+  },
+  {
+   "feature": "forest_loss_year_max",
+   "importance": 0.01825
+  },
+  {
+   "feature": "cop_elevation",
+   "importance": 0.01817
+  },
+  {
+   "feature": "elevation_max",
+   "importance": 0.01815
+  },
+  {
+   "feature": "slope_mean",
+   "importance": 0.01808
+  },
+  {
+   "feature": "slope_max",
+   "importance": 0.01757
+  },
+  {
+   "feature": "elevation",
+   "importance": 0.0172
+  },
+  {
+   "feature": "relief",
+   "importance": 0.01707
+  },
+  {
+   "feature": "elevation_min",
+   "importance": 0.01707
+  },
+  {
+   "feature": "frac_tree",
+   "importance": 0.01529
+  },
+  {
+   "feature": "mtpi",
+   "importance": 0.0152
+  },
+  {
+   "feature": "hnd",
+   "importance": 0.01508
+  },
+  {
+   "feature": "upa",
+   "importance": 0.01402
+  },
+  {
+   "feature": "curvature",
+   "importance": 0.01376
+  },
+  {
+   "feature": "twi",
+   "importance": 0.01364
+  },
+  {
+   "feature": "curvature_mean",
+   "importance": 0.0136
+  },
+  {
+   "feature": "tpi",
+   "importance": 0.01277
+  },
+  {
+   "feature": "aspect",
+   "importance": 0.01133
+  },
+  {
+   "feature": "cop_aspect",
+   "importance": 0.01115
+  },
+  {
+   "feature": "soil_bulkdens",
+   "importance": 0.01097
+  },
+  {
+   "feature": "soil_sand",
+   "importance": 0.00867
+  },
+  {
+   "feature": "soil_clay",
+   "importance": 0.00783
+  },
+  {
+   "feature": "soil_carbon",
+   "importance": 0.00748
+  },
+  {
+   "feature": "frac_bare_crop",
+   "importance": 0.00574
+  },
+  {
+   "feature": "landform",
+   "importance": 0.0041
+  },
+  {
+   "feature": "soil_texture",
+   "importance": 0.00119
+  }
+ ],
+ "n_points": 20126,
+ "n_slides": 7741,
+ "block_deg": 0.25
+}
