@@ -50,6 +50,35 @@ private fun SeverityPill(severity: String, percent: Int?) {
     }
 }
 
+/**
+ * What to do here, which is the rainfall score crossed with the ground.
+ *
+ * A percentage tells a field officer how worried the model is. It does not
+ * tell them whether to drive out. ACT means the rain is triggering *and* the
+ * slope is the kind that fails; WATCH means the rain is real but this ground
+ * has no terrain signature of failing, and is the one that saves the trip.
+ */
+@Composable
+private fun ActionChip(action: String, compact: Boolean = false) {
+    val c = when (action) {
+        "ACT" -> Spx.Severe
+        "PREPARE" -> Spx.High
+        "WATCH" -> Spx.Moderate
+        else -> Spx.Faint
+    }
+    Text(
+        action,
+        color = c,
+        fontSize = if (compact) 8.5.sp else 10.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.7.sp,
+        modifier = Modifier
+            .background(c.copy(alpha = 0.15f), RoundedCornerShape(50))
+            .padding(horizontal = if (compact) 6.dp else 9.dp,
+                     vertical = if (compact) 2.dp else 4.dp),
+    )
+}
+
 /** Left edge painted in the severity colour -- readable before any text is. */
 @Composable
 private fun SeverityEdge(severity: String, height: Dp = 0.dp) {
@@ -199,8 +228,15 @@ fun MapScreen(geo: Geo?, hotspots: List<Hotspot>, loading: Boolean) {
         Spacer(Modifier.height(14.dp))
         ScreenTitle(
             "Risk map",
-            if (hotspots.isEmpty()) "waiting for the server"
-            else "${hotspots.size} monitored slopes · ${hotspots.count { it.risk >= 0.5 }} above the alert line",
+            when {
+                hotspots.isEmpty() -> "waiting for the server"
+                hotspots.any { it.action != null } ->
+                    "${hotspots.size} monitored slopes · " +
+                        "${hotspots.count { it.risk >= 0.5 }} above the alert line · " +
+                        "${hotspots.count { it.action == "ACT" }} worth going to"
+                else -> "${hotspots.size} monitored slopes · " +
+                    "${hotspots.count { it.risk >= 0.5 }} above the alert line"
+            },
         )
         Spacer(Modifier.height(14.dp))
 
@@ -264,6 +300,7 @@ fun MapScreen(geo: Geo?, hotspots: List<Hotspot>, loading: Boolean) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             SeverityPill(h.severity, h.riskPercent)
+                            h.action?.let { Spacer(Modifier.width(7.dp)); ActionChip(it) }
                             Spacer(Modifier.weight(1f))
                             Text("tap to dismiss", fontSize = 9.5.sp, color = Spx.Faint)
                         }
@@ -274,6 +311,26 @@ fun MapScreen(geo: Geo?, hotspots: List<Hotspot>, loading: Boolean) {
                             "${h.state}  ·  ${"%.3f".format(h.lat)}, ${"%.3f".format(h.lon)}",
                             fontSize = 11.sp, color = Spx.Muted,
                         )
+                        // The two scores are different questions, so they are
+                        // labelled as different questions rather than averaged
+                        // into one number that means neither. Where the two
+                        // ground models disagree by a lot the road-cut number
+                        // is shown as well, because otherwise "ground 23%" on
+                        // a slope marked ACT reads as a contradiction rather
+                        // than as the diagnosis it is.
+                        h.groundPercent?.let { g ->
+                            val road = h.susceptibility?.let {
+                                Math.round(it * 100).toInt()
+                            }
+                            val wide = road != null && road - g >= 25
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "rain today ${h.riskPercent}%   ·   slope ${g}%" +
+                                    (if (wide) "   ·   at the road cut ${road}%" else "") +
+                                    (h.groundLabel?.let { "\n$it" } ?: ""),
+                                fontSize = 10.5.sp, color = Spx.Muted, lineHeight = 15.sp,
+                            )
+                        }
                     }
                 }
             }
@@ -287,7 +344,13 @@ fun MapScreen(geo: Geo?, hotspots: List<Hotspot>, loading: Boolean) {
             contentPadding = PaddingValues(bottom = 18.dp),
             modifier = Modifier.weight(1f),
         ) {
-            items(hotspots.sortedByDescending { it.risk }.take(40), key = { it.id }) { h ->
+            // Sorted by what to do before how high the number is: a 92% on
+            // ground that does not fail should not sit above a 61% on ground
+            // that does. Falls back to pure risk when nothing is scored.
+            val ordered = hotspots.sortedWith(
+                compareBy<Hotspot> { it.priority }.thenByDescending { it.risk }
+            ).take(40)
+            items(ordered, key = { it.id }) { h ->
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -302,7 +365,13 @@ fun MapScreen(geo: Geo?, hotspots: List<Hotspot>, loading: Boolean) {
                     Column(Modifier.weight(1f)) {
                         Text(h.location.ifBlank { h.id }, fontSize = 13.sp,
                              color = Spx.Ink, maxLines = 1)
-                        Text(h.state, fontSize = 10.sp, color = Spx.Faint)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(h.state, fontSize = 10.sp, color = Spx.Faint)
+                            h.action?.let {
+                                Spacer(Modifier.width(6.dp))
+                                ActionChip(it, compact = true)
+                            }
+                        }
                     }
                     Text(
                         "${h.riskPercent}%",

@@ -4,6 +4,10 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+/** A number the server may simply not send, kept apart from a real zero. */
+private fun JSONObject.optDoubleOrNull(key: String): Double? =
+    if (has(key) && !isNull(key)) optDouble(key).takeIf { !it.isNaN() } else null
+
 /**
  * Talks to the SPIREXA server over the local network.
  *
@@ -53,6 +57,14 @@ object Api {
                     lat = o.optDouble("lat", 0.0),
                     lon = o.optDouble("lon", 0.0),
                     risk = o.optDouble("live_risk", 0.0),
+                    // sent only when the hotspots have been scored for
+                    // susceptibility; absent on an older server
+                    susceptibility = o.optDoubleOrNull("susceptibility"),
+                    susceptibilityTerrainOnly =
+                        o.optDoubleOrNull("susceptibility_terrain_only"),
+                    ground = o.optString("ground").takeIf { it.isNotBlank() },
+                    groundLabel = o.optString("ground_label").takeIf { it.isNotBlank() },
+                    action = o.optString("action").takeIf { it.isNotBlank() },
                 )
             )
         }
