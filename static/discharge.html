@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPIREXA — Discharge Forecast</title>
+<style>
+  :root{
+    --ink:#0e1420; --muted:#7d8798; --accent:#5b8cff;
+    --low:#22c55e; --mod:#f59e0b; --high:#f97316; --sev:#ef4444;
+    --water:#38bdf8; --physics:#a78bfa;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%;background:#05070c;
+    font-family:"Avenir Next","Helvetica Neue",system-ui,sans-serif;color:#eaf0fb}
+
+  .panel{
+    backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.16);border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+  h2{font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin-bottom:11px}
+
+  /* ---- layout ---- */
+  #page{display:grid;grid-template-columns:290px 1fr 290px;
+    gap:12px;padding:18px;min-height:100vh;align-items:start}
+
+  /* ---- left: controls ---- */
+  #left{display:flex;flex-direction:column;gap:10px}
+  #left .panel{padding:15px 17px}
+
+  /* current state */
+  #state-big{font-size:44px;font-weight:600;font-variant-numeric:tabular-nums;
+    line-height:1;transition:color .35s}
+  #state-unit{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.1em}
+  #api-row{display:flex;gap:14px;margin-top:12px;padding-top:11px;
+    border-top:1px solid rgba(255,255,255,.1)}
+  .api-kv{flex:1}
+  .api-kv .val{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+  .api-kv .lbl{font-size:10px;color:var(--muted);margin-top:2px}
+
+  /* scenario buttons */
+  .btn-group{display:flex;gap:6px}
+  .btn{flex:1;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;
+    border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);
+    color:#c9d3e4;cursor:pointer;transition:all .2s}
+  .btn.active,.btn:hover{background:rgba(91,140,255,.25);color:#fff;
+    border-color:rgba(91,140,255,.4)}
+  .btn.monsoon.active{background:rgba(56,189,248,.22);color:#7dd3fc;
+    border-color:rgba(56,189,248,.4)}
+  .btn.dry.active{background:rgba(34,197,94,.18);color:#86efac;
+    border-color:rgba(34,197,94,.35)}
+
+  /* sliders */
+  .ctl{margin-bottom:12px}
+  .ctl label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+  .ctl label span:last-child{color:var(--accent);font-weight:600;
+    font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:5px;
+    background:rgba(255,255,255,.18);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--accent);cursor:pointer;
+    box-shadow:0 0 0 3px rgba(91,140,255,.22)}
+
+  /* physics note */
+  .phys-note{font-size:10px;color:var(--muted);line-height:1.55;
+    padding:10px 12px;border-radius:10px;background:rgba(167,139,250,.08);
+    border:1px solid rgba(167,139,250,.2)}
+  .phys-note b{color:var(--physics)}
+
+  /* model metrics */
+  .metric-row{display:flex;justify-content:space-between;font-size:11.5px;
+    padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .metric-row:last-child{border-bottom:none}
+  .metric-row span:first-child{color:var(--muted)}
+  .metric-row b{font-variant-numeric:tabular-nums}
+
+  /* ---- center: forecast chart ---- */
+  #center{display:flex;flex-direction:column;gap:10px}
+  #chart-wrap{border-radius:18px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.3);
+    position:relative}
+  canvas{display:block;width:100%}
+  #chart-title{position:absolute;top:14px;left:18px;
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:rgba(255,255,255,.4);font-weight:600}
+
+  /* warning banner */
+  #flood-banner{padding:13px 18px;border-radius:14px;display:none;
+    border:1px solid rgba(239,68,68,.4);background:rgba(28,8,10,.72)}
+  #flood-banner.on{display:block}
+  #flood-banner-title{font-size:14px;font-weight:600;color:#f87171;margin-bottom:4px}
+  #flood-banner-body{font-size:11.5px;color:#fca5a5;line-height:1.6}
+
+  /* 7-day cards */
+  #cards{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .day-card{border-radius:12px;padding:10px 8px;text-align:center;
+    border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+    transition:border-color .3s,background .3s}
+  .day-card.low{border-color:rgba(34,197,94,.3)}
+  .day-card.moderate{border-color:rgba(245,158,11,.35);background:rgba(38,28,10,.5)}
+  .day-card.high{border-color:rgba(239,68,68,.4);background:rgba(30,10,10,.6)}
+  .day-card.severe{border-color:rgba(239,68,68,.6);background:rgba(45,5,5,.7);
+    animation:cardpulse 1.4s ease-in-out infinite}
+  @keyframes cardpulse{50%{box-shadow:0 0 0 3px rgba(239,68,68,.18)}}
+  .day-lbl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:6px}
+  .day-q{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+  .day-unit{font-size:9px;color:var(--muted)}
+  .day-band{font-size:10px;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .day-range{font-size:9.5px;color:var(--muted);margin-top:3px;
+    font-variant-numeric:tabular-nums}
+  .band-low{color:var(--low)} .band-moderate{color:var(--mod)}
+  .band-high{color:var(--high)} .band-severe{color:var(--sev)}
+
+  /* ---- right: attribution + metrics ---- */
+  #right{display:flex;flex-direction:column;gap:10px}
+  #right .panel{padding:15px 17px}
+
+  /* attribution bars */
+  #attr-list{display:flex;flex-direction:column;gap:6px}
+  .attr-row{display:grid;grid-template-columns:1fr 100px 40px;
+    align-items:center;gap:8px;font-size:11px}
+  .attr-name{color:#c9d3e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .attr-bar-wrap{height:5px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}
+  .attr-bar{height:100%;border-radius:5px;transition:width .6s ease}
+  .attr-physics{background:var(--physics)}
+  .attr-rain{background:var(--water)}
+  .attr-q{background:var(--accent)}
+  .attr-season{background:#fb923c}
+  .attr-val{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;
+    font-size:10.5px}
+
+  /* model info */
+  #model-info{font-size:11px;color:#c9d3e4;line-height:1.7}
+  #model-info b{color:#eaf0fb}
+</style>
+</head>
+<body>
+<div id="page">
+
+<!-- ── LEFT CONTROLS ─────────────────────────────────────────── -->
+<div id="left">
+
+  <div class="panel">
+    <h2>Current Conditions · Teesta at Gajoldoba</h2>
+    <div id="state-big" style="color:var(--low)">—</div>
+    <div id="state-unit">m³/s observed discharge</div>
+    <div id="api-row">
+      <div class="api-kv">
+        <div class="val" id="api-val">—</div>
+        <div class="lbl">API (30d)</div>
+      </div>
+      <div class="api-kv">
+        <div class="val" id="cn-val">—</div>
+        <div class="lbl">Effective CN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Scenario</h2>
+    <div class="btn-group" style="margin-bottom:12px">
+      <button class="btn dry" data-sc="dry">Dry</button>
+      <button class="btn active" data-sc="normal">Normal</button>
+      <button class="btn monsoon" data-sc="monsoon">Monsoon</button>
+    </div>
+    <div class="ctl">
+      <label>
+        <span>Today's rain (mm)</span>
+        <span id="rain-today-val">10</span>
+      </label>
+      <input type="range" id="rain-today" min="0" max="200" step="1" value="10">
+    </div>
+    <div class="ctl">
+      <label>
+        <span>7-day antecedent rain (mm)</span>
+        <span id="rain-7d-val">45</span>
+      </label>
+      <input type="range" id="rain-7d" min="0" max="400" step="5" value="45">
+    </div>
+    <div class="ctl">
+      <label>
+        <span>Current discharge (m³/s)</span>
+        <span id="q-now-val">200</span>
+      </label>
+      <input type="range" id="q-now" min="10" max="5000" step="10" value="200">
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="phys-note">
+      <b>Physics-informed</b> — the WCN (Weighted Curve Number) engine computes
+      direct runoff from today's rainfall and antecedent moisture condition.
+      That estimate is a feature in the gradient-boosting model alongside
+      discharge lags and seasonal encodings.<br><br>
+      <b>API</b> (Antecedent Precipitation Index) is the top weather predictor —
+      it captures soil memory that a single-day rainfall feature misses.
+    </div>
+  </div>
+
+  <div class="panel" id="metrics-panel">
+    <h2>Model Accuracy (log scale)</h2>
+    <div id="metrics-list">—</div>
+  </div>
+
+</div>
+
+<!-- ── CENTER CHART ──────────────────────────────────────────── -->
+<div id="center">
+
+  <div id="flood-banner">
+    <div id="flood-banner-title">—</div>
+    <div id="flood-banner-body">—</div>
+  </div>
+
+  <div id="chart-wrap" class="panel" style="padding:0">
+    <div id="chart-title">7-DAY DISCHARGE FORECAST · TEESTA BASIN</div>
+    <canvas id="cv"></canvas>
+  </div>
+
+  <div id="cards"></div>
+
+</div>
+
+<!-- ── RIGHT ATTRIBUTION ─────────────────────────────────────── -->
+<div id="right">
+
+  <div class="panel">
+    <h2>Feature Attribution (permutation importance)</h2>
+    <div id="attr-list">—</div>
+  </div>
+
+  <div class="panel">
+    <h2>About this model</h2>
+    <div id="model-info">
+      <b>Architecture:</b> HistGradientBoosting (sklearn XGBoost-equivalent)<br>
+      <b>Target:</b> log₁p(discharge) → back-transformed at inference<br>
+      <b>Horizons:</b> +1 to +7 days, separate model per horizon<br>
+      <b>Uncertainty:</b> p10/p90 quantile regression<br>
+      <b>Training data:</b> 12 years synthetic (WCN physics + AR noise)<br><br>
+      <b>LSTM / KAN upgrade:</b> the feature matrix is already structured
+      for sequence models. Replace HGBR with a PyTorch LSTM or KAN
+      (see src/discharge.py, "LSTM / KAN upgrade path").<br><br>
+      <b>Real data integration:</b> swap <code>generate_training_data()</code>
+      for an IMD/CHIRPS + CWC WRIS gauge loader (see scripts/train_discharge.py).
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────
+let result = null;
+let metrics = null;
+let importance = null;
+let scenario = "normal";
+
+const DAYS = ["Today+1","Today+2","Today+3","Today+4","Today+5","Today+6","Today+7"];
+const RISK_COLORS = {low:"#22c55e", moderate:"#f59e0b", high:"#f97316", severe:"#ef4444"};
+const BANKFULL = 3800;
+
+// ─────────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────────
+async function boot() {
+  setupControls();
+  await loadMetrics();
+  await run();
+  window.addEventListener("resize", () => { resizeCanvas(); drawChart(); });
+}
+
+function setupControls() {
+  document.querySelectorAll("[data-sc]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-sc]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      scenario = btn.dataset.sc;
+      // Set slider defaults
+      const presets = {
+        dry:  {rain: 2,  rain7: 10, q: 40},
+        normal: {rain: 10, rain7: 45, q: 200},
+        monsoon: {rain: 80, rain7: 250, q: 1800},
+      };
+      const p = presets[scenario];
+      document.getElementById("rain-today").value = p.rain;
+      document.getElementById("rain-7d").value = p.rain7;
+      document.getElementById("q-now").value = p.q;
+      updateLabels();
+      run();
+    });
+  });
+
+  ["rain-today","rain-7d","q-now"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      updateLabels();
+      run();
+    });
+  });
+
+  updateLabels();
+}
+
+function updateLabels() {
+  document.getElementById("rain-today-val").textContent =
+    document.getElementById("rain-today").value;
+  document.getElementById("rain-7d-val").textContent =
+    document.getElementById("rain-7d").value;
+  document.getElementById("q-now-val").textContent =
+    document.getElementById("q-now").value;
+}
+
+async function loadMetrics() {
+  try {
+    const r = await fetch("/api/discharge/metrics");
+    const d = await r.json();
+    metrics = d.metrics;
+    importance = d.importance;
+    renderMetrics();
+    renderAttribution();
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────────
+// API call
+// ─────────────────────────────────────────────────────────────────
+let pending = null;
+async function run() {
+  const rainToday = parseFloat(document.getElementById("rain-today").value);
+  const rain7d = parseFloat(document.getElementById("rain-7d").value);
+  const qNow = parseFloat(document.getElementById("q-now").value);
+
+  // Build synthetic 30-day history from sliders
+  const rain = buildRainHistory(rainToday, rain7d);
+  const q = buildQHistory(qNow);
+
+  const params = new URLSearchParams({
+    rain: rain.join(","),
+    q: q.join(","),
+  });
+
+  if (pending) pending._cancel = true;
+  const token = { _cancel: false };
+  pending = token;
+
+  try {
+    const resp = await fetch(`/api/discharge?${params}`);
+    if (token._cancel) return;
+    result = await resp.json();
+    if (result.importance) {
+      importance = result.importance;
+      renderAttribution();
+    }
+    renderState();
+    resizeCanvas();
+    drawChart();
+    renderCards();
+    renderFloodBanner();
+  } catch(e) { console.error(e); }
+}
+
+function buildRainHistory(rainToday, rain7d) {
+  // last 30 days: older days have less rain, ramp up over last 7 days
+  const base = Math.max(0, (rain7d - rainToday) / 6);
+  const rain = [];
+  for (let i = 0; i < 23; i++) rain.push(Math.max(0, base * 0.5 + Math.random() * base * 0.2));
+  for (let i = 0; i < 6; i++) rain.push(Math.max(0, base + Math.random() * 5));
+  rain.push(rainToday);
+  return rain;
+}
+
+function buildQHistory(qNow) {
+  const q = [];
+  for (let i = 29; i > 0; i--) {
+    q.push(Math.max(10, qNow * (0.8 + 0.2 * Math.random()) * (1 - i * 0.005)));
+  }
+  q.push(qNow);
+  return q;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────────────────────────
+function renderState() {
+  if (!result) return;
+  const q = result.current_q;
+  const el = document.getElementById("state-big");
+  el.textContent = fmtQ(q);
+  el.style.color = riskColor(q, BANKFULL);
+  document.getElementById("api-val").textContent = result.current_api.toFixed(0);
+  document.getElementById("cn-val").textContent = result.current_cn.toFixed(0);
+}
+
+function renderMetrics() {
+  if (!metrics) return;
+  const list = document.getElementById("metrics-list");
+  list.innerHTML = [1, 2, 3, 7].map(h => {
+    const m = metrics[h];
+    if (!m) return "";
+    const nse = m.nse_log ?? m.nse;
+    const bar = "▓".repeat(Math.max(0, Math.round(nse * 12)));
+    return `<div class="metric-row">
+      <span>+${h}d NSE(log)</span>
+      <b style="color:${nse > 0.6 ? 'var(--low)' : nse > 0.3 ? 'var(--mod)' : 'var(--sev)'}">
+        ${nse.toFixed(3)} ${bar}</b>
+    </div>`;
+  }).join("");
+}
+
+function renderAttribution() {
+  if (!importance) return;
+  const top = importance.slice(0, 12);
+  const maxVal = top[0]?.importance || 1;
+
+  function featureColor(name) {
+    if (name.startsWith("q_")) return "attr-q";
+    if (name.startsWith("rain_") || name.startsWith("api")) return "attr-rain";
+    if (name.includes("doy") || name === "month") return "attr-season";
+    return "attr-physics";
+  }
+
+  function featureLabel(name) {
+    const map = {
+      q_lag_1d: "Discharge (today)", q_lag_2d: "Discharge (−1d)",
+      q_lag_3d: "Discharge (−2d)", q_lag_5d: "Discharge (−4d)",
+      q_lag_7d: "Discharge (−6d)",
+      api: "API (antecedent)", rain_1d: "Rain (1-day)", rain_3d: "Rain (3-day)",
+      rain_7d: "Rain (7-day)", rain_14d: "Rain (14-day)", rain_30d: "Rain (30-day)",
+      rain_5d: "Rain (5-day)", rain_10d: "Rain (10-day)", rain_21d: "Rain (21-day)",
+      sin_doy: "Seasonality (sin)", cos_doy: "Seasonality (cos)",
+      month: "Month", cn_eff: "Effective CN ⚗", wcn_runoff_mm: "WCN runoff ⚗",
+    };
+    return map[name] || name;
+  }
+
+  const list = document.getElementById("attr-list");
+  list.innerHTML = top.map(item => {
+    const pct = Math.round((item.importance / maxVal) * 100);
+    const cls = featureColor(item.feature);
+    return `<div class="attr-row">
+      <span class="attr-name">${featureLabel(item.feature)}</span>
+      <div class="attr-bar-wrap">
+        <div class="attr-bar ${cls}" style="width:${pct}%"></div>
+      </div>
+      <span class="attr-val">${(item.importance * 100).toFixed(1)}%</span>
+    </div>`;
+  }).join("");
+}
+
+function renderCards() {
+  if (!result) return;
+  const cards = document.getElementById("cards");
+  cards.innerHTML = DAYS.map((day, i) => {
+    const p50 = result.p50[i];
+    const p10 = result.p10[i];
+    const p90 = result.p90[i];
+    const band = result.risk_band[i];
+    return `<div class="day-card ${band}">
+      <div class="day-lbl">${day.replace("Today+","Day +")}</div>
+      <div class="day-q" style="color:${RISK_COLORS[band]}">${fmtQ(p50)}</div>
+      <div class="day-unit">m³/s</div>
+      <div class="day-band band-${band}">${band}</div>
+      <div class="day-range">${fmtQ(p10)}–${fmtQ(p90)}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderFloodBanner() {
+  if (!result) return;
+  const banner = document.getElementById("flood-banner");
+  const highDays = result.p50.map((q, i) => ({q, h: i+1, band: result.risk_band[i]}))
+    .filter(d => d.band === "high" || d.band === "severe");
+  if (highDays.length > 0) {
+    banner.classList.add("on");
+    const first = highDays[0];
+    document.getElementById("flood-banner-title").textContent =
+      `Flood risk: day +${first.h} forecast exceeds bankfull (${BANKFULL.toLocaleString()} m³/s)`;
+    document.getElementById("flood-banner-body").textContent =
+      `${highDays.length} of 7 forecast days exceed bankfull discharge at Gajoldoba. ` +
+      `Peak forecast: ${fmtQ(Math.max(...result.p50))} m³/s (p50).`;
+  } else {
+    banner.classList.remove("on");
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Canvas chart
+// ─────────────────────────────────────────────────────────────────
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+
+function resizeCanvas() {
+  const wrap = document.getElementById("chart-wrap");
+  const W = wrap.clientWidth;
+  const H = Math.round(W * 0.42);
+  cv.style.height = H + "px";
+  cv.width = W * devicePixelRatio;
+  cv.height = H * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+function drawChart() {
+  if (!result) return;
+  const W = cv.width / devicePixelRatio;
+  const H = cv.height / devicePixelRatio;
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = {l: 56, r: 24, t: 36, b: 36};
+  const cW = W - PAD.l - PAD.r;
+  const cH = H - PAD.t - PAD.b;
+
+  // Background
+  ctx.fillStyle = "rgba(5,7,12,0.6)";
+  ctx.fillRect(0, 0, W, H);
+
+  const p10 = result.p10;
+  const p50 = result.p50;
+  const p90 = result.p90;
+  const allVals = [...p10, ...p50, ...p90, BANKFULL * 0.5];
+  const yMax = Math.max(BANKFULL * 1.15, Math.max(...allVals) * 1.1);
+  const yMin = 0;
+  const n = p50.length;
+
+  function xPos(i) { return PAD.l + (i + 0.5) * (cW / n); }
+  function yPos(v) { return PAD.t + cH * (1 - (v - yMin) / (yMax - yMin)); }
+
+  // Grid lines
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.07)";
+  ctx.lineWidth = 1;
+  const yTicks = 5;
+  for (let t = 0; t <= yTicks; t++) {
+    const v = yMin + (yMax - yMin) * (t / yTicks);
+    const y = yPos(v);
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, y);
+    ctx.lineTo(W - PAD.r, y);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "9px 'Avenir Next',system-ui";
+    ctx.textAlign = "right";
+    ctx.fillText(fmtQ(v), PAD.l - 4, y + 3);
+  }
+
+  // Bankfull line
+  const bankY = yPos(BANKFULL);
+  ctx.strokeStyle = "rgba(239,68,68,0.55)";
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([8, 5]);
+  ctx.beginPath();
+  ctx.moveTo(PAD.l, bankY);
+  ctx.lineTo(W - PAD.r, bankY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(239,68,68,0.7)";
+  ctx.font = "9px 'Avenir Next',system-ui";
+  ctx.textAlign = "left";
+  ctx.fillText("Bankfull", PAD.l + 4, bankY - 4);
+  ctx.restore();
+
+  // Uncertainty band (p10-p90)
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) ctx.lineTo(xPos(i), yPos(p90[i]));
+  for (let i = n - 1; i >= 0; i--) ctx.lineTo(xPos(i), yPos(p10[i]));
+  ctx.closePath();
+  const bandGrad = ctx.createLinearGradient(PAD.l, 0, W - PAD.r, 0);
+  bandGrad.addColorStop(0, "rgba(91,140,255,0.22)");
+  bandGrad.addColorStop(1, "rgba(56,189,248,0.12)");
+  ctx.fillStyle = bandGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // p10, p90 dashed borders
+  ["p10","p90"].forEach(key => {
+    const arr = key === "p10" ? p10 : p90;
+    ctx.save();
+    ctx.beginPath();
+    arr.forEach((v, i) => { i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)); });
+    ctx.strokeStyle = "rgba(91,140,255,0.35)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  });
+
+  // p50 main line
+  ctx.save();
+  ctx.beginPath();
+  p50.forEach((v, i) => {
+    i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v));
+  });
+  const lineGrad = ctx.createLinearGradient(PAD.l, 0, W - PAD.r, 0);
+  lineGrad.addColorStop(0, "#5b8cff");
+  lineGrad.addColorStop(1, "#38bdf8");
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = "round";
+  ctx.stroke();
+
+  // Dots on p50
+  p50.forEach((v, i) => {
+    const band = result.risk_band[i];
+    ctx.beginPath();
+    ctx.arc(xPos(i), yPos(v), 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = RISK_COLORS[band];
+    ctx.shadowColor = RISK_COLORS[band];
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+  ctx.restore();
+
+  // X-axis labels
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "9px 'Avenir Next',system-ui";
+  ctx.textAlign = "center";
+  p50.forEach((_, i) => {
+    ctx.fillText(`+${i+1}d`, xPos(i), H - PAD.b + 14);
+  });
+  ctx.restore();
+
+  // Legend
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "9px 'Avenir Next',system-ui";
+  ctx.textAlign = "right";
+  ctx.fillText("— median   ··· p10/p90", W - PAD.r, PAD.t - 6);
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────
+function fmtQ(q) {
+  if (q >= 1000) return (q / 1000).toFixed(1) + "k";
+  return Math.round(q) + "";
+}
+
+function riskColor(q, bfq) {
+  if (q >= 1.4 * bfq) return "var(--sev)";
+  if (q >= bfq) return "var(--high)";
+  if (q >= 0.7 * bfq) return "var(--mod)";
+  return "var(--low)";
+}
+
+boot();
+</script>
+</body>
+</html>
